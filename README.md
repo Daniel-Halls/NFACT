@@ -133,7 +133,7 @@ Under the hood NFACT PP is probtrackx2 omatrix2 option to get a seed by target c
 ### Input for nfact_preproc
 
 Required before running NFACT PP:
-    - crossing-fibre diffusion modelled data (bedpostX)
+    - Crossing-fibre diffusion modelled data (bedpostX)
     - Seeds (either surfaces or volumes)
 
 NFACT PP has three modes: surface , volume, and filestree.
@@ -157,9 +157,13 @@ Input for surface seed mode:
 Input needed for volume mode:
     - Seeds as volumes (relative path, must be same across subjects)
 
- ### NFACT PP input folder 
+Warps must be ordered Standard2diff and Diff2standard. If your target fdt paths doesn't match up to the template then it is most likely the warps being the wrong way around.
+
+
+### NFACT PP input folder 
 
 NFACT pp can be used in a folder agnostic way by providing the paths to seeds/bedpostX/target inside a subject folder (i.e --seeds seeds/amygdala.nii.gz).
+However, NFACT pp does have an  --absolute option which will treat the seeds (and rois) as absolute paths. This way one set of seeds and rois can be passed to all subjects
 
 The other way is to use the --file_tree command with the name of a file tree (see https://open.win.ox.ac.uk/pages/fsl/file-tree/index.html for further details on filetree).
 In this case seeds/rois/bedpostx do not need to be specified as nfact_pp will try and find the appropriate files.
@@ -177,31 +181,32 @@ seed files are aliased as (seed), roi as (roi), warps as (diff2std, std2diff) an
 ### Usage:
 
 ```
-usage: nfact_pp [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [-f FILE_TREE] [-s SEED [SEED ...]] [-w WARPS [WARPS ...]] [-b BPX_PATH] [-r ROI [ROI ...]] [-sr SEEDREF] [-t TARGET2] [-ns NSAMPLES] [-mm MM_RES] [-p PTX_OPTIONS] [-e EXCLUSION] [-S [STOP ...]]
-                [-n N_CORES] [-C] [-cq CLUSTER_QUEUE] [-cr CLUSTER_RAM] [-ct CLUSTER_TIME] [-cqos CLUSTER_QOS]
+usage: nfact_pp [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [-G] [-f FILE_TREE] [-s SEED [SEED ...]] [-w WARPS [WARPS ...]] [-b BPX_PATH] [-r ROI [ROI ...]] [-sr SEEDREF] [-t TARGET2] [-ns NSAMPLES] [-mm MM_RES] [-p PTX_OPTIONS] [-e EXCLUSION] [-S [STOP ...]]
+                [-A] [-n N_CORES] [-C] [-cq CLUSTER_QUEUE] [-cr CLUSTER_RAM] [-ct CLUSTER_TIME] [-cqos CLUSTER_QOS]
 
 options:
-  -h, --help            Shows help message and exit
+  -h, --help            show this help message and exit
   -hh, --verbose_help   Verbose help message. Prints help message and example usages
   -O, --overwrite       Overwrites previous file structure
+  -G, --gpu             Use this option to overrride nfact_pp check for GPU and use the GPU. Use this option if submitting to cluster with a GPU from a partition without a GPU.
 
-Compulsory Arguments:
+Set Up Arguments:
   -l LIST_OF_SUBJECTS, --list_of_subjects LIST_OF_SUBJECTS
-                        Absolute path to a list of subjects in text form. All subjects need the absolute file path to subjects directory. Consider using nfact_config to help create subject list
+                        Filepath to a list of subjects
   -o OUTDIR, --outdir OUTDIR
-                        Absolute path to a directory to save results in. nfact_pp creates a folder called nfact_pp in it.
+                        Path to output directory
 
-REQUIRED FOR FILETREE MODE: :
+Filetree option:
   -f FILE_TREE, --file_tree FILE_TREE
-                        Use this option to provide name of predefined file tree to perform whole brain tractography. nfact_pp currently comes with HCP filetree. See documentation for further information.
+                        Use this option to provide name of a predefined file tree to perform whole brain tractography. nfact_pp currently comes with a number of HCP filetree. See documentation for further information.
 
-Tractography options: :
+Tractography options:
   -s SEED [SEED ...], --seed SEED [SEED ...]
-                        Relative path to either a single or multiple seeds. If multiple seeds given then include a space between paths. Must be the same across subjects.
+                        Relative path to either a single or multiple seeds. If multiple seeds given then include a space between paths. Path to file must be the same across subjects.
   -w WARPS [WARPS ...], --warps WARPS [WARPS ...]
-                        Relative path to warps inside a subjects directory. Include a space between paths. Must be the same across subjects.
+                        Relative path to warps inside a subjects directory. Include a space between paths. Path to file must be the same across subjects. Expects the order as Standard2diff and Diff2standard.
   -b BPX_PATH, --bpx BPX_PATH
-                        Relative path to Bedpostx folder inside a subjects directory. Must be the same across subjects
+                        Relative path to Bedpostx folder inside a subjects directory. Path to file must be the same across subjects
   -r ROI [ROI ...], --roi ROI [ROI ...]
                         REQUIRED FOR SURFACE MODE: Relative path to a single ROI or multiple ROIS to restrict seeding to (e.g. medial wall masks). Must be the same across subject. ROIS must match number of seeds.
   -sr SEEDREF, --seedref SEEDREF
@@ -217,9 +222,9 @@ Tractography options: :
   -e EXCLUSION, --exclusion EXCLUSION
                         Absolute path to an exclusion mask. Will reject pathways passing through locations given by this mask
   -S [STOP ...], --stop [STOP ...]
-                        Use wtstop and stop in the tractography. Takes an absolute file path to a json file containing stop and wtstop masks, JSON keys must be stopping_mask and wtstop_mask. Argument can be used with the --filetree, in that case no json file is needed.
- -A, --absolute        Treat seeds and rois as absolute paths, providing one set of seeds and rois for tractography across all subjects.
-
+                        Use wtstop and stop in the tractography. Takes an absolute file path to a json file containing stop and wtstop masks, JSON keys must be stopping_mask and wtstop_mask. Argument can be used with the --filetree, in that case no json file is
+                        needed.
+  -A, --absolute        Treat seeds and rois as absolute paths, providing one set of seeds and rois for tractography across all subjects.
 
 Parallel Processing arguments:
   -n N_CORES, --n_cores N_CORES
@@ -227,16 +232,15 @@ Parallel Processing arguments:
                         slow down processing.
 
 Cluster Arguments:
-  -C, --cluster         Use the cluster enviornment. nfact_pp will check that
+  -C, --cluster         Use cluster enviornment
   -cq CLUSTER_QUEUE, --queue CLUSTER_QUEUE
                         Cluster queue to submit to
   -cr CLUSTER_RAM, --cluster_ram CLUSTER_RAM
-                        The amount of ram that job will take. Default is 60
+                        Ram that job will take. Default is 60
   -ct CLUSTER_TIME, --cluster_time CLUSTER_TIME
-                        The amount of time that job will take. nfact_pp will assign a time if none given, depending on cluster gpu status
+                        Time that job will take. nfact_pp will assign a time if none given
   -cqos CLUSTER_QOS, --cluster_qos CLUSTER_QOS
-                        Set the qos for the cluster. Usually not needed
-
+                        Set the qos for the cluster
 
 Example Usage:
     Surface mode:

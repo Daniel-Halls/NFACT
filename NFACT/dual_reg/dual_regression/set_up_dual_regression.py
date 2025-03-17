@@ -1,5 +1,6 @@
-from NFACT.dual_reg.nfact_dr_functions import get_subject_id
-from NFACT.base.utils import nprint, colours
+from NFACT.dual_reg.nfact_dr_functions import get_subject_id, get_group_level_components
+from NFACT.dual_reg.dual_regression.run_dual_regression import dual_regression_pipeline
+from NFACT.base.utils import nprint, error_and_exit, colours
 from NFACT.base.cluster_support import cluster_submission, Queue_Monitoring
 from pathlib import Path
 import os
@@ -42,7 +43,7 @@ def get_cluster_script_path() -> str:
         Path to cluster
         script
     """
-    return os.path.join(Path(__file__).parent, "cluster_script.py")
+    return os.path.join(Path(__file__).parent, "run_dual_regression.py")
 
 
 def build_cluster_command(
@@ -147,7 +148,8 @@ def submit_to_cluster(args: dict, paths: dict) -> list:
             f"{sub_id}_nfact_dr",
             os.path.join(args["outdir"], "nfact_dr", "logs"),
             args["cluster_qos"],
-            False,
+            gpu=False,
+            parallel=args["n_cores"],
         )
         job_ids.append(id)
     return job_ids
@@ -155,7 +157,8 @@ def submit_to_cluster(args: dict, paths: dict) -> list:
 
 def run_on_cluster(args: dict, paths: dict) -> None:
     """
-    Function to run jobs on cluster
+    Function to run dual regression
+    on the cluster
 
     Parameters
     ----------
@@ -171,7 +174,58 @@ def run_on_cluster(args: dict, paths: dict) -> None:
 
     col = colours()
     nprint(f"{col['pink']}Running{col['reset']}: Cluster")
+    method = "Regression" if args["algo"] == "ica" else "Non-negative Regression"
+    nprint(f"{col['pink']}DR Method:{col['reset']} {method}")
     nprint(f"{col['pink']}Submtting to{col['reset']}: {args['cluster_queue']}")
     ids = submit_to_cluster(args, paths)
     queue = Queue_Monitoring()
     queue.monitor(ids)
+
+
+def run_locally(args: dict, paths: dict) -> None:
+    """
+    Function to run dual regression
+    locally
+
+    Parameters
+    ----------
+    args: dict
+        dictionary of cmd args
+    paths: dict
+        path to images
+
+    Returns
+    -------
+    None
+    """
+    col = colours()
+
+    nprint(f"{col['pink']}Running:{col['reset']} Locally")
+    method = "Regression" if args["algo"] == "ica" else "Non-negative Regression"
+    nprint(f"{col['pink']}DR Method:{col['reset']} {method}")
+    nprint(f"{col['pink']}Obtaining:{col['reset']} Components")
+
+    try:
+        components = get_group_level_components(
+            paths["component_path"],
+            paths["group_average_path"],
+            args["seeds"],
+            args["roi"],
+        )
+    except Exception:
+        error_and_exit(False, "Unable to find components")
+
+    for idx, subject in enumerate(args["ptxdir"]):
+        subject_id = get_subject_id(subject, idx)
+        dual_regression_pipeline(
+            fdt_path=subject,
+            output_dir=os.path.join(args["outdir"], "nfact_dr"),
+            component_path=paths["component_path"],
+            group_average_path=paths["group_average_path"],
+            algo=args["algo"],
+            seeds=args["seeds"],
+            sub_id=subject_id,
+            roi=args["roi"],
+            parallel=args["n_cores"],
+            components=components,
+        )

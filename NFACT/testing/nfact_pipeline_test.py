@@ -8,7 +8,10 @@ from NFACT.decomp.decomposition.decomp import (
 )
 from NFACT.decomp.pipes.image_handling import create_wta_map
 from NFACT.base.matrix_handling import normalise_components, load_fdt_matrix
-from NFACT.dual_reg.dual_regression import nmf_dual_regression, ica_dual_regression
+from NFACT.dual_reg.dual_regression.dual_regression_methods import (
+    nmf_dual_regression,
+    ica_dual_regression,
+)
 import pytest
 import os
 from pathlib import Path

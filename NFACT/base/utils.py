@@ -98,7 +98,7 @@ def error_and_exit(
         exit(1)
 
 
-def nprint(message: str) -> None:
+def nprint(message: str, to_flush: bool = False) -> None:
     """
     Function to print to terminal
     and attempt to log to pre set up
@@ -108,12 +108,15 @@ def nprint(message: str) -> None:
     ----------
     message: str
         string to print and log
+    to_flush: bool
+        to flush output
+        default is false
 
     Returns
     -------
     None
     """
-    print(message)
+    print(message, flush=to_flush)
     try:
         logging.info(message)
     except Exception:

@@ -158,6 +158,7 @@ def fsl_sub_cluster_command(
     queue: str = None,
     qos: str = None,
     gpu: bool = False,
+    parallel: int = None,
 ) -> list:
     """
     Function to build out fsl sub command.
@@ -178,6 +179,9 @@ def fsl_sub_cluster_command(
         SLURM qos. Can be None
     gpu: bool = False
         To use GPU.
+    parallel: int = None
+        Assigns parallel slots
+        for fsl_sub
 
     Returns
     -------
@@ -191,6 +195,8 @@ def fsl_sub_cluster_command(
         cluster_command.extend(["-q", str(queue)])
     if gpu:
         cluster_command.extend(["-c", "cuda"])
+    if parallel:
+        cluster_command.extend(["-s", str(parallel)])
     cluster_command.extend([" ".join(command_to_run)])
     return cluster_command
 
@@ -373,6 +379,7 @@ def cluster_submission(
     log_location: str,
     cluster_qos: str,
     gpu: bool,
+    parallel: int = None,
 ) -> str:
     """
     Function to submit jobs to cluster.
@@ -398,6 +405,9 @@ def cluster_submission(
         SLURM qos. Can be None
     gpu: bool = False
         To use GPU.
+    parallel: int = None
+        Assigns parallel slots
+        for fsl_sub
 
     Returns
     -------
@@ -412,7 +422,7 @@ def cluster_submission(
         log_name,
     )
     cluster_command = fsl_sub_cluster_command(
-        bcluster_command, command, cluster_queue, cluster_qos, gpu
+        bcluster_command, command, cluster_queue, cluster_qos, gpu, parallel
     )
     fsl_sub_rout = run_fsl_sub(cluster_command)
     return fsl_sub_rout["stdout"]

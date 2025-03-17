@@ -4,8 +4,10 @@ from NFACT.dual_reg.nfact_dr_set_up import (
     create_nfact_dr_folder_set_up,
 )
 from NFACT.dual_reg.nfact_dr_functions import get_paths
-from NFACT.dual_reg.local.local_run import run_locally
-from NFACT.dual_reg.cluster.cluster_run import run_on_cluster
+from NFACT.dual_reg.dual_regression.set_up_dual_regression import (
+    run_on_cluster,
+    run_locally,
+)
 from NFACT.base.setup import (
     check_algo,
     get_subjects,
@@ -88,9 +90,10 @@ def nfact_dr_main(args: dict = None) -> None:
     log.log_break("input")
     log.log_arguments(args)
     log.log_break("nfact decomp workflow")
-    nprint(f"{col['plum']}Number of subject:{col['reset']} {len(args['ptxdir'])} \n")
-
-    nprint("\nDual Regression\n")
+    nprint(f"{col['plum']}Number of subject:{col['reset']} {len(args['ptxdir'])}")
+    parallel_str = args["n_cores"] if args["n_cores"] else 1
+    nprint(f"{col['plum']}Number of cores{col['reset']}: {parallel_str}")
+    nprint("\nDual Regression")
     nprint("-" * 100)
 
     if args["cluster"]:
