@@ -169,11 +169,14 @@ def save_dual_regression_images(
             )
         if "white" in comp:
             nprint(f"{col['pink']}Image:{col['reset']} {comp}")
-            save_white_matter(
-                components[comp],
-                os.path.join(ptx_directory, "lookup_tractspace_fdt_matrix2.nii.gz"),
-                os.path.join(nfact_path, algo_path, w_file_name),
-            )
+            try:
+                save_white_matter(
+                    components[comp],
+                    os.path.join(ptx_directory, "lookup_tractspace_fdt_matrix2.nii.gz"),
+                    os.path.join(nfact_path, algo_path, w_file_name),
+                )
+            except Exception as e:
+                nprint(f"Unable to save Image due to {e}")
 
 
 def white_component(component_dir: str, group_averages_dir: str) -> np.ndarray:
