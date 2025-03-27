@@ -1,7 +1,8 @@
-from NFACT.base.utils import colours, nprint
+from NFACT.base.utils import colours, nprint, error_and_exit
 from sklearn.preprocessing import StandardScaler
 import scipy.sparse as sps
 import numpy as np
+import os
 
 
 def normalise_components(grey_matter: np.array, white_matter: np.array) -> dict:
@@ -53,3 +54,26 @@ def load_fdt_matrix(matfile: str) -> np.ndarray:
     nrows = int(mat[-1, 0])
     ncols = int(mat[-1, 1])
     return sps.csc_matrix((data, (rows, cols)), shape=(nrows, ncols)).toarray()
+
+
+def save_matrix(matrix: np.array, directory: str, matrix_name: str) -> None:
+    """
+    Function to save average matrix as npz file
+
+    Parameters
+    ----------
+    matrix: np.array
+        matrix to save
+    directory: str
+        directory to save matrix to
+    matrix_name: str
+        name of matrix to save as
+
+    Returns
+    -------
+    None
+    """
+    try:
+        np.save(os.path.join(directory, matrix_name), matrix)
+    except Exception as e:
+        error_and_exit(False, f"Unable to save matrix due to {e}")
