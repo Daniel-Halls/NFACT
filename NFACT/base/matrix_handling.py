@@ -33,8 +33,9 @@ def img_save_failed(
     -------
     None
     """
+    col = colours()
     nprint(fail_message)
-    nprint(f"Saving Component to disk at {save_path}")
+    nprint(f"{col['pink']}Saving Component to disk:{col['reset']} {save_path}")
     save_matrix(component, save_path, matrix_name)
     if to_exit:
         error_and_exit(False)

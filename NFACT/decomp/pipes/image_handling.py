@@ -75,7 +75,7 @@ def save_images(
                 img_save_failed(
                     components[comp],
                     os.path.join(nfact_path, algo_path),
-                    f"Unable to save GM component due to {e}",
+                    f"{col['red']}Unable to save GM component due to: {e}{col['reset']}",
                     grey_prefix,
                 )
 
@@ -95,7 +95,7 @@ def save_images(
                 img_save_failed(
                     components[comp],
                     os.path.join(nfact_path, algo_path),
-                    f"Unable to save WM component due to {e}",
+                    f"{col['red']}Unable to save WM component due to: {e}{col['reset']}",
                     w_file_name,
                     to_exit=True,
                 )

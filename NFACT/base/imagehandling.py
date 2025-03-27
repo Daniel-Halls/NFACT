@@ -3,7 +3,11 @@ import os
 import nibabel as nb
 import numpy as np
 import re
-from NFACT.base.utils import error_and_exit, nprint
+from NFACT.base.utils import error_and_exit
+
+
+class ImageError(Exception):
+    pass
 
 
 def imaging_type(path: str) -> str:
@@ -131,12 +135,11 @@ def save_white_matter(
     lut_vol = nb.load(path_to_lookup_vol)
     lut_vol_data = lut_vol.get_fdata().astype(np.int32)
     lut_shape = sum(lut_vol_data.flatten() > 0)
-    white_matter_shape = white_matter_components.shape[1]
-    if lut_shape != white_matter_shape:
-        nprint(
-            f"Lookup_tractspace_fdt_matrix2 size {lut_shape} is not compatible with white matter component size {white_matter_shape}"
+    wm_shape = white_matter_components.shape[1]
+    if lut_shape != wm_shape:
+        raise ImageError(
+            f"Lookup_tractspace size {lut_shape} not the same as WM component size {wm_shape}"
         )
-        raise ValueError
 
     white_matter_vol = mat2vol(white_matter_components, lut_vol_data)
     nb.Nifti1Image(
