@@ -5,6 +5,41 @@ import numpy as np
 import os
 
 
+def img_save_failed(
+    component: np.ndarray,
+    save_path: str,
+    fail_message: str,
+    matrix_name: str,
+    to_exit: bool = False,
+) -> None:
+    """
+    Function to save component to
+    disk when image fail.
+
+    Parameters
+    ----------
+    component: np.ndarray
+        numpy array of component
+    save_path: str
+        Path to save matrix to
+    fail_message: str
+        message to print on fail
+    matrix_name: str
+        name of matrix
+    to_exit: bool
+        to exit on fail
+
+    Returns
+    -------
+    None
+    """
+    nprint(fail_message)
+    nprint(f"Saving Component to disk at {save_path}")
+    save_matrix(component, save_path, matrix_name)
+    if to_exit:
+        error_and_exit(False)
+
+
 def normalise_components(grey_matter: np.array, white_matter: np.array) -> dict:
     """
     Normalise components.

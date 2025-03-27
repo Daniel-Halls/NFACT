@@ -5,8 +5,8 @@ from NFACT.base.imagehandling import (
     save_white_matter,
     save_grey_matter_components,
 )
-from NFACT.base.matrix_handling import save_matrix
-from NFACT.base.utils import colours, nprint, error_and_exit
+from NFACT.base.matrix_handling import img_save_failed
+from NFACT.base.utils import colours, nprint
 
 
 def save_images(
@@ -57,8 +57,8 @@ def save_images(
             grey_prefix = f"G_{algo.upper()}_norm"
 
         if "grey" in comp:
+            nprint(f"{col['pink']}Image:{col['reset']} {comp}")
             try:
-                nprint(f"{col['pink']}Image:{col['reset']} {comp}")
                 save_grey_matter_components(
                     components[comp],
                     nfact_path,
@@ -72,16 +72,16 @@ def save_images(
                     grey_prefix,
                 )
             except Exception as e:
-                save_path = os.path.join(nfact_path, algo_path)
-                nprint(f"{col['red']}Unable to save Grey component due to: {e}")
-                nprint(
-                    f"Continuing however dual regression not possbile.{col['reset']}"
+                img_save_failed(
+                    components[comp],
+                    os.path.join(nfact_path, algo_path),
+                    f"Unable to save GM component due to {e}",
+                    grey_prefix,
                 )
-                nprint(f"Saving Component as np array {save_path}")
-                save_matrix(components[comp], save_path, grey_prefix)
+
         if "white" in comp:
+            nprint(f"{col['pink']}Image:{col['reset']} {comp}")
             try:
-                nprint(f"{col['pink']}Image:{col['reset']} {comp}")
                 save_white_matter(
                     components[comp],
                     os.path.join(
@@ -92,11 +92,13 @@ def save_images(
                     os.path.join(nfact_path, algo_path, w_file_name),
                 )
             except Exception as e:
-                save_path = os.path.join(nfact_path, algo_path)
-                nprint(f"{col['red']}Unable to save White component due to: {e}")
-                nprint(f"Saving Component as np array {save_path}")
-                save_matrix(components[comp], save_path, w_file_name)
-                error_and_exit(False)
+                img_save_failed(
+                    components[comp],
+                    os.path.join(nfact_path, algo_path),
+                    f"Unable to save WM component due to {e}",
+                    w_file_name,
+                    to_exit=True,
+                )
 
 
 def winner_takes_all(
