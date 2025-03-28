@@ -116,6 +116,7 @@ def dual_regression_pipeline(
                 seeds,
                 roi,
             )
+
         except Exception:
             error_and_exit(False, "Unable to find components")
 
@@ -124,12 +125,16 @@ def dual_regression_pipeline(
 
     try:
         matrix = load_fdt_matrix(os.path.join(fdt_path, "fdt_matrix2.dot"))
+
+    except KeyboardInterrupt:
+        exit(0)
     except Exception:
         error_and_exit(False, f"Unable to load {sub_id} fdt matrix")
 
     method = nmf_dual_regression if algo.lower() == "nmf" else ica_dual_regression
     try:
         dr_results = run_decomp(method, components, matrix, parallel)
+
     except Exception as e:
         error_and_exit(False, f"Dual regression failed due to {e}")
 
@@ -146,6 +151,7 @@ def dual_regression_pipeline(
             fdt_path,
             roi,
         )
+
     except Exception as e:
         error_and_exit(False, f"Unable to save images due to {e}")
 

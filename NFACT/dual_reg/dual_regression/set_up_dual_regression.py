@@ -182,7 +182,7 @@ def run_on_cluster(args: dict, paths: dict) -> None:
     queue.monitor(ids)
 
 
-def run_locally(args: dict, paths: dict) -> None:
+def run_locally(args: dict, paths: dict, handler) -> None:
     """
     Function to run dual regression
     locally
@@ -214,6 +214,9 @@ def run_locally(args: dict, paths: dict) -> None:
         )
     except Exception:
         error_and_exit(False, "Unable to find components")
+
+    if args["n_cores"]:
+        handler.set_suppress_messages = True
 
     for idx, subject in enumerate(args["ptxdir"]):
         subject_id = get_subject_id(subject, idx)

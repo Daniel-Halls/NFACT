@@ -43,7 +43,7 @@ def nfact_dr_main(args: dict = None) -> None:
     None
     """
 
-    Signit_handler()
+    handler = Signit_handler()
     col = colours()
     to_exit = False
 
@@ -99,7 +99,7 @@ def nfact_dr_main(args: dict = None) -> None:
     if args["cluster"]:
         run_on_cluster(args, paths)
     else:
-        run_locally(args, paths)
+        run_locally(args, paths, handler)
 
     nprint(f"{col['darker_pink']}NFACT_DR has finished{col['reset']}")
     log.clear_logging()
