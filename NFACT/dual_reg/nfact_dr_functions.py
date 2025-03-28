@@ -1,8 +1,8 @@
 from NFACT.base.imagehandling import (
     save_grey_matter_components,
     save_white_matter,
-    img_save_failed,
 )
+from NFACT.base.matrix_handling import img_save_failed
 from NFACT.base.utils import colours, nprint, error_and_exit
 import numpy as np
 import os
@@ -169,11 +169,11 @@ def save_dual_regression_images(
                     roi,
                     grey_prefix,
                 )
-            except Exception as e:
+            except Exception:
                 img_save_failed(
                     components[comp],
                     os.path.join(nfact_path, algo_path),
-                    f"Unable to save GM component due to: {e}{col['reset']}",
+                    "Unable to save GM component due to: ",
                     grey_prefix,
                 )
         if "white" in comp:

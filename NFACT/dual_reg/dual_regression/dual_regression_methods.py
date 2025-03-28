@@ -32,14 +32,12 @@ def run_decomp(
     """
     try:
         components = decomp(components, connectivity_matrix, parallel)
+        return components
     except ValueError as e:
         error_and_exit(
             False,
             f"Components have incompatable size with connectivity Matrix {e}",
         )
-    except Exception as e:
-        error_and_exit(False, f"Unable to perform dual regression due to {e}")
-    return components
 
 
 def ica_dual_regression(
