@@ -1,9 +1,8 @@
 from NFACT.base.utils import error_and_exit, nprint, colours, Timer
 import numpy as np
 from scipy.optimize import nnls
-from multiprocessing import Pool
+from joblib import Parallel, delayed
 from tqdm import tqdm
-import signal
 
 
 def run_decomp(
@@ -33,12 +32,14 @@ def run_decomp(
     """
     try:
         components = decomp(components, connectivity_matrix, parallel)
-        return components
     except ValueError as e:
         error_and_exit(
             False,
             f"Components have incompatable size with connectivity Matrix {e}",
         )
+    except Exception as e:
+        error_and_exit(False, f"Unable to perform dual regression due to {e}")
+    return components
 
 
 def ica_dual_regression(
@@ -207,60 +208,30 @@ def nnls_parallel(components: dict, connectivity_matrix: np.ndarray, n_jobs: int
     dict
         Dictionary of components.
     """
-
     time = Timer()
     time.tic()
-    col = colours()
-
-    def kill_pool(sig, frame):
-        """
-        Method to kill pool safely.
-        Also prints kill message so that
-        the singit doesn't print it 100x
-        times
-        """
-        process.terminate()
-        print(f"\n{col['darker_pink']}Recieved kill signal (Ctrl+C). Terminating...")
-        print(f"Exiting...{col['reset']}\n")
-        exit(0)
 
     grey_components = components["grey_components"]
-    try:
-        nprint(f"{col['pink']}Regression:{col['reset']} White Matter")
+    col = colours()
+    nprint(f"{col['pink']}Regression:{col['reset']} White Matter")
+    wm_component_white_map = np.array(
+        Parallel(n_jobs=n_jobs)(
+            delayed(nnls_for_parallel)(col, grey_components, connectivity_matrix)
+            for col in range(connectivity_matrix.shape[1])
+        )
+    ).T
 
-        grey_components = components["grey_components"]
-        with Pool(int(n_jobs)) as process:
-            signal.signal(signal.SIGINT, kill_pool)
-            wm_component_white_map = np.array(
-                process.starmap(
-                    nnls_for_parallel,
-                    [
-                        (col, grey_components, connectivity_matrix)
-                        for col in range(connectivity_matrix.shape[1])
-                    ],
-                )
-            ).T
-
-        wm_component_white_map_T = wm_component_white_map.T
-        transposed_matrix = connectivity_matrix.T
-        nprint(f"{col['pink']}Regression:{col['reset']} Grey Matter")
-        time.tic()
-        with Pool(int(n_jobs)) as process:
-            signal.signal(signal.SIGINT, kill_pool)
-            gm_component_grey_map = np.array(
-                process.starmap(
-                    nnls_for_parallel,
-                    [
-                        (col, wm_component_white_map_T, transposed_matrix)
-                        for col in range(connectivity_matrix.shape[0])
-                    ],
-                )
+    nprint(f"{col['pink']}Regression:{col['reset']} Grey Matter")
+    time.tic()
+    wm_component_white_map_T = wm_component_white_map.T
+    gm_component_grey_map = np.array(
+        Parallel(n_jobs=n_jobs)(
+            delayed(nnls_for_parallel)(
+                col, wm_component_white_map_T, connectivity_matrix.T
             )
-    except KeyboardInterrupt:
-        process.terminate()
-        nprint(f"{col['pink']}Killing Processes and exiting{col['reset']}")
-        exit(0)
-
+            for col in range(connectivity_matrix.shape[0])
+        )
+    )
     nprint(f"Dual regression took {time.how_long()}")
 
     return {

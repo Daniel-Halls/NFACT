@@ -2,7 +2,6 @@ from NFACT.base.imagehandling import (
     save_grey_matter_components,
     save_white_matter,
 )
-from NFACT.base.matrix_handling import img_save_failed
 from NFACT.base.utils import colours, nprint, error_and_exit
 import numpy as np
 import os
@@ -158,39 +157,23 @@ def save_dual_regression_images(
 
         if "grey" in comp:
             nprint(f"{col['pink']}Image:{col['reset']} {comp}")
-            try:
-                save_grey_matter_components(
-                    components[comp],
-                    nfact_path,
-                    seeds,
-                    algo_path,
-                    dim,
-                    os.path.join(ptx_directory, "coords_for_fdt_matrix2"),
-                    roi,
-                    grey_prefix,
-                )
-            except Exception:
-                img_save_failed(
-                    components[comp],
-                    os.path.join(nfact_path, algo_path),
-                    "Unable to save GM component due to: ",
-                    grey_prefix,
-                )
+            save_grey_matter_components(
+                components[comp],
+                nfact_path,
+                seeds,
+                algo_path,
+                dim,
+                os.path.join(ptx_directory, "coords_for_fdt_matrix2"),
+                roi,
+                grey_prefix,
+            )
         if "white" in comp:
             nprint(f"{col['pink']}Image:{col['reset']} {comp}")
-            try:
-                save_white_matter(
-                    components[comp],
-                    os.path.join(ptx_directory, "lookup_tractspace_fdt_matrix2.nii.gz"),
-                    os.path.join(nfact_path, algo_path, w_file_name),
-                )
-            except Exception as e:
-                img_save_failed(
-                    components[comp],
-                    os.path.join(nfact_path, algo_path),
-                    f"Unable to save WM component due to: {e}{col['reset']}",
-                    w_file_name,
-                )
+            save_white_matter(
+                components[comp],
+                os.path.join(ptx_directory, "lookup_tractspace_fdt_matrix2.nii.gz"),
+                os.path.join(nfact_path, algo_path, w_file_name),
+            )
 
 
 def white_component(component_dir: str, group_averages_dir: str) -> np.ndarray:
