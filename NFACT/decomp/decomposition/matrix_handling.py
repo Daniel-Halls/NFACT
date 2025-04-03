@@ -63,28 +63,6 @@ def load_previous_matrix(path: str) -> np.ndarray:
         return None
 
 
-def save_avg_matrix(matrix: np.array, directory: str) -> None:
-    """
-    Function to save average matrix as npz file
-
-    Parameters
-    ----------
-    matrix: np.array
-        fdt2 matrix
-    directory: str
-        path to group_average folder in the nfact
-        folder
-
-    Returns
-    -------
-    None
-    """
-    try:
-        np.save(os.path.join(directory, "average_matrix2"), matrix)
-    except Exception as e:
-        error_and_exit(False, f"Unable to save matrix due to {e}")
-
-
 def avg_fdt(list_of_matfiles: list) -> np.ndarray:
     """
     Function to create and create

@@ -6,6 +6,16 @@ import re
 from NFACT.base.utils import error_and_exit
 
 
+class ImageError(Exception):
+    """
+    Custom Exception class
+    to raise errors with imaging
+    problems.
+    """
+
+    pass
+
+
 def imaging_type(path: str) -> str:
     """
     Function to return imaging
@@ -131,11 +141,10 @@ def save_white_matter(
     lut_vol = nb.load(path_to_lookup_vol)
     lut_vol_data = lut_vol.get_fdata().astype(np.int32)
     lut_shape = sum(lut_vol_data.flatten() > 0)
-    white_matter_shape = white_matter_components.shape[1]
-    if lut_shape != white_matter_shape:
-        error_and_exit(
-            False,
-            f"Lookup_tractspace_fdt_matrix2 size {lut_shape} is not compatible with white matter component size {white_matter_shape}",
+    wm_shape = white_matter_components.shape[1]
+    if lut_shape != wm_shape:
+        raise ImageError(
+            f"Lookup_tractspace size {lut_shape} not the same as WM component size {wm_shape}"
         )
 
     white_matter_vol = mat2vol(white_matter_components, lut_vol_data)

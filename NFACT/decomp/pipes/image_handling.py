@@ -5,7 +5,8 @@ from NFACT.base.imagehandling import (
     save_white_matter,
     save_grey_matter_components,
 )
-from NFACT.base.utils import colours, nprint, error_and_exit
+from NFACT.base.matrix_handling import img_save_failed
+from NFACT.base.utils import colours, nprint
 
 
 def save_images(
@@ -54,9 +55,10 @@ def save_images(
             algo_path = os.path.join("components", algo, "normalised")
             w_file_name = f"W_{algo.upper()}_norm_dim{dim}"
             grey_prefix = f"G_{algo.upper()}_norm"
-        try:
-            if "grey" in comp:
-                nprint(f"{col['pink']}Image:{col['reset']} {comp}")
+
+        if "grey" in comp:
+            nprint(f"{col['pink']}Image:{col['reset']} {comp}")
+            try:
                 save_grey_matter_components(
                     components[comp],
                     nfact_path,
@@ -69,12 +71,17 @@ def save_images(
                     roi,
                     grey_prefix,
                 )
-        except Exception as e:
-            nprint(f"{col['red']}Unable to save grey matter due to: {e}")
-            nprint(f"Continuing however dual regression not possbile.{col['reset']}")
-        try:
-            if "white" in comp:
-                nprint(f"{col['pink']}Image:{col['reset']} {comp}")
+            except Exception as e:
+                img_save_failed(
+                    components[comp],
+                    os.path.join(nfact_path, algo_path),
+                    f"{col['red']}Unable to save GM component due to: {e}{col['reset']}",
+                    grey_prefix,
+                )
+
+        if "white" in comp:
+            nprint(f"{col['pink']}Image:{col['reset']} {comp}")
+            try:
                 save_white_matter(
                     components[comp],
                     os.path.join(
@@ -84,8 +91,14 @@ def save_images(
                     ),
                     os.path.join(nfact_path, algo_path, w_file_name),
                 )
-        except Exception as e:
-            error_and_exit(f"Unable to save white matter components due to {e}")
+            except Exception as e:
+                img_save_failed(
+                    components[comp],
+                    os.path.join(nfact_path, algo_path),
+                    f"{col['red']}Unable to save WM component due to: {e}{col['reset']}",
+                    w_file_name,
+                    to_exit=True,
+                )
 
 
 def winner_takes_all(

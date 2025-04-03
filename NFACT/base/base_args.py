@@ -48,7 +48,7 @@ def cluster_args(base_args: object, col: dict) -> None:
         "--cluster_time",
         dest="cluster_time",
         default=False,
-        help="Time that job will take. nfact_pp will assign a time if none given",
+        help="Time that job will take. nfact will assign a time if none given",
     )
     cluster_options.add_argument(
         "-cqos",

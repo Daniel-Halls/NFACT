@@ -2,6 +2,7 @@ from NFACT.base.logging import NFACT_logs
 from NFACT.base.utils import Timer, colours, nprint
 from NFACT.base.signithandler import Signit_handler
 from NFACT.base.filesystem import delete_folder
+from NFACT.base.matrix_handling import save_matrix
 from NFACT.base.setup import (
     check_subject_exist,
     check_algo,
@@ -24,7 +25,6 @@ from NFACT.decomp.decomposition.decomp import matrix_decomposition, get_paramete
 from NFACT.decomp.decomposition.matrix_handling import (
     process_fdt_matrix2,
     load_previous_matrix,
-    save_avg_matrix,
 )
 from NFACT.decomp.pipes.image_handling import winner_takes_all, save_images
 from NFACT.decomp.setup.arg_check import process_command_args
@@ -126,7 +126,7 @@ def nfact_decomp_main(args: dict = None) -> None:
         )
         save_directory = os.path.join(args["outdir"], "nfact_decomp", "group_averages")
         fdt_2_conn = process_fdt_matrix2(args["ptxdir"], group_mode)
-        save_avg_matrix(fdt_2_conn, save_directory)
+        save_matrix(fdt_2_conn, save_directory, "average_matrix2")
         nprint(f"{col['pink']}Saving Matrix:{col['reset']} {save_directory}")
     nprint(
         f"{col['pink']}Matrix Loading Time:{col['reset']} {matrix_time.how_long()} \n"
