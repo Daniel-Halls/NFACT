@@ -35,10 +35,9 @@ def nfact_pp_args() -> dict:
         "--gpu",
         dest="gpu",
         action="store_true",
+        default=False,
         help="""
-        Use this option to overrride nfact_pp check for GPU 
-        and use the GPU. Use this option if submitting to
-        cluster with a GPU from a partition without a GPU.
+        To use the GPU version of probtrackx2.
         """,
     )
     file_tree_input = base_args.add_argument_group(
@@ -50,7 +49,7 @@ def nfact_pp_args() -> dict:
         dest="file_tree",
         default=False,
         help="""Use this option to provide name of a predefined file tree to 
-        perform whole brain tractography. nfact_pp currently comes with a number of HCP filetree. 
+        perform whole brain tractography. nfact_pp currently comes with a number of HCP filetrees. 
         See documentation for further information.""",
     )
     tractography_input = base_args.add_argument_group(

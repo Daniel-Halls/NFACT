@@ -1,5 +1,4 @@
 from NFACT.preprocess.nfactpp import pre_processing
-from NFACT.preprocess.probtrackx_functions import to_use_gpu
 from NFACT.preprocess.nfactpp_functions import seedref
 from NFACT.preprocess.nfactpp_args import nfact_pp_args
 from NFACT.preprocess.nfactpp_setup import (
@@ -68,16 +67,9 @@ def nfact_pp_main(arg: dict = None):
     arg["list_of_subjects"] = return_list_of_subjects_from_file(arg["list_of_subjects"])
     check_subject_exist(arg["list_of_subjects"])
 
-    if not arg["gpu"]:
-        print(f"{col['deep_pink']}Checking:{col['reset']} GPU status")
-        arg["gpu"] = to_use_gpu()
-        print(f"{col['amethyst']}Using:{col['reset']} GPU\n") if arg["gpu"] else print(
-            f"{col['amethyst']}Using:{col['reset']} CPU\n"
-        )
-    else:
-        print(
-            f"{col['amethyst']}Using:{col['reset']} GPU (Override option given. This may cause nfact_pp to crash if no GPU available)\n"
-        )
+    print(
+        f"{col['darker_pink']}Using:{col['reset']} {('GPU' if arg['gpu'] else 'CPU')}\n"
+    )
 
     nfact_pp_directory = os.path.join(arg["outdir"], "nfact_pp")
     if arg["overwrite"]:
