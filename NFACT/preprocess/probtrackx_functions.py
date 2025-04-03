@@ -10,21 +10,6 @@ import multiprocessing
 import signal
 
 
-def to_use_gpu():
-    """
-    Function to check if to use GPU
-    or CPU
-    Parameters
-    ----------
-    None
-    Returns
-    -------
-    bool: boolen
-        True if probtrack
-    """
-    return True if get_probtrack2_arguments(bin=True) else False
-
-
 def fail_safe_for_nfact_pp(warp: str, bpx: str):
     """
     Fail safe function to check that
