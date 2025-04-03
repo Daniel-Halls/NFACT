@@ -7,6 +7,12 @@ from NFACT.base.utils import error_and_exit
 
 
 class ImageError(Exception):
+    """
+    Custom Exception class
+    to raise errors with imaging
+    problems.
+    """
+
     pass
 
 
