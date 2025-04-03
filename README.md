@@ -188,7 +188,7 @@ options:
   -h, --help            show this help message and exit
   -hh, --verbose_help   Verbose help message. Prints help message and example usages
   -O, --overwrite       Overwrites previous file structure
-  -G, --gpu             Use this option to overrride nfact_pp check for GPU and use the GPU. Use this option if submitting to cluster with a GPU from a partition without a GPU.
+  -G, --gpu             To use the GPU version of probtrackx2.
 
 Set Up Arguments:
   -l LIST_OF_SUBJECTS, --list_of_subjects LIST_OF_SUBJECTS
@@ -198,7 +198,7 @@ Set Up Arguments:
 
 Filetree option:
   -f FILE_TREE, --file_tree FILE_TREE
-                        Use this option to provide name of a predefined file tree to perform whole brain tractography. nfact_pp currently comes with a number of HCP filetree. See documentation for further information.
+                        Use this option to provide name of a predefined file tree to perform whole brain tractography. nfact_pp currently comes with a number of HCP filetrees. See documentation for further information.
 
 Tractography options:
   -s SEED [SEED ...], --seed SEED [SEED ...]
