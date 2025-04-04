@@ -347,10 +347,6 @@ def seeds_to_ascii(surfin: str, roi: str, surfout: str) -> None:
     -------
     None
     """
-    col = colours()
-    print(
-        f"{col['pink']}Working on seed surface:{col['reset']} {os.path.basename(surfin)}"
-    )
 
     try:
         run = subprocess.run(

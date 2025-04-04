@@ -22,12 +22,15 @@ def check_roi_seed_len(seed: list, roi: list):
     -------
     None
     """
+    seed_check = [
+        seed_file for seed_file 
+        in seed if '.nii' not in seed]
     error_and_exit(
         roi,
         "Surfaces given as seeds but no medial wall. Please provide medial wall",
     )
     error_and_exit(
-        len(seed) == len(roi),
+        len(seed_check) == len(roi),
         "Number of seeds and number of medial wall must match",
     )
 

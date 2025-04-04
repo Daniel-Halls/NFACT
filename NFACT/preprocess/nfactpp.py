@@ -73,17 +73,23 @@ def process_surface(nfactpp_diretory: str, seed: list, roi: list) -> str:
         string of seeds names
     """
     seed_names = rename_seed(seed)
-    for img in range(0, len(roi)):
-        seeds_to_ascii(
-            seed[img],
-            roi[img],
-            os.path.join(nfactpp_diretory, "files", f"{seed_names[img]}_surf"),
-        )
-    asc_seeds = [
+    col = colours()
+    for img in range(len(seed_names)):
+        if '.nii' not in seed[img]:
+            print(f"{col['pink']}Working on seed surface:{col['reset']} {os.path.basename(seed[img])}")
+            seeds_to_ascii(
+                seed[img],
+                roi[img],
+                os.path.join(nfactpp_diretory, "files", f"{seed_names[img]}_surf"),
+            )
+        else:
+            print(f"{col['pink']}Adding Volume seed:{col['reset']} {os.path.basename(seed[img])}")
+    surf_mode_seeds = [
         os.path.join(nfactpp_diretory, "files", f"{seed}_surf.asc")
-        for seed in seed_names
+        if '.nii' not in seed else os.path.join(nfactpp_diretory, "files", seed)
+        for seed in seed_names 
     ]
-    return "\n".join(asc_seeds)
+    return "\n".join(surf_mode_seeds)
 
 
 def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
@@ -159,7 +165,7 @@ def process_subject(sub: str, arg: dict, col: dict) -> list:
         arg = process_filetree_args(arg, sub_id)
 
     seed = get_file(arg["seed"], sub, arg["absolute"])
-
+    
     seed_text = "\n".join(seed)
     # using this function not to return a file but check it is an imaging file
     get_file(arg["warps"], sub)
