@@ -127,6 +127,9 @@ def process_filetree_args(arg: dict, sub: str) -> dict:
     if "vol_seed" in arg["file_tree"].template_keys():
         arg["seed"].append(filetree_get_files(arg["file_tree"], sub, "L", "vol_seed"))
 
+    if "waypoints" in arg["file_tree"].template_keys():
+        arg["waypoints"] = filetree_get_files(arg["file_tree"], sub, "L", "waypoints")
+
     arg["warps"] = [
         filetree_get_files(arg["file_tree"], sub, "L", "std2diff"),
         filetree_get_files(arg["file_tree"], sub, "L", "diff2std"),

@@ -251,6 +251,7 @@ def build_probtrackx2_arguments(arg: dict, sub: str, ptx_options=False) -> list:
         f"--nsamples={arg['nsamples']}",
         f"--dir={output_dir}",
     ]
+
     command.extend(warp_options)
     if arg["exclusion"]:
         command.extend(exclsuion_mask(arg["exclusion"]))
@@ -260,7 +261,8 @@ def build_probtrackx2_arguments(arg: dict, sub: str, ptx_options=False) -> list:
                 arg, os.path.dirname(output_dir), sub, os.path.basename(sub)
             )
         )
-
+    if "waypoints" in arg.keys():
+        command.extend([f'--waypoints={os.path.join(sub, arg["waypoints"])}'])
     if ptx_options:
         command.extend(ptx_options)
     return command

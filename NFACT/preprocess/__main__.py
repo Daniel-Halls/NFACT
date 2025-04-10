@@ -68,7 +68,7 @@ def nfact_pp_main(arg: dict = None):
     check_subject_exist(arg["list_of_subjects"])
 
     print(
-        f"{col['darker_pink']}Using:{col['reset']} {('GPU' if arg['gpu'] else 'CPU')}\n"
+        f"{col['darker_pink']}Using:{col['reset']} {('GPU' if arg['gpu'] else 'CPU')}"
     )
 
     nfact_pp_directory = os.path.join(arg["outdir"], "nfact_pp")
