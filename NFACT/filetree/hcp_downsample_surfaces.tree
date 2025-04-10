@@ -1,9 +1,7 @@
 downsample
     {sub}.{hemi}.atlasroi.resampled_fs_LR.shape.gii (roi)
     {sub}.{hemi}.white.resampled_fs_LR.surf.gii (seed)
-    subcortical.nii.gz (vol_seed)
-    waypoint.nii.gz (waypoints)
-MNINonLinear                 
+MNINonLinear                    
     xfms
         acpc_dc2standard.nii.gz (diff2std)
         standard2acpc_dc.nii.gz (std2diff)
@@ -31,5 +29,3 @@ MNINonLinear
             white.R.asc (wtstop18)
 T1w
     Diffusion.bedpostX (bedpostX)
-
-
