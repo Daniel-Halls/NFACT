@@ -117,6 +117,32 @@ def check_files_are_imaging_files(path: str) -> bool:
     )
 
 
+def save_volume(base_volume: object, data_to_save: np.ndarray, filename: str) -> None:
+    """
+    Function wrapper around saving Nifti1Image
+
+    Parameters
+    ----------
+    base_volume: object
+        Nifti1Image to get affine
+        and header information
+    data_to_save: np.ndarray
+        np array of data to save to
+        volume
+    filename: str
+        string of name of volume
+        to save. Must include full
+        filepath
+
+    Returns
+    -------
+    None
+    """
+    nb.Nifti1Image(
+        data_to_save.astype(float), header=base_volume.header, affine=base_volume.affine
+    ).to_filename(filename)
+
+
 def save_white_matter(
     white_matter_components: np.ndarray,
     path_to_lookup_vol: str,
@@ -152,13 +178,10 @@ def save_white_matter(
         )
 
     white_matter_vol = mat2vol(white_matter_components, lut_vol_data)
-    file_name = f"{out_file}.nii.gz"
+    save_volume(lut_vol, white_matter_vol, f"{out_file}.nii.gz")
     if to_threshold:
-        file_name = f"{out_file}_T.nii.gz"
-        white_matter = thresholding(white_matter)
-    nb.Nifti1Image(
-        white_matter_vol.astype(float), header=lut_vol.header, affine=lut_vol.affine
-    ).to_filename(file_name)
+        white_matter_vol_threshold = thresholding(white_matter_vol)
+        save_volume(lut_vol, white_matter_vol_threshold, f"{out_file}_T.nii.gz")
 
 
 def save_grey_matter_volume(
@@ -195,11 +218,7 @@ def save_grey_matter_volume(
     out = np.zeros(vol.shape + (ncols,)).reshape(-1, ncols)
     for idx, col in enumerate(grey_matter_component.T):
         out[xyz_idx, idx] = col
-    nb.Nifti1Image(
-        out.reshape(vol.shape + (ncols,)).astype(float),
-        affine=vol.affine,
-        header=vol.header,
-    ).to_filename(file_name)
+    save_volume(vol, out.reshape(vol.shape + (ncols,)), file_name)
 
 
 def save_grey_matter_gifit(

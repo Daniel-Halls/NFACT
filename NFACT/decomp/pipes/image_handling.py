@@ -91,6 +91,7 @@ def save_images(
                         "lookup_tractspace_fdt_matrix2.nii.gz",
                     ),
                     os.path.join(nfact_path, algo_path, w_file_name),
+                    to_threshold,
                 )
             except Exception as e:
                 img_save_failed(
