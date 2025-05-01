@@ -131,4 +131,4 @@ def thresholding(component: np.ndarray) -> np.ndarray:
         thresholded component
     """
     threshold = component.mean() + (3 * component.std())
-    return np.where(component < threshold, 0, component)
+    return np.where(component < threshold, 0.0, component)

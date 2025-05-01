@@ -87,6 +87,20 @@ def nfact_decomp_args() -> dict:
         and saves map. This is useful for visualization
         """,
     )
+    output_args.add_argument(
+        "-T",
+        "--threshold",
+        dest="threshold",
+        action="store_true",
+        default=False,
+        help="""
+        Should a theresholded W matter 
+        image be saved along with the unthresholded
+        image. This is useful to remove noise in 
+        decomposition. Threshold is set to maintain
+        values greater than three zscores from 0.
+        """,
+    )
     ica_options = base_args.add_argument_group(
         f"{col['purple']}ICA options{col['reset']}"
     )

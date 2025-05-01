@@ -164,6 +164,7 @@ def nfact_decomp_main(args: dict = None) -> None:
         args["algo"].upper(),
         args["dim"],
         args["roi"],
+        args["threshold"],
     )
 
     if args["wta"]:

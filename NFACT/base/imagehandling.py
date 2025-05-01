@@ -162,6 +162,10 @@ def save_white_matter(
         path to look up volume from probtrackx
     out_file: str
         string to path to save images
+    to_threshold: bool
+        Should the white matter images
+        be thresholded so that values
+        below threshold are set to zero
 
     Returns
     -------

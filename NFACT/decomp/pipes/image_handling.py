@@ -38,6 +38,10 @@ def save_images(
     roi: list
         rois. Needed
         for surface
+    to_threshold: bool
+        Should the white matter images
+        be thresholded so that values
+        below threshold are set to zero
 
     Returns
     -------
