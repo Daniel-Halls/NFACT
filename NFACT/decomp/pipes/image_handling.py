@@ -16,6 +16,7 @@ def save_images(
     algo: str,
     dim: int,
     roi: list,
+    to_threshold: bool = False,
 ) -> None:
     """
     Function to save  grey and white

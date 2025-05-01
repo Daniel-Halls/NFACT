@@ -113,3 +113,22 @@ def save_matrix(matrix: np.array, directory: str, matrix_name: str) -> None:
         np.save(os.path.join(directory, matrix_name), matrix)
     except Exception as e:
         error_and_exit(False, f"Unable to save matrix due to {e}")
+
+
+def thresholding(component: np.ndarray) -> np.ndarray:
+    """
+    Function to threshold components
+    to remove noise
+
+    Parameteres
+    -----------
+    component: np.ndarray
+        component ot threshold
+
+    Returns
+    -------
+    component: np.ndarray
+        thresholded component
+    """
+    threshold = component.mean() + (3 * component.std())
+    return np.where(component < threshold, 0, component)

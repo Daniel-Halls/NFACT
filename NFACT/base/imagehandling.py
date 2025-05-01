@@ -4,6 +4,7 @@ import nibabel as nb
 import numpy as np
 import re
 from NFACT.base.utils import error_and_exit
+from NFACT.base.matrix_handling import thresholding
 
 
 class ImageError(Exception):
@@ -117,7 +118,10 @@ def check_files_are_imaging_files(path: str) -> bool:
 
 
 def save_white_matter(
-    white_matter_components: np.ndarray, path_to_lookup_vol: str, out_file: str
+    white_matter_components: np.ndarray,
+    path_to_lookup_vol: str,
+    out_file: str,
+    to_threshold: bool = False,
 ) -> None:
     """
     Function to save white matter compponents
@@ -148,9 +152,13 @@ def save_white_matter(
         )
 
     white_matter_vol = mat2vol(white_matter_components, lut_vol_data)
+    file_name = f"{out_file}.nii.gz"
+    if to_threshold:
+        file_name = f"{out_file}_T.nii.gz"
+        white_matter = thresholding(white_matter)
     nb.Nifti1Image(
         white_matter_vol.astype(float), header=lut_vol.header, affine=lut_vol.affine
-    ).to_filename(f"{out_file}.nii.gz")
+    ).to_filename(file_name)
 
 
 def save_grey_matter_volume(
