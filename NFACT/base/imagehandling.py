@@ -4,7 +4,6 @@ import nibabel as nb
 import numpy as np
 import re
 from NFACT.base.utils import error_and_exit
-from NFACT.base.matrix_handling import thresholding
 
 
 class ImageError(Exception):
@@ -176,6 +175,7 @@ def save_white_matter(
         )
     white_matter_vol = mat2vol(white_matter_components, lut_vol_data)
     save_volume(lut_vol, white_matter_vol, f"{out_file}.nii.gz")
+
 
 def save_grey_matter_volume(
     grey_matter_component: np.ndarray,
