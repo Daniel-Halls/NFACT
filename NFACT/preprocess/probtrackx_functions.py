@@ -263,7 +263,6 @@ def build_probtrackx2_arguments(arg: dict, sub: str, ptx_options=False) -> list:
         command.extend([f'--waypoints={os.path.join(sub, arg["waypoints"])}'])
     if ptx_options:
         command.extend(ptx_options)
-    breakpoint()
     return command
 
 
