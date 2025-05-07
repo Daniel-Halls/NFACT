@@ -113,3 +113,59 @@ def save_matrix(matrix: np.array, directory: str, matrix_name: str) -> None:
         np.save(os.path.join(directory, matrix_name), matrix)
     except Exception as e:
         error_and_exit(False, f"Unable to save matrix due to {e}")
+
+
+def threshold_grey_components(
+    components: np.ndarray, coord_path: str, seeds: list, zscore_val: int
+) -> np.ndarray:
+    """
+    Function to threshold grey matter components
+
+    Parameters
+    ----------
+    components: np.ndarray
+        grey mattter component
+    coord_path: str
+        path to coords
+    seeds: list
+        list of seeds
+    zscore_val: int
+        zscore value
+
+    Returns
+    -------
+    components: np.ndarray
+      components thresholded by seed
+      and component
+
+    """
+    coord_mat2 = np.loadtxt(coord_path, dtype=int)
+    seeds_id = coord_mat2[:, -2]
+    for idx, _ in enumerate(seeds):
+        mask_to_get_seed = seeds_id == idx
+        grey_matter_seed = components[mask_to_get_seed, :].T
+        thresholding(grey_matter_seed, zscore_val)
+        components[mask_to_get_seed, :] = grey_matter_seed.T
+    return components
+
+
+def thresholding(component: np.ndarray, zscore_val: int) -> np.ndarray:
+    """
+    Function to threshold components
+    to remove noise
+
+    Parameteres
+    -----------
+    component: np.ndarray
+        component ot threshold
+
+    Returns
+    -------
+    component: np.ndarray
+        thresholded component
+    """
+    for comp in range(component.shape[0]):
+        tract = component[comp, :]
+        threshold = tract.mean() + (zscore_val * tract.std())
+        tract[tract < threshold] = 0.0
+    return component

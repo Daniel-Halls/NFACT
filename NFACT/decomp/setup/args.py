@@ -83,8 +83,18 @@ def nfact_decomp_args() -> dict:
         action="store_true",
         default=False,
         help="""
-        Z scores component values
+        Convert component values into Z scores 
         and saves map. This is useful for visualization
+        """,
+    )
+    output_args.add_argument(
+        "-t",
+        "--threshold",
+        dest="threshold",
+        default=3,
+        help="""
+        Value at which to threshold W components
+        at. Set to 0 to do no thresholding.
         """,
     )
     ica_options = base_args.add_argument_group(

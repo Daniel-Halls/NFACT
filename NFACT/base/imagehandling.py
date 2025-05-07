@@ -116,8 +116,36 @@ def check_files_are_imaging_files(path: str) -> bool:
     )
 
 
+def save_volume(base_volume: object, data_to_save: np.ndarray, filename: str) -> None:
+    """
+    Function wrapper around saving Nifti1Image
+
+    Parameters
+    ----------
+    base_volume: object
+        Nifti1Image to get affine
+        and header information
+    data_to_save: np.ndarray
+        np array of data to save to
+        volume
+    filename: str
+        string of name of volume
+        to save. Must include full
+        filepath
+
+    Returns
+    -------
+    None
+    """
+    nb.Nifti1Image(
+        data_to_save.astype(float), header=base_volume.header, affine=base_volume.affine
+    ).to_filename(filename)
+
+
 def save_white_matter(
-    white_matter_components: np.ndarray, path_to_lookup_vol: str, out_file: str
+    white_matter_components: np.ndarray,
+    path_to_lookup_vol: str,
+    out_file: str,
 ) -> None:
     """
     Function to save white matter compponents
@@ -132,7 +160,6 @@ def save_white_matter(
         path to look up volume from probtrackx
     out_file: str
         string to path to save images
-
     Returns
     -------
     None
@@ -146,11 +173,8 @@ def save_white_matter(
         raise ImageError(
             f"Lookup_tractspace size {lut_shape} not the same as WM component size {wm_shape}"
         )
-
     white_matter_vol = mat2vol(white_matter_components, lut_vol_data)
-    nb.Nifti1Image(
-        white_matter_vol.astype(float), header=lut_vol.header, affine=lut_vol.affine
-    ).to_filename(f"{out_file}.nii.gz")
+    save_volume(lut_vol, white_matter_vol, f"{out_file}.nii.gz")
 
 
 def save_grey_matter_volume(
@@ -187,11 +211,7 @@ def save_grey_matter_volume(
     out = np.zeros(vol.shape + (ncols,)).reshape(-1, ncols)
     for idx, col in enumerate(grey_matter_component.T):
         out[xyz_idx, idx] = col
-    nb.Nifti1Image(
-        out.reshape(vol.shape + (ncols,)).astype(float),
-        affine=vol.affine,
-        header=vol.header,
-    ).to_filename(file_name)
+    save_volume(vol, out.reshape(vol.shape + (ncols,)), file_name)
 
 
 def save_grey_matter_gifit(
