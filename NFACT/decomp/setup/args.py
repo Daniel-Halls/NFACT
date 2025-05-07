@@ -83,7 +83,7 @@ def nfact_decomp_args() -> dict:
         action="store_true",
         default=False,
         help="""
-        Z scores component values
+        Convert component values into Z scores 
         and saves map. This is useful for visualization
         """,
     )

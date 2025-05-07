@@ -27,7 +27,7 @@ from NFACT.decomp.decomposition.matrix_handling import (
     load_previous_matrix,
 )
 from NFACT.decomp.pipes.image_handling import winner_takes_all, save_images
-from NFACT.base.matrix_handling import thresholding
+from NFACT.base.matrix_handling import thresholding, threshold_grey_components
 from NFACT.decomp.setup.arg_check import process_command_args
 import os
 
@@ -153,10 +153,26 @@ def nfact_decomp_main(args: dict = None) -> None:
     nprint(
         f"{col['pink']}Decomposition time:{col['reset']} {decomposition_timer.how_long()}\n"
     )
-    nprint(f"{col['pink']}Thresholding WM components:{col['reset']} {args['threshold']}\n"
-    )
 
-    components['white_components'] = thresholding(components['white_components'], args['threshold'])
+    thresholding_str = (
+        args["threshold"] if int(args["threshold"]) != 0 else "Not thresholding"
+    )
+    nprint(f"{col['pink']}Thresholding value:{col['reset']} {thresholding_str}\n")
+    if int(args["threshold"]) != 0:
+        components["white_components"] = thresholding(
+            components["white_components"], int(args["threshold"])
+        )
+        components["grey_components"] = threshold_grey_components(
+            components["grey_components"],
+            os.path.join(
+                args["outdir"],
+                "nfact_decomp",
+                "group_averages",
+                "coords_for_fdt_matrix2",
+            ),
+            args["seeds"],
+            int(args["threshold"]),
+        )
 
     # Save the results
     save_images(
