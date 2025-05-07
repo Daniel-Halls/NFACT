@@ -27,6 +27,7 @@ from NFACT.decomp.decomposition.matrix_handling import (
     load_previous_matrix,
 )
 from NFACT.decomp.pipes.image_handling import winner_takes_all, save_images
+from NFACT.base.matrix_handling import thresholding
 from NFACT.decomp.setup.arg_check import process_command_args
 import os
 
@@ -152,6 +153,10 @@ def nfact_decomp_main(args: dict = None) -> None:
     nprint(
         f"{col['pink']}Decomposition time:{col['reset']} {decomposition_timer.how_long()}\n"
     )
+    nprint(f"{col['pink']}Thresholding WM components:{col['reset']} {args['threshold']}\n"
+    )
+
+    components['white_components'] = thresholding(components['white_components'], args['threshold'])
 
     # Save the results
     save_images(
@@ -164,7 +169,6 @@ def nfact_decomp_main(args: dict = None) -> None:
         args["algo"].upper(),
         args["dim"],
         args["roi"],
-        args["threshold"],
     )
 
     if args["wta"]:

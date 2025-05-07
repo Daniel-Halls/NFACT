@@ -147,7 +147,6 @@ def save_white_matter(
     white_matter_components: np.ndarray,
     path_to_lookup_vol: str,
     out_file: str,
-    to_threshold: bool = False,
 ) -> None:
     """
     Function to save white matter compponents
@@ -162,11 +161,6 @@ def save_white_matter(
         path to look up volume from probtrackx
     out_file: str
         string to path to save images
-    to_threshold: bool
-        Should the white matter images
-        be thresholded so that values
-        below threshold are set to zero
-
     Returns
     -------
     None
@@ -180,13 +174,8 @@ def save_white_matter(
         raise ImageError(
             f"Lookup_tractspace size {lut_shape} not the same as WM component size {wm_shape}"
         )
-
     white_matter_vol = mat2vol(white_matter_components, lut_vol_data)
     save_volume(lut_vol, white_matter_vol, f"{out_file}.nii.gz")
-    if to_threshold:
-        white_matter_vol_threshold = thresholding(white_matter_vol)
-        save_volume(lut_vol, white_matter_vol_threshold, f"{out_file}_T.nii.gz")
-
 
 def save_grey_matter_volume(
     grey_matter_component: np.ndarray,

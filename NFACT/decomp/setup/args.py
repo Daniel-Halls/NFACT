@@ -88,17 +88,13 @@ def nfact_decomp_args() -> dict:
         """,
     )
     output_args.add_argument(
-        "-T",
+        "-t",
         "--threshold",
         dest="threshold",
-        action="store_true",
-        default=False,
+        default=3,
         help="""
-        Should a theresholded W matter 
-        image be saved along with the unthresholded
-        image. This is useful to remove noise in 
-        decomposition. Threshold is set to maintain
-        values greater than three zscores from 0.
+        Value at which to threshold W components
+        at. Set to 0 to do no thresholding.
         """,
     )
     ica_options = base_args.add_argument_group(

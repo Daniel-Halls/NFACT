@@ -115,7 +115,7 @@ def save_matrix(matrix: np.array, directory: str, matrix_name: str) -> None:
         error_and_exit(False, f"Unable to save matrix due to {e}")
 
 
-def thresholding(component: np.ndarray) -> np.ndarray:
+def thresholding(component: np.ndarray, zscore_val: int) -> np.ndarray:
     """
     Function to threshold components
     to remove noise
@@ -130,5 +130,10 @@ def thresholding(component: np.ndarray) -> np.ndarray:
     component: np.ndarray
         thresholded component
     """
-    threshold = component.mean() + (3 * component.std())
-    return np.where(component < threshold, 0.0, component)
+    if zscore_val == 0:
+        return component
+    for comp in range(component.shape[0]):
+        tract = component[comp, :]
+        threshold = tract.mean() + (zscore_val * tract.std())
+        tract[tract < threshold] = 0.0
+    return component

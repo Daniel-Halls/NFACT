@@ -16,7 +16,6 @@ def save_images(
     algo: str,
     dim: int,
     roi: list,
-    to_threshold: bool = False,
 ) -> None:
     """
     Function to save  grey and white
@@ -38,10 +37,6 @@ def save_images(
     roi: list
         rois. Needed
         for surface
-    to_threshold: bool
-        Should the white matter images
-        be thresholded so that values
-        below threshold are set to zero
 
     Returns
     -------
@@ -95,7 +90,6 @@ def save_images(
                         "lookup_tractspace_fdt_matrix2.nii.gz",
                     ),
                     os.path.join(nfact_path, algo_path, w_file_name),
-                    to_threshold,
                 )
             except Exception as e:
                 img_save_failed(
