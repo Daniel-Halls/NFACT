@@ -130,9 +130,7 @@ def get_target_mask(sub: str, arg: dict) -> str:
     return (
         os.path.join(sub, arg["target2"])
         if arg["target2"]
-        else os.path.join(
-            arg["outdir"], "nfact_pp", os.path.basename(sub), "files", "target2.nii.gz"
-        )
+        else os.path.join(arg["outdir"], "nfact_pp", "target2.nii.gz")
     )
 
 
@@ -265,6 +263,7 @@ def build_probtrackx2_arguments(arg: dict, sub: str, ptx_options=False) -> list:
         command.extend([f'--waypoints={os.path.join(sub, arg["waypoints"])}'])
     if ptx_options:
         command.extend(ptx_options)
+    breakpoint()
     return command
 
 

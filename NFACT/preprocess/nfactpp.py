@@ -118,7 +118,7 @@ def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
     print(f"{col['pink']}Creating:{col['reset']} Target2 Image")
     get_target2(
         arg["seedref"],
-        os.path.join(nfactpp_diretory, "files", "target2"),
+        os.path.join(nfactpp_diretory, "target2"),
         arg["mm_res"],
         arg["seedref"],
         "nearestneighbour",
@@ -183,11 +183,6 @@ def process_subject(sub: str, arg: dict, col: dict) -> list:
         seed_text = process_surface(nfactpp_diretory, seed, roi)
 
     error_and_exit(write_options_to_file(nfactpp_diretory, seed_text, "seeds"))
-
-    if not arg["target2"]:
-        target_generation(arg, nfactpp_diretory, col)
-    else:
-        print(f"{col['pink']}Target2 img:{col['reset']} {arg['target2']}")
 
     return build_probtrackx2_arguments(
         arg,
@@ -255,6 +250,11 @@ def pre_processing(arg: dict, handler: object) -> None:
         check_roi_seed_len(arg["seed"], arg["roi"])
     else:
         print(f"{col['darker_pink']}Mode:{col['reset']} Volume")
+
+    if not arg["target2"]:
+        target_generation(arg, os.path.join(arg["outdir"], "nfact_pp"), col)
+    else:
+        print(f"{col['darker_pink']}Target2 img:{col['reset']} {arg['target2']}")
 
     print(
         f"{col['darker_pink']}Number of subjects:{col['reset']} {len(arg['list_of_subjects'])}"
