@@ -49,6 +49,10 @@ def mat2vol(
     ----------
     matrix: np.ndarray
         array to  be saved as volume
+    x_y_z_coords: np.ndarray
+        array of coords
+    img_dim: tuple
+        dim of image
     lut_vol: ndarray
         data from lookup volume
 
@@ -62,7 +66,7 @@ def mat2vol(
         (img_dim[0], img_dim[1], img_dim[2], number_of_comp), dtype=matrix.dtype
     )
     x, y, z = x_y_z_coords.T
-    matvol[x, y, z, :] = matrix
+    matvol[x, y, z, :] = matrix.T
     return matvol
 
 
@@ -157,6 +161,8 @@ def save_white_matter(
         to save
     path_to_lookup_vol: str
         path to look up volume from probtrackx
+    coords_path: str
+        path to coords text file
     out_file: str
         string to path to save images
     Returns
