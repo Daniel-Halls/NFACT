@@ -131,7 +131,14 @@ def clean_target2(nfactpp_diretory: str, default_ref: str) -> None:
 
     Parameters
     ----------
-    nfactpp_diretory: str, default_ref: str
+    nfactpp_diretory: str
+       path to nfact directory
+    default_ref: str
+        default reference image
+
+    Returns
+    -------
+    None
     """
     mask = os.path.join(
         os.getenv("FSLDIR"),

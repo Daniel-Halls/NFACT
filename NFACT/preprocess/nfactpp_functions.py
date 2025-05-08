@@ -327,6 +327,13 @@ def write_options_to_file(file_path: str, text_to_save: str, name_of_file: str):
     seed_txt: str
         path of string to go into
         seed directory
+
+    Returns
+    --------
+    bool: boolean
+        true if successful
+        else False
+
     """
     file_written = write_to_file(file_path, f"{name_of_file}.txt", text_to_save + "\n")
     if not file_written:
