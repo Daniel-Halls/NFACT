@@ -124,9 +124,16 @@ def fslmaths_cmd(command: list) -> None:
 
 
 def clean_target2(nfactpp_diretory, default_ref):
+    mask = os.path.join(
+        os.getenv("FSLDIR"),
+        "data",
+        "atlases",
+        "HarvardOxford",
+        "HarvardOxford-sub-maxprob-thr0-2mm.nii.gz",
+    )
     fslmaths_cmd(
         [
-            f"{os.getenv('FSLDIR')}/data/atlases/HarvardOxford/HarvardOxford-sub-maxprob-thr0-2mm.nii.gz",
+            mask,
             "-thr",
             "14",
             "-uthr",
@@ -137,7 +144,7 @@ def clean_target2(nfactpp_diretory, default_ref):
     )
     fslmaths_cmd(
         [
-            f"{os.getenv('FSLDIR')}/data/atlases/HarvardOxford/HarvardOxford-sub-maxprob-thr0-2mm.nii.gz",
+            mask,
             "-thr",
             "3",
             "-uthr",
@@ -146,9 +153,26 @@ def clean_target2(nfactpp_diretory, default_ref):
             f"{nfactpp_diretory}/ventricle_2",
         ]
     )
-    fslmaths_cmd(["ventricle_1", "-add", "ventricle_2", "-bin", "ven_mask"])
-    fslmaths_cmd(["ven_mask.nii.gz", "-dilM", "ven_mask_dilated.nii.gz"])
-    fslmaths_cmd(["ven_mask_dilated.nii.gz", "-binv", "ven_inv.nii.gz"])
+    fslmaths_cmd(
+        [
+            f"{nfactpp_diretory}/ventricle_1",
+            "-add",
+            f"{nfactpp_diretory}/ventricle_2",
+            "-bin",
+            f"{nfactpp_diretory}/ven_mask",
+        ]
+    )
+    fslmaths_cmd(
+        [
+            f"{nfactpp_diretory}/ven_mask",
+            "-dilM",
+            f"{nfactpp_diretory}/ven_mask_dilated",
+        ]
+    )
+    fslmaths_cmd(
+        [f"{nfactpp_diretory}/ven_mask_dilated", "-binv", f"{nfactpp_diretory}/ven_inv"]
+    )
+    fslmaths_cmd([default_ref, "-mul", ""])
     return None
 
 
