@@ -16,6 +16,7 @@ from NFACT.base.setup import (
     check_fsl_is_installed,
 )
 from NFACT.base.cluster_support import processing_cluster
+from NFACT.config.nfact_config_functions import create_subject_list
 import os
 
 
@@ -107,7 +108,7 @@ def nfact_pp_main(arg: dict = None):
     arg["seedref"] = seedref(arg["seedref"])
 
     pre_processing(arg, handler)
-
+    create_subject_list(nfact_pp_directory, nfact_pp_directory, "nfact_config")
     if to_exit:
         print("NFACT PP has Finished")
         exit(0)
