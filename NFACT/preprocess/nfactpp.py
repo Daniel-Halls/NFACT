@@ -14,7 +14,7 @@ from NFACT.preprocess.nfactpp_functions import (
 from NFACT.preprocess.probtrackx_functions import (
     build_probtrackx2_arguments,
     Probtrackx,
-    get_target2,
+    downsample_target2,
     seeds_to_ascii,
 )
 from NFACT.base.utils import colours, error_and_exit
@@ -22,6 +22,7 @@ from NFACT.base.setup import check_seeds_surfaces
 from NFACT.base.imagehandling import rename_seed
 import os
 import shutil
+import subprocess
 
 
 def setup_subject_directory(nfactpp_diretory: str, seed: list, roi: list) -> None:
@@ -97,6 +98,60 @@ def process_surface(nfactpp_diretory: str, seed: list, roi: list) -> str:
     return "\n".join(surf_mode_seeds)
 
 
+def fslmaths_cmd(command: list) -> None:
+    """
+    Wrapper function around fslmaths
+
+    Parameters
+    ----------
+    command: list
+        fslmaths command
+
+    Returns
+    -------
+    None
+    """
+    command = command.insert(0, "fslmaths")
+    try:
+        run = subprocess.run(command, capture_output=True)
+    except subprocess.CalledProcessError as error:
+        error_and_exit(False, f"Error in calling fslmaths: {error}")
+    except KeyboardInterrupt:
+        run.kill()
+
+    if run.returncode != 0:
+        error_and_exit(False, f"fslmaths failed due to {run.stderr}.")
+
+
+def clean_target2(nfactpp_diretory, default_ref):
+    fslmaths_cmd(
+        [
+            f"{os.getenv('FSLDIR')}/data/atlases/HarvardOxford/HarvardOxford-sub-maxprob-thr0-2mm.nii.gz",
+            "-thr",
+            "14",
+            "-uthr",
+            "14",
+            "-bin",
+            f"{nfactpp_diretory}/ventricle_1",
+        ]
+    )
+    fslmaths_cmd(
+        [
+            f"{os.getenv('FSLDIR')}/data/atlases/HarvardOxford/HarvardOxford-sub-maxprob-thr0-2mm.nii.gz",
+            "-thr",
+            "3",
+            "-uthr",
+            "3",
+            "-bin",
+            f"{nfactpp_diretory}/ventricle_2",
+        ]
+    )
+    fslmaths_cmd(["ventricle_1", "-add", "ventricle_2", "-bin", "ven_mask"])
+    fslmaths_cmd(["ven_mask.nii.gz", "-dilM", "ven_mask_dilated.nii.gz"])
+    fslmaths_cmd(["ven_mask_dilated.nii.gz", "-binv", "ven_inv.nii.gz"])
+    return None
+
+
 def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
     """
     Function to generate target2 image
@@ -115,12 +170,19 @@ def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
     None
     """
 
-    print(f"{col['pink']}Creating:{col['reset']} Target2 Image")
-    get_target2(
-        arg["seedref"],
+    print(f"{col['darker_pink']}Creating:{col['reset']} Target2 Image")
+    target_2_ref = arg["seedref"]
+    default_ref = os.path.join(
+        os.getenv("FSLDIR"), "data", "standard", "MNI152_T1_2mm_brain.nii.gz"
+    )
+    # if arg['seedref'] == default_ref:
+    #    clean_target2(nfactpp_diretory, default_ref)
+    #    target_2_ref = ""
+    downsample_target2(
+        target_2_ref,
         os.path.join(nfactpp_diretory, "target2"),
         arg["mm_res"],
-        arg["seedref"],
+        target_2_ref,
         "nearestneighbour",
     )
 

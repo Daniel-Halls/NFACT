@@ -266,7 +266,7 @@ def build_probtrackx2_arguments(arg: dict, sub: str, ptx_options=False) -> list:
     return command
 
 
-def get_target2(
+def downsample_target2(
     target_img: str,
     output_dir: str,
     resolution: str,
