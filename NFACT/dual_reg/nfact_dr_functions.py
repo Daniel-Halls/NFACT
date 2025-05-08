@@ -172,6 +172,7 @@ def save_dual_regression_images(
             save_white_matter(
                 components[comp],
                 os.path.join(ptx_directory, "lookup_tractspace_fdt_matrix2.nii.gz"),
+                os.path.join(ptx_directory, "tract_space_coords_for_fdt_matrix2"),
                 os.path.join(nfact_path, algo_path, w_file_name),
             )
 

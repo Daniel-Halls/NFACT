@@ -61,6 +61,9 @@ def get_group_average_files(file_directory: str, nfact_directory: str) -> None:
     """
     lookup_space = os.path.join(file_directory, "lookup_tractspace_fdt_matrix2.nii.gz")
     coords_for_fdt_matrix2 = os.path.join(file_directory, "coords_for_fdt_matrix2")
+    tract_space_for_fdt_matrix2 = os.path.join(
+        file_directory, "tract_space_coords_for_fdt_matrix2"
+    )
 
     [
         error_and_exit(
@@ -74,4 +77,8 @@ def get_group_average_files(file_directory: str, nfact_directory: str) -> None:
     )
     shutil.copyfile(
         coords_for_fdt_matrix2, os.path.join(nfact_directory, "coords_for_fdt_matrix2")
+    )
+    shutil.copyfile(
+        tract_space_for_fdt_matrix2,
+        os.path.join(nfact_directory, "tract_space_coords_for_fdt_matrix2"),
     )
