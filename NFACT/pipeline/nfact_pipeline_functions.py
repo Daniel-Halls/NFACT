@@ -1,5 +1,4 @@
 from NFACT.base.utils import error_and_exit
-from NFACT.base.filesystem import read_file_to_list, write_to_file
 import os
 
 
@@ -139,43 +138,6 @@ def build_module_arguments(module_dict: dict, args: dict, key: str):
     return build_args(args[key], module_dict)
 
 
-def write_decomp_list(
-    file_path: str, out_dir_name: str, nfact_tmp_location: str
-) -> None:
-    """
-    Function to write to a file
-    the subjects  omatrix2 location.
-
-    Parameters
-    ----------
-    file_path: str
-        str to sub list file
-    out_dir_name: str
-        str of the name of
-        the output directory of nfact_pp
-    nfact_tmp_location: str
-        path of nfact_tmp location
-
-    Returns
-    -------
-    None
-    """
-    files = read_file_to_list(file_path)
-    omatrix_2_paths = [
-        os.path.join(out_dir_name, "nfact_pp", os.path.basename(file), "omatrix2\n")
-        for file in files
-        if os.path.isdir(file)
-    ]
-    omatrix_2_paths.sort()
-
-    write_to_file(
-        nfact_tmp_location,
-        "nfact_decomp_sub_list",
-        omatrix_2_paths,
-        text_is_list=True,
-    )
-
-
 def compulsory_args_for_config(args: dict) -> None:
     """
     Function to check for required
@@ -261,6 +223,14 @@ def assign_nfact_decomp(args: dict) -> None:
     """
 
     args["nfact_decomp"]["overwrite"] = args["global_input"]["overwrite"]
+    args["nfact_decomp"]["list_of_subjects"] = os.path.join(
+        args["nfact_pp"]["outdir"],
+        "nfact_pp",
+        "nfact_config.sublist",
+    )
+    args["nfact_decomp"]["seeds"] = os.path.join(
+        args["nfact_pp"]["outdir"], "nfact_pp", "seeds_for_decomp.txt"
+    )
 
 
 def assign_nfact_dr(args: dict) -> None:
@@ -284,6 +254,8 @@ def assign_nfact_dr(args: dict) -> None:
     )
     args["nfact_dr"]["algo"] = args["nfact_decomp"]["algo"]
     args["nfact_dr"]["overwrite"] = args["global_input"]["overwrite"]
+    args["nfact_dr"]["seeds"] = args["nfact_decomp"]["seeds"]
+    args["nfact_dr"]["list_of_subjects"] = args["nfact_decomp"]["list_of_subjects"]
     args["nfact_dr"].update(args["cluster"])
 
 
@@ -331,5 +303,5 @@ def update_nfact_args(args: dict) -> None:
     """
     assign_outdir(args)
     assign_nfactpp(args)
-    assign_nfact_dr(args)
     assign_nfact_decomp(args)
+    assign_nfact_dr(args)
