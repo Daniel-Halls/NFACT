@@ -89,6 +89,11 @@ def save_images(
                         "group_averages",
                         "lookup_tractspace_fdt_matrix2.nii.gz",
                     ),
+                    os.path.join(
+                        nfact_path,
+                        "group_averages",
+                        "tract_space_coords_for_fdt_matrix2",
+                    ),
                     os.path.join(nfact_path, algo_path, w_file_name),
                 )
             except Exception as e:
@@ -142,6 +147,9 @@ def winner_takes_all(
         white_wta_map,
         os.path.join(
             nfact_path, "group_averages", "lookup_tractspace_fdt_matrix2.nii.gz"
+        ),
+        os.path.join(
+            nfact_path, "group_averages", "tract_space_coords_for_fdt_matrix2"
         ),
         os.path.join(
             nfact_path, "components", algo, "WTA", f"W_{algo.upper()}_WTA_dim{dim}"

@@ -38,7 +38,9 @@ def imaging_type(path: str) -> str:
         return "gifti"
 
 
-def mat2vol(matrix: np.ndarray, lut_vol: np.ndarray) -> np.ndarray:
+def mat2vol(
+    matrix: np.ndarray, x_y_z_coords: np.array, img_dim: tuple, number_of_comp: int
+) -> np.ndarray:
     """
     Function to reshape a matrix
     to be saved as a volume.
@@ -56,15 +58,11 @@ def mat2vol(matrix: np.ndarray, lut_vol: np.ndarray) -> np.ndarray:
         array reformatted to be converted to
         a volume
     """
-
-    mask = lut_vol > 0
-    n_components = matrix.shape[0]
-    matvol = np.zeros(lut_vol.shape + (n_components,))
-
-    for row in range(n_components):
-        matvol.reshape(-1, n_components)[mask.flatten(), row] = matrix[
-            row, lut_vol[mask] - 1
-        ]
+    matvol = np.zeros(
+        (img_dim[0], img_dim[1], img_dim[2], number_of_comp), dtype=matrix.dtype
+    )
+    x, y, z = x_y_z_coords.T
+    matvol[x, y, z, :] = matrix
     return matvol
 
 
@@ -145,6 +143,7 @@ def save_volume(base_volume: object, data_to_save: np.ndarray, filename: str) ->
 def save_white_matter(
     white_matter_components: np.ndarray,
     path_to_lookup_vol: str,
+    coords_path: str,
     out_file: str,
 ) -> None:
     """
@@ -166,14 +165,10 @@ def save_white_matter(
 
     """
     lut_vol = nb.load(path_to_lookup_vol)
-    lut_vol_data = lut_vol.get_fdata().astype(np.int32)
-    lut_shape = sum(lut_vol_data.flatten() > 0)
-    wm_shape = white_matter_components.shape[1]
-    if lut_shape != wm_shape:
-        raise ImageError(
-            f"Lookup_tractspace size {lut_shape} not the same as WM component size {wm_shape}"
-        )
-    white_matter_vol = mat2vol(white_matter_components, lut_vol_data)
+    coords = np.loadtxt(coords_path, dtype=int)
+    white_matter_vol = mat2vol(
+        white_matter_components, coords, lut_vol.shape, white_matter_components.shape[0]
+    )
     save_volume(lut_vol, white_matter_vol, f"{out_file}.nii.gz")
 
 
