@@ -111,7 +111,7 @@ def fslmaths_cmd(command: list) -> None:
     -------
     None
     """
-    command = command.insert(0, "fslmaths")
+    command.insert(0, "fslmaths")
     try:
         run = subprocess.run(command, capture_output=True)
     except subprocess.CalledProcessError as error:
@@ -123,7 +123,16 @@ def fslmaths_cmd(command: list) -> None:
         error_and_exit(False, f"fslmaths failed due to {run.stderr}.")
 
 
-def clean_target2(nfactpp_diretory, default_ref):
+def clean_target2(nfactpp_diretory: str, default_ref: str) -> None:
+    """
+    Wrapper function around a bunch
+    of fslmaths commands to remove
+    ventricles from target2 img.
+
+    Parameters
+    ----------
+    nfactpp_diretory: str, default_ref: str
+    """
     mask = os.path.join(
         os.getenv("FSLDIR"),
         "data",
@@ -131,6 +140,7 @@ def clean_target2(nfactpp_diretory, default_ref):
         "HarvardOxford",
         "HarvardOxford-sub-maxprob-thr0-2mm.nii.gz",
     )
+    # Get ventricle from HarvardOxford
     fslmaths_cmd(
         [
             mask,
@@ -142,6 +152,7 @@ def clean_target2(nfactpp_diretory, default_ref):
             f"{nfactpp_diretory}/ventricle_1",
         ]
     )
+    # Get other ventricle from HarvardOxford
     fslmaths_cmd(
         [
             mask,
@@ -153,6 +164,7 @@ def clean_target2(nfactpp_diretory, default_ref):
             f"{nfactpp_diretory}/ventricle_2",
         ]
     )
+    # Add them together
     fslmaths_cmd(
         [
             f"{nfactpp_diretory}/ventricle_1",
@@ -162,6 +174,7 @@ def clean_target2(nfactpp_diretory, default_ref):
             f"{nfactpp_diretory}/ven_mask",
         ]
     )
+    # Dilate the mask
     fslmaths_cmd(
         [
             f"{nfactpp_diretory}/ven_mask",
@@ -169,11 +182,31 @@ def clean_target2(nfactpp_diretory, default_ref):
             f"{nfactpp_diretory}/ven_mask_dilated",
         ]
     )
+    # Invert the mask
     fslmaths_cmd(
         [f"{nfactpp_diretory}/ven_mask_dilated", "-binv", f"{nfactpp_diretory}/ven_inv"]
     )
-    fslmaths_cmd([default_ref, "-mul", ""])
-    return None
+    # Subtract the maks from the img by multiplication
+    fslmaths_cmd(
+        [
+            default_ref,
+            "-mul",
+            f"{nfactpp_diretory}/ven_inv",
+            f"{nfactpp_diretory}/target2",
+        ]
+    )
+    # REmove all intermediate files
+    files_to_delete = [
+        "ven_mask_dilated",
+        "ventricle_1",
+        "ventricle_2",
+        "ven_mask",
+        "ven_inv",
+    ]
+    [
+        os.remove(os.path.join(nfactpp_diretory, f"{file}.nii.gz"))
+        for file in files_to_delete
+    ]
 
 
 def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
@@ -199,9 +232,9 @@ def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
     default_ref = os.path.join(
         os.getenv("FSLDIR"), "data", "standard", "MNI152_T1_2mm_brain.nii.gz"
     )
-    # if arg['seedref'] == default_ref:
-    #    clean_target2(nfactpp_diretory, default_ref)
-    #    target_2_ref = ""
+    if arg["seedref"] == default_ref:
+        clean_target2(nfactpp_diretory, default_ref)
+        target_2_ref = os.path.join(nfactpp_diretory, "target2")
     downsample_target2(
         target_2_ref,
         os.path.join(nfactpp_diretory, "target2"),
@@ -345,7 +378,6 @@ def pre_processing(arg: dict, handler: object) -> None:
     print(
         f"{col['darker_pink']}Number of subjects:{col['reset']} {len(arg['list_of_subjects'])}"
     )
-
     print_to_screen("SUBJECT SETUP")
     subjects_commands = [
         process_subject(sub, arg, col) for sub in arg["list_of_subjects"]
