@@ -14,7 +14,7 @@ from NFACT.preprocess.nfactpp_functions import (
 from NFACT.preprocess.probtrackx_functions import (
     build_probtrackx2_arguments,
     Probtrackx,
-    get_target2,
+    downsample_target2,
     seeds_to_ascii,
 )
 from NFACT.base.utils import colours, error_and_exit
@@ -22,6 +22,7 @@ from NFACT.base.setup import check_seeds_surfaces
 from NFACT.base.imagehandling import rename_seed
 import os
 import shutil
+import subprocess
 
 
 def setup_subject_directory(nfactpp_diretory: str, seed: list, roi: list) -> None:
@@ -97,6 +98,124 @@ def process_surface(nfactpp_diretory: str, seed: list, roi: list) -> str:
     return "\n".join(surf_mode_seeds)
 
 
+def fslmaths_cmd(command: list) -> None:
+    """
+    Wrapper function around fslmaths
+
+    Parameters
+    ----------
+    command: list
+        fslmaths command
+
+    Returns
+    -------
+    None
+    """
+    command.insert(0, "fslmaths")
+    try:
+        run = subprocess.run(command, capture_output=True)
+    except subprocess.CalledProcessError as error:
+        error_and_exit(False, f"Error in calling fslmaths: {error}")
+    except KeyboardInterrupt:
+        run.kill()
+
+    if run.returncode != 0:
+        error_and_exit(False, f"fslmaths failed due to {run.stderr}.")
+
+
+def clean_target2(nfactpp_diretory: str, default_ref: str) -> None:
+    """
+    Wrapper function around a bunch
+    of fslmaths commands to remove
+    ventricles from target2 img.
+
+    Parameters
+    ----------
+    nfactpp_diretory: str
+       path to nfact directory
+    default_ref: str
+        default reference image
+
+    Returns
+    -------
+    None
+    """
+    mask = os.path.join(
+        os.getenv("FSLDIR"),
+        "data",
+        "atlases",
+        "HarvardOxford",
+        "HarvardOxford-sub-maxprob-thr0-2mm.nii.gz",
+    )
+    # Get ventricle from HarvardOxford
+    fslmaths_cmd(
+        [
+            mask,
+            "-thr",
+            "14",
+            "-uthr",
+            "14",
+            "-bin",
+            f"{nfactpp_diretory}/ventricle_1",
+        ]
+    )
+    # Get other ventricle from HarvardOxford
+    fslmaths_cmd(
+        [
+            mask,
+            "-thr",
+            "3",
+            "-uthr",
+            "3",
+            "-bin",
+            f"{nfactpp_diretory}/ventricle_2",
+        ]
+    )
+    # Add them together
+    fslmaths_cmd(
+        [
+            f"{nfactpp_diretory}/ventricle_1",
+            "-add",
+            f"{nfactpp_diretory}/ventricle_2",
+            "-bin",
+            f"{nfactpp_diretory}/ven_mask",
+        ]
+    )
+    # Dilate the mask
+    fslmaths_cmd(
+        [
+            f"{nfactpp_diretory}/ven_mask",
+            "-dilM",
+            f"{nfactpp_diretory}/ven_mask_dilated",
+        ]
+    )
+    # Invert the mask
+    fslmaths_cmd(
+        [f"{nfactpp_diretory}/ven_mask_dilated", "-binv", f"{nfactpp_diretory}/ven_inv"]
+    )
+    # Subtract the maks from the img by multiplication
+    fslmaths_cmd(
+        [
+            default_ref,
+            "-mul",
+            f"{nfactpp_diretory}/ven_inv",
+            f"{nfactpp_diretory}/target2",
+        ]
+    )
+    # REmove all intermediate files
+    files_to_delete = [
+        "ven_mask_dilated",
+        "ventricle_1",
+        "ventricle_2",
+        "ven_mask",
+        "ven_inv",
+    ]
+    [
+        os.remove(os.path.join(nfactpp_diretory, f"{file}.nii.gz"))
+        for file in files_to_delete
+    ]
+
+
 def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
     """
     Function to generate target2 image
@@ -115,12 +234,19 @@ def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
     None
     """
 
-    print(f"{col['pink']}Creating:{col['reset']} Target2 Image")
-    get_target2(
-        arg["seedref"],
-        os.path.join(nfactpp_diretory, "files", "target2"),
+    print(f"{col['darker_pink']}Creating:{col['reset']} Target2 Image")
+    target_2_ref = arg["seedref"]
+    default_ref = os.path.join(
+        os.getenv("FSLDIR"), "data", "standard", "MNI152_T1_2mm_brain.nii.gz"
+    )
+    if arg["seedref"] == default_ref:
+        clean_target2(nfactpp_diretory, default_ref)
+        target_2_ref = os.path.join(nfactpp_diretory, "target2")
+    downsample_target2(
+        target_2_ref,
+        os.path.join(nfactpp_diretory, "target2"),
         arg["mm_res"],
-        arg["seedref"],
+        target_2_ref,
         "nearestneighbour",
     )
 
@@ -183,11 +309,6 @@ def process_subject(sub: str, arg: dict, col: dict) -> list:
         seed_text = process_surface(nfactpp_diretory, seed, roi)
 
     error_and_exit(write_options_to_file(nfactpp_diretory, seed_text, "seeds"))
-
-    if not arg["target2"]:
-        target_generation(arg, nfactpp_diretory, col)
-    else:
-        print(f"{col['pink']}Target2 img:{col['reset']} {arg['target2']}")
 
     return build_probtrackx2_arguments(
         arg,
@@ -256,10 +377,14 @@ def pre_processing(arg: dict, handler: object) -> None:
     else:
         print(f"{col['darker_pink']}Mode:{col['reset']} Volume")
 
+    if not arg["target2"]:
+        target_generation(arg, os.path.join(arg["outdir"], "nfact_pp"), col)
+    else:
+        print(f"{col['darker_pink']}Target2 img:{col['reset']} {arg['target2']}")
+
     print(
         f"{col['darker_pink']}Number of subjects:{col['reset']} {len(arg['list_of_subjects'])}"
     )
-
     print_to_screen("SUBJECT SETUP")
     subjects_commands = [
         process_subject(sub, arg, col) for sub in arg["list_of_subjects"]
