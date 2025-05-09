@@ -286,43 +286,53 @@ components are the "winner" in that region
 
 ### Usage
 ```
-usage: nfact_decomp [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [--seeds SEEDS] [--roi ROI] [-n CONFIG] [-d DIM] [-a ALGO] [-W] [-z WTA_ZTHR] [-N] [-c COMPONENTS] [-p PCA_TYPE] [-S]
+usage: nfact_decomp [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [--seeds SEEDS] [--roi ROI] [-n CONFIG] [-d DIM] [-a ALGO] [-W]
+                    [-z WTA_ZTHR] [-N] [-t THRESHOLD] [-c COMPONENTS] [-p PCA_TYPE] [-S]
 
 options:
-  -h, --help            Shows help message and exit
+  -h, --help            show this help message and exit
   -hh, --verbose_help   Verbose help message. Prints help message and example usages
-  -O, --overwrite       Overwrite previous file structure
+  -O, --overwrite       Overwrites previous file structure
 
-Compulsory Arguments:
+Set Up Arguments:
   -l LIST_OF_SUBJECTS, --list_of_subjects LIST_OF_SUBJECTS
-                        Absolute path to a list of subjects in text form. All subjects need the absolute file path to subjects omatrix2 directory. Consider using nfact_config to help create subject list.
+                        Filepath to a list of subjects
   -o OUTDIR, --outdir OUTDIR
-                        Absolute path to a directory to save results in. nfact_decomp creates a folder called nfact_decomp in it.
+                        Path to output directory
 
-Decomposition inputs: :
+Decomposition inputs:
   --seeds SEEDS, -s SEEDS
-                        Absolute path to a text file of seed(s) used in nfact_pp/probtrackx. If used nfact_pp this is the seeds_for_decomp.txt in the nfact_pp directory.
-  --roi ROI, -r ROI     Absolute path to a text file containing the absolute path ROI(s) paths to restrict seeding to (e.g. medial wall masks). This is not needed if seeds are not surfaces. If used nfact_pp then this is the roi_for_decomp.txt file in the nfact_pp
-                        directory.
+                        Absolute path to a text file of seed(s) used in nfact_pp/probtrackx. If used nfact_pp this is the
+                        seeds_for_decomp.txt in the nfact_pp directory.
+  --roi ROI, -r ROI     Absolute path to a text file containing the absolute path ROI(s) paths to restrict seeding to (e.g. medial
+                        wall masks). This is not needed if seeds are not surfaces. If used nfact_pp then this is the
+                        roi_for_decomp.txt file in the nfact_pp directory.
   -n CONFIG, --nfact_config CONFIG
-                        Absolute path to a configuration file. Congifuration file provides available hyperparameters for ICA and NMF. Use nfact_config -D to create a config file. Please see sckit learn documentation for NMF and FASTICA for further details
+                        Absolute path to a configuration file. Congifuration file provides available hyperparameters for ICA and NMF.
+                        Use nfact_config -D to create a config file. Please see sckit learn documentation for NMF and FASTICA for
+                        further details
 
-Decomposition options: :
+Decomposition options:
   -d DIM, --dim DIM     This is compulsory option. Number of dimensions/components to retain after running NMF/ICA.
-  -a ALGO, --algo ALGO  Which decomposition algorithm to run. Options are: NMF (default), or ICA. This is case insensitive
+  -a ALGO, --algo ALGO  Which decomposition algorithm. Options are: NMF (default), or ICA. This is case insensitive
 
-Output options: :
+Output options:
   -W, --wta             Option to create and save winner-takes-all maps.
   -z WTA_ZTHR, --wta_zthr WTA_ZTHR
                         Winner-takes-all threshold. Default is 0
-  -N, --normalise       Z scores component values and saves map. This is useful for visualization
+  -N, --normalise       Convert component values into Z scores and saves map. This is useful for visualization
+  -t THRESHOLD, --threshold THRESHOLD
+                        Value at which to threshold W components at. Set to 0 to do no thresholding.
 
-ICA options: :
+ICA options:
   -c COMPONENTS, --components COMPONENTS
                         Number of component to be retained following the PCA. Default is 1000
   -p PCA_TYPE, --pca_type PCA_TYPE
-                        Which type of PCA to do before ICA. Options are 'pca' which is sckit learns default PCA or 'migp' (MELODIC's Incremental Group-PCA dimensionality). Default is 'pca' as for most cases 'migp' is slow and not needed. Option is case insensitive.
-  -S, --sign_flip       nfact_decomp by default sign flips the ICA distribution to reduce the number of negative values. Use this option to stop the sign_flip
+                        Which type of PCA to do before ICA. Options are 'pca' which is sckit learns default PCA or 'migp' (MELODIC's
+                        Incremental Group-PCA dimensionality). Default is 'pca' as for most cases 'migp' is slow and not needed.
+                        Option is case insensitive.
+  -S, --sign_flip       nfact_decomp by default sign flips the ICA distribution to reduce the number of negative values. Use this
+                        option to stop the sign_flip
 
 
 Basic NMF with volume seeds usage:
@@ -354,7 +364,6 @@ Advanced ICA Usage:
                  --normalise \
                  --wta \
                  --wta_zthr 0.5
-
 
 ```
 ------------------------------------------------------------------------------------------------------------------------------------------
