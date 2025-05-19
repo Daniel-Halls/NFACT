@@ -1,5 +1,6 @@
 import numpy as np
 from pathlib import Path
+import random
 
 
 def generate_fdt_matrix2(
@@ -88,6 +89,25 @@ def fdt_matrix2(
     return remove_duplicates(fdt_matrix).astype(int)
 
 
+def waytotal(sub_dir: str) -> None:
+    """
+    Test function to generate
+    a random waytotal file
+
+    Parameters
+    ----------
+    sub_dir: str
+        sub directory
+
+    Returns
+    -------
+    None
+    """
+    waytotal = random.randint(10_000_000, 22_555_000)
+    with open(f"{sub_dir}/waytotal", "w") as waytot_file:
+        waytot_file.write(str(waytotal))
+
+
 if __name__ == "__main__":
     print("Building random connectivity matricies")
     seeds = np.array(range(1, 100))
@@ -100,3 +120,4 @@ if __name__ == "__main__":
         np.savetxt(
             f"{current_working_dir}/test_data/sub-{sub}/fdt_matrix2.dot", mat, fmt="%i"
         )
+        waytotal(f"{current_working_dir}/test_data/sub-{sub}")
