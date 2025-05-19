@@ -67,6 +67,28 @@ def normalise_components(grey_matter: np.array, white_matter: np.array) -> dict:
     }
 
 
+def normalise_matrix(waytotal: str, matrix: object) -> np.ndarray:
+    """
+    Function to normalise matrix by waytotal
+
+    Parameters
+    ----------
+    waytotal: str
+        path to waytotal file
+    matrix: object
+        scipy csc_matrix
+
+    Returns
+    --------
+    sparse matrix: object
+        sparse matrix normalised by waytotal
+
+
+    """
+    waytotal = float(np.loadtxt(waytotal))
+    return matrix.multiply(1e8 / waytotal)
+
+
 def load_fdt_matrix(matfile: str) -> np.ndarray:
     """
     Function to load a single fdt matrix
@@ -89,7 +111,11 @@ def load_fdt_matrix(matfile: str) -> np.ndarray:
     cols = np.array(mat[:-1, 1] - 1, dtype=int)
     nrows = int(mat[-1, 0])
     ncols = int(mat[-1, 1])
-    return sps.csc_matrix((data, (rows, cols)), shape=(nrows, ncols)).toarray()
+    sparse_mat = sps.csc_matrix((data, (rows, cols)), shape=(nrows, ncols))
+    normalised = normalise_matrix(
+        os.path.join(os.path.dirname(matfile), "waytotal"), sparse_mat
+    )
+    return normalised.toarray()
 
 
 def save_matrix(matrix: np.array, directory: str, matrix_name: str) -> None:
