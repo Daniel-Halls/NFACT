@@ -98,6 +98,7 @@ def process_surface(nfactpp_diretory: str, seed: list, roi: list) -> str:
     return "\n".join(surf_mode_seeds)
 
 
+# TODO: This function needs to moving
 def fslmaths_cmd(command: list) -> None:
     """
     Wrapper function around fslmaths
@@ -123,6 +124,7 @@ def fslmaths_cmd(command: list) -> None:
         error_and_exit(False, f"fslmaths failed due to {run.stderr}.")
 
 
+# TODO: This function needs to moving
 def clean_target2(nfactpp_diretory: str, default_ref: str) -> None:
     """
     Wrapper function around a bunch
@@ -202,7 +204,7 @@ def clean_target2(nfactpp_diretory: str, default_ref: str) -> None:
             f"{nfactpp_diretory}/target2",
         ]
     )
-    # REmove all intermediate files
+    # Remove all intermediate files
     files_to_delete = [
         "ven_mask_dilated",
         "ventricle_1",
@@ -214,6 +216,24 @@ def clean_target2(nfactpp_diretory: str, default_ref: str) -> None:
         os.remove(os.path.join(nfactpp_diretory, f"{file}.nii.gz"))
         for file in files_to_delete
     ]
+
+
+# TODO: This needs to be moved
+def binarise_target2(target2_path: str) -> None:
+    """
+    Function to binarize target2 mask
+
+    Parameters
+    ----------
+    target2_path: str
+        path to target2 image
+
+    Returns
+    --------
+    None
+    """
+    fslmaths_cmd([target2_path, "-thr", "1.0", target2_path])
+    fslmaths_cmd([target2_path, "-bin", target2_path])
 
 
 def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
@@ -249,6 +269,7 @@ def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
         target_2_ref,
         "nearestneighbour",
     )
+    binarise_target2(target_2_ref)
 
 
 def print_to_screen(print_string: str) -> None:
