@@ -377,7 +377,7 @@ def save_grey_matter_components(
     if cifti_save:
         cifti_saved = save_cifti(
             seeds,
-            rois,
+            roi,
         )
         if cifti_saved:
             return None
