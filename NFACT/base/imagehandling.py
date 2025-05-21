@@ -379,7 +379,18 @@ def save_grey_matter_components(
             )
 
 
-def save_cifti():
+def cifti_seed_checking(seeds: list) -> bool:
+    """
+    Function to check
+    """
+    gii_seeds = [seed for seed in seeds if imaging_type(seed) == "gifti"]
+    nii_seeds = [seed for seed in seeds if imaging_type(seed) == "nifti"]
+    if len(gii_seeds) != 2 or len(nii_seeds) > 1:
+        return False
+    return True
+
+
+def save_cifti(seeds: list, rois: list, grey_component: np.ndarray):
     return None
 
 
