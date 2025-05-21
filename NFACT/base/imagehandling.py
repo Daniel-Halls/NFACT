@@ -1,6 +1,7 @@
 import pathlib
 import os
 import nibabel as nb
+from nibabel import cifti2
 import numpy as np
 import re
 from NFACT.base.utils import error_and_exit
@@ -324,6 +325,7 @@ def save_grey_matter_components(
     coord_path: str,
     roi: list,
     prefix: str = "G",
+    cifti_save: bool = False,
 ) -> None:
     """
     Function wrapper to save grey matter
@@ -344,6 +346,8 @@ def save_grey_matter_components(
         used for naming output
     roi: list
         list of roi path
+    cifti_save: bool
+        should save type be
 
     Returns
     -------
@@ -351,6 +355,10 @@ def save_grey_matter_components(
     """
     coord_mat2 = np.loadtxt(coord_path, dtype=int)
     seeds_id = coord_mat2[:, -2]
+    if cifti_save:
+        save_cifti()
+        return None
+
     for idx, seed in enumerate(seeds):
         save_type = imaging_type(seed)
         mask_to_get_seed = seeds_id == idx
@@ -369,3 +377,22 @@ def save_grey_matter_components(
             save_grey_matter_volume(
                 grey_matter_seed, file_name, seed, coord_mat2[mask_to_get_seed, :3]
             )
+
+
+def save_cifti():
+    return None
+
+
+def parse_seed_data(seeds) -> dict:
+    return {
+        "l_seed": 1,
+        "r_seed": 2,
+    }
+
+
+def save_dscalar(grey_componet, seeds, rois):
+    parsed_seed = parse_seed_data()
+    bm_l = cifti2.BrainModelAxis.from_mask(parsed_seed["l_seed"], name="CortexLeft")
+    bm_r = cifti2.BrainModelAxis.from_mask(parsed_seed["r_seed"], name="CortexRight")
+    bm_full = bm_l + bm_r
+    return None
