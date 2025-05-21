@@ -126,7 +126,7 @@ nfact –config /absolute path/nfact_config.config
 
 ```
 ## NFACT PP
-Pre-processing of tractography data for decomposition with NFACT (Non-negative matrix Factorisation of Tractography data)
+Pre-processing module of NFACT.
 
 Under the hood NFACT PP is probtrackx2 omatrix2 option to get a seed by target connectivity matrix 
 
@@ -153,11 +153,17 @@ Input needed for both surface and volume mode:
 Input for surface seed mode:
     - Seeds as surfaces (relative path, must be same across subjects)
     - ROI as surfaces. This is files to restrict seeding to (for example surface files that exclude medial wall, this is a relative path, must be same across subjects)
-    
+
 Input needed for volume mode:
     - Seeds as volumes (relative path, must be same across subjects)
 
 Warps must be ordered Standard2diff and Diff2standard. If your target fdt paths doesn't match up to the template then it is most likely the warps being the wrong way around.
+
+#### Other NFACT_PP inputs
+
+NFACT_PP needs a seed reference space to define seed space used by probtrackx. This is optional however this default is Human MNI. 
+
+NFACT_PP needs a target2 img (a target for the seeds). This can be a whole brain mask or an ROIs mask, and it is recommended that they are downsampled. If the target2 is not given then the seedrefernce will be used. 
 
 
 ### NFACT PP input folder 
