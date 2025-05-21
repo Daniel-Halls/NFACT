@@ -4,7 +4,7 @@ import nibabel as nb
 from nibabel import cifti2
 import numpy as np
 import re
-from NFACT.base.utils import error_and_exit
+from NFACT.base.utils import error_and_exit, nprint, colours
 
 
 class ImageError(Exception):
@@ -216,6 +216,28 @@ def save_grey_matter_volume(
     save_volume(vol, out.reshape(vol.shape + (ncols,)), file_name)
 
 
+def add_medial_wall(m_wall: np.ndarry, grey_component: np.ndarray) -> np.ndarray:
+    """
+    Function to add in an empty medial wall
+    to the grey matter component
+
+    Parameters
+    ----------
+    m_wall: np.ndarry
+        medial wall data
+    grey_component: np.ndarray
+        grey matter component
+    Returns
+    --------
+    grey_matter_component: np.ndarray
+        grey matter component with empty
+        medial wall
+    """
+    grey_matter_component = np.zeros((m_wall.shape[0], grey_component.shape[1]))
+    grey_matter_component[m_wall == 1, :] = grey_component
+    return grey_matter_component
+
+
 def save_grey_matter_gifit(
     grey_component: np.ndarray, file_name: str, seed: str, roi: str
 ) -> None:
@@ -240,8 +262,7 @@ def save_grey_matter_gifit(
     """
     surf = nb.load(seed)
     m_wall = nb.load(roi).darrays[0].data != 0
-    grey_matter_component = np.zeros((m_wall.shape[0], grey_component.shape[1]))
-    grey_matter_component[m_wall == 1, :] = grey_component
+    grey_matter_component = add_medial_wall(m_wall, grey_component)
 
     darrays = [
         nb.gifti.GiftiDataArray(
@@ -353,12 +374,16 @@ def save_grey_matter_components(
     -------
     None
     """
+    if cifti_save:
+        cifti_saved = save_cifti(
+            seeds,
+            rois,
+        )
+        if cifti_saved:
+            return None
+
     coord_mat2 = np.loadtxt(coord_path, dtype=int)
     seeds_id = coord_mat2[:, -2]
-    if cifti_save:
-        save_cifti()
-        return None
-
     for idx, seed in enumerate(seeds):
         save_type = imaging_type(seed)
         mask_to_get_seed = seeds_id == idx
@@ -379,10 +404,14 @@ def save_grey_matter_components(
             )
 
 
-def cifti_seed_checking(seeds: list) -> bool:
+def check_cifti_components(seeds: list, rois: list) -> bool:
     """
     Function to check
     """
+    try:
+        len(rois) > 2
+    except Exception:
+        return False
     gii_seeds = [seed for seed in seeds if imaging_type(seed) == "gifti"]
     nii_seeds = [seed for seed in seeds if imaging_type(seed) == "nifti"]
     if len(gii_seeds) != 2 or len(nii_seeds) > 1:
@@ -390,20 +419,38 @@ def cifti_seed_checking(seeds: list) -> bool:
     return True
 
 
-def save_cifti(seeds: list, rois: list, grey_component: np.ndarray):
-    return None
+def save_cifti(
+    seeds: list, rois: list, grey_component: np.ndarray, save_path: str
+) -> bool:
+    cifti_components = check_cifti_components(seeds, rois)
+    if not cifti_components:
+        col = colours()
+        nprint(f"{col['red']} Unable to save as ciftis as invalid seeds{col['reset']}")
+        return False
+    m_wall = np.concatenate([(nb.load(roi).darrays[0].data != 0) for roi in rois])
+    grey_component = add_medial_wall(m_wall, grey_component)
+    cifti = create_dscalar(grey_component, seeds)
+    nb.save(cifti, save_path)
 
 
 def parse_seed_data(seeds) -> dict:
+    """ """
     return {
-        "l_seed": 1,
-        "r_seed": 2,
+        "l_seed": nb.load(seeds[0]).darrays[0].data != 0,
+        "r_seed": nb.load(seeds[1]).darrays[0].data != 0,
     }
 
 
-def save_dscalar(grey_componet, seeds, rois):
-    parsed_seed = parse_seed_data()
+def create_dscalar(grey_component: np.ndarray, seeds: list) -> object:
+    """
+    Function to create
+    """
+    parsed_seed = parse_seed_data(seeds)
     bm_l = cifti2.BrainModelAxis.from_mask(parsed_seed["l_seed"], name="CortexLeft")
     bm_r = cifti2.BrainModelAxis.from_mask(parsed_seed["r_seed"], name="CortexRight")
+    scalar = cifti2.cifti2_axes.ScalarAxis(
+        np.linspace(0, grey_component.shape[1], grey_component.shape[1], dtype="int")
+    )
     bm_full = bm_l + bm_r
-    return None
+    header = cifti2.Cifti2Header.from_axes((scalar, bm_full))
+    return cifti2.Cifti2Image(grey_component.T, header)
