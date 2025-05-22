@@ -317,7 +317,6 @@ def process_subject(sub: str, arg: dict, col: dict) -> list:
         arg = process_filetree_args(arg, sub_id)
 
     seed = get_file(arg["seed"], sub, arg["absolute"])
-
     seed_text = "\n".join(seed)
     # using this function not to return a file but check it is an imaging file
     get_file(arg["warps"], sub)
