@@ -538,7 +538,16 @@ This is the config file for the nfact pipeline. Please check the individual modu
         "qc_skip": false,
         "folder_name": "nfact"
     },
+    "cluster": {
+        "cluster": false,
+        "cluster_queue": "None",
+        "cluster_ram": "60",
+        "cluster_time": false,
+        "cluster_qos": false
+    },
+    
     "nfact_pp": {
+        "gpu": false,
         "file_tree": false,
         "warps": [],
         "bpx_path": false,
@@ -546,37 +555,38 @@ This is the config file for the nfact pipeline. Please check the individual modu
         "seedref": false,
         "target2": false,
         "nsamples": "1000",
-        "mm_res": "2",
+        "mm_res": "3",
         "ptx_options": false,
         "exclusion": false,
         "stop": false,
-        "n_cores": false,
-        "cluster": false,
-        "cluster_queue": "None",
-        "cluster_ram": "60",
-        "cluster_time": false,
-        "cluster_qos": false
+        "absolute": false,
+        "n_cores": false
     },
+
     "nfact_decomp": {
         "dim": "Required",
-        "roi": false,
         "algo": "NMF",
-        "components": "1000",
-        "pca_type": "pca",
+        "roi": false,
+        "config": false,
+        "cifti": false,
         "wta": false,
         "wta_zthr": "0.0",
         "normalise": false,
-        "sign_flip": true,
-        "config": false
+        "threshold": "3",
+        "components": "1000",
+        "pca_type": "pca",
+        "sign_flip": true
     },
+    
     "nfact_dr": {
-        "roi": false,
-        "normalise": false
+        "normalise": false,
+        "n_cores": false
     },
+
     "nfact_qc": {
         "threshold": "2"
     }
-}
+
 ```
 
 Everything that has says is required must be given. rois, warps and seed must be given in python list format like this

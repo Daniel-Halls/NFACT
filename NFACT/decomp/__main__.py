@@ -56,6 +56,10 @@ def nfact_decomp_main(args: dict = None) -> None:
         to_exit = True
     col = colours()
 
+    if args["cifti"]:
+        print(
+            f"{col['plum']}Cifti option given:{col['reset']} Seeds must be in correct order"
+        )
     # Do argument checking
     check_arguments(args, ["list_of_subjects", "dim", "seeds", "outdir"])
     args["algo"] = check_algo(args["algo"])

@@ -216,7 +216,7 @@ def save_grey_matter_volume(
     save_volume(vol, out.reshape(vol.shape + (ncols,)), file_name)
 
 
-def add_medial_wall(m_wall: np.ndarry, grey_component: np.ndarray) -> np.ndarray:
+def add_medial_wall(m_wall: np.ndarray, grey_component: np.ndarray) -> np.ndarray:
     """
     Function to add in an empty medial wall
     to the grey matter component
@@ -327,6 +327,11 @@ def name_seed(seed: str, nfact_path: str, directory: str, prefix: str, dim: int)
     dim: int
         number of dimensions from
         decomp
+
+    Returns
+    -------
+    str: string
+        renamed seed
     """
     seed_name = rename_seed([seed])[0]
     file_name = f"{prefix}_dim{dim}_{seed_name}"
@@ -374,42 +379,60 @@ def save_grey_matter_components(
     -------
     None
     """
+
+    coord_mat2 = np.loadtxt(coord_path, dtype=int)
+    seeds_id = coord_mat2[:, -2]
     if cifti_save:
         cifti_saved = save_cifti(
             seeds,
             roi,
+            grey_matter_components,
+            os.path.join(nfact_path, directory, f"G_{dim}.dscalar.nii"),
+            seeds_id,
         )
         if cifti_saved:
             return None
-
-    coord_mat2 = np.loadtxt(coord_path, dtype=int)
-    seeds_id = coord_mat2[:, -2]
     for idx, seed in enumerate(seeds):
         save_type = imaging_type(seed)
         mask_to_get_seed = seeds_id == idx
         grey_matter_seed = grey_matter_components[mask_to_get_seed, :]
-        file_name = name_seed(seed, nfact_path, directory, prefix, dim)
-
+        file_name = re.sub(
+            r"_gii|_nii", "", name_seed(seed, nfact_path, directory, prefix, dim)
+        ).replace("_gz", "")
         if save_type == "gifti":
-            file_name = re.sub("_gii", "", file_name)
-            roi_idx = roi[idx]
-            save_grey_matter_gifit(grey_matter_seed, file_name, seed, roi_idx)
-
-        if save_type == "nifti":
-            file_name = re.sub("_nii", "", file_name)
-            if "_gz" in file_name:
-                file_name = re.sub("_gz", "", file_name)
+            save_grey_matter_gifit(grey_matter_seed, file_name, seed, roi[idx])
+        elif save_type == "nifti":
             save_grey_matter_volume(
                 grey_matter_seed, file_name, seed, coord_mat2[mask_to_get_seed, :3]
             )
+        else:
+            raise ValueError(f"Unsupported imaging type: {save_type}")
 
 
 def check_cifti_components(seeds: list, rois: list) -> bool:
     """
-    Function to check
+    Function to check that given seeds/rois
+    are currently compatable with dscalar format.
+    Currently supported is 2 sufaces +/- subcortical
+    nifti
+
+    Parameters
+    ----------
+    seeds: list
+        list of seeds
+    rois: list
+        list of rois
+
+    Returns
+    -------
+    bool: Boolean
+        True if cifti structure
+        is able to be processed,
+        else False
     """
     try:
-        len(rois) > 2
+        if len(rois) > 2:
+            return False
     except Exception:
         return False
     gii_seeds = [seed for seed in seeds if imaging_type(seed) == "gifti"]
@@ -420,37 +443,111 @@ def check_cifti_components(seeds: list, rois: list) -> bool:
 
 
 def save_cifti(
-    seeds: list, rois: list, grey_component: np.ndarray, save_path: str
+    seeds: list,
+    rois: list,
+    grey_component: np.ndarray,
+    save_path: str,
+    seeds_id: np.ndarray,
 ) -> bool:
+    """
+    Wrapper function to save
+    cifti.
+
+    Parameters
+    -----------
+    seeds: list
+        list of seeds
+    rois: list
+        list of rois
+    grey_component: np.ndarray
+        NMF grey matter component
+    save_path: str
+        path to save img file
+    seeds_id: np.ndarry
+        index and array of seeds
+
+    Returns
+    --------
+    bool: boolean
+        True if saved sucessfuly
+        else False
+    """
     cifti_components = check_cifti_components(seeds, rois)
     if not cifti_components:
         col = colours()
         nprint(f"{col['red']} Unable to save as ciftis as invalid seeds{col['reset']}")
         return False
     m_wall = np.concatenate([(nb.load(roi).darrays[0].data != 0) for roi in rois])
-    grey_component = add_medial_wall(m_wall, grey_component)
-    cifti = create_dscalar(grey_component, seeds)
-    nb.save(cifti, save_path)
+    gm = add_medial_wall(m_wall, grey_component[(seeds_id == 0) | (seeds_id == 1), :])
+    if len(seeds) == 3:
+        gm = np.concatenate([gm, grey_component[seeds_id == 2, :]])
+    cifti = create_dscalar(gm, seeds)
+    try:
+        nb.save(cifti, save_path)
+        return True
+    except Exception:
+        return False
 
 
-def parse_seed_data(seeds) -> dict:
-    """ """
-    return {
+def parse_seed_data(seeds: list) -> dict:
+    """
+    Function to return parsed seed
+    data.
+
+    Parameters
+    ----------
+    seeds: list
+        list of seeds
+
+    Returns
+    -------
+    save_data: dict
+        dictionary of
+        parsed seed data
+    """
+    save_data = {
         "l_seed": nb.load(seeds[0]).darrays[0].data != 0,
         "r_seed": nb.load(seeds[1]).darrays[0].data != 0,
     }
+    if len(seeds) == 3:
+        save_data["subcortical"] = nb.load(seeds[2]).get_fdata().flatten() != 0
+    return save_data
 
 
 def create_dscalar(grey_component: np.ndarray, seeds: list) -> object:
     """
-    Function to create
+    Function to create a cifti
+    dscalar
+
+    Parameters
+    ----------
+    grey_component: np.ndarray
+        NMF grey matter component
+    seeds: list
+        list of seeds
+
+    Returns
+    -------
+    object: Cifti2Image
+        Cifti dscalar
     """
+
     parsed_seed = parse_seed_data(seeds)
-    bm_l = cifti2.BrainModelAxis.from_mask(parsed_seed["l_seed"], name="CortexLeft")
-    bm_r = cifti2.BrainModelAxis.from_mask(parsed_seed["r_seed"], name="CortexRight")
+    bm_l = cifti2.BrainModelAxis.from_mask(
+        parsed_seed["l_seed"][:, 0], name="CIFTI_STRUCTURE_CORTEX_LEFT"
+    )
+    bm_r = cifti2.BrainModelAxis.from_mask(
+        parsed_seed["r_seed"][:, 0], name="CIFTI_STRUCTURE_CORTEX_RIGHT"
+    )
+
+    bm_full = bm_l + bm_r
+    if len(parsed_seed.keys()) == 3:
+        bm_sub = cifti2.BrainModelAxis.from_mask(
+            parsed_seed["subcortical"], name="Other"
+        )
+        bm_full = bm_full + bm_sub
     scalar = cifti2.cifti2_axes.ScalarAxis(
         np.linspace(0, grey_component.shape[1], grey_component.shape[1], dtype="int")
     )
-    bm_full = bm_l + bm_r
     header = cifti2.Cifti2Header.from_axes((scalar, bm_full))
     return cifti2.Cifti2Image(grey_component.T, header)
