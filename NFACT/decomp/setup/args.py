@@ -73,6 +73,16 @@ def nfact_decomp_args() -> dict:
         """,
     )
     output_args.add_argument(
+        "-D",
+        "--disk",
+        dest="disk",
+        action="store_true",
+        default=False,
+        help="""
+        Save the decompistion matricies directly to disk rather than as nii/gii files.
+        """,
+    )
+    output_args.add_argument(
         "-W",
         "--wta",
         dest="wta",
@@ -106,7 +116,7 @@ def nfact_decomp_args() -> dict:
         dest="threshold",
         default=3,
         help="""
-        Value at which to threshold W components
+        Value at which to threshold Components
         at. Set to 0 to do no thresholding.
         """,
     )

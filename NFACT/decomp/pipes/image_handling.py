@@ -5,7 +5,7 @@ from NFACT.base.imagehandling import (
     save_white_matter,
     save_grey_matter_components,
 )
-from NFACT.base.matrix_handling import img_save_failed
+from NFACT.base.matrix_handling import comp_disk_save
 from NFACT.base.utils import colours, nprint
 
 
@@ -76,7 +76,7 @@ def save_images(
                     cifti_save,
                 )
             except Exception as e:
-                img_save_failed(
+                comp_disk_save(
                     components[comp],
                     os.path.join(nfact_path, algo_path),
                     f"{col['red']}Unable to save GM component due to: {e}{col['reset']}",
@@ -101,13 +101,51 @@ def save_images(
                     os.path.join(nfact_path, algo_path, w_file_name),
                 )
             except Exception as e:
-                img_save_failed(
+                comp_disk_save(
                     components[comp],
                     os.path.join(nfact_path, algo_path),
                     f"{col['red']}Unable to save WM component due to: {e}{col['reset']}",
                     w_file_name,
                     to_exit=True,
                 )
+
+
+def save_components_to_disk(
+    component_dict: dict, nfact_path: str, algo: str, dim: str
+) -> None:
+    """
+    Function to save components
+    to disk when requested
+
+    Parameters
+    ----------
+    components: dict
+        dictionary of components
+    nfact_path: str
+        str to nfact directory
+    algo: str
+        str of algo
+    dim: int
+        number of dimensions
+        used for naming output
+
+    Returns
+    -------
+    None
+    """
+    base_path = os.path.join(nfact_path, "components", algo)
+    prefix_map = {"grey": "G", "white": "W"}
+
+    for comp_name, comp_data in component_dict.items():
+        prefix = next(
+            (value for key, value in prefix_map.items() if key in comp_name), None
+        )
+        name = f"{prefix}_{algo.upper()}_dim{dim}"
+        subfolder = "normalised" if "normalised" in comp_name else "decomp"
+        if subfolder == "normalised":
+            name += "_norm"
+        save_path = os.path.join(base_path, subfolder)
+        comp_disk_save(comp_data, save_path, "", name)
 
 
 def winner_takes_all(

@@ -3,7 +3,7 @@ from tqdm import tqdm
 from scipy.sparse.linalg import eigsh
 import os
 from NFACT.base.utils import Timer, error_and_exit, colours, nprint
-from NFACT.base.matrix_handling import load_fdt_matrix
+from NFACT.base.matrix_handling import load_fdt_matrix, load_single_matrix
 
 
 def process_fdt_matrix2(list_of_ptx_folds: list, group_mode: bool) -> np.ndarray:
@@ -81,12 +81,16 @@ def avg_fdt(list_of_matfiles: list) -> np.ndarray:
     sparse_matrix: np.array
         np.array of sparse matrix.
     """
-    sparse_matrix = 0.0
+    sparse_matrix = None
     for matrix in tqdm(list_of_matfiles, colour="magenta", unit="Matrices"):
-        sparse_matrix += load_fdt_matrix(matrix)
-
+        mat = load_single_matrix(matrix)
+        if sparse_matrix is None:
+            sparse_matrix = mat.copy()
+        else:
+            sparse_matrix += mat
+        del mat
     sparse_matrix /= len(list_of_matfiles)
-    return sparse_matrix
+    return sparse_matrix.toarray().astype(np.float32)
 
 
 def demean(matrix: np.array, axis: int = 0) -> np.ndarray:
