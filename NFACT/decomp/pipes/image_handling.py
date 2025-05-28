@@ -5,7 +5,7 @@ from NFACT.base.imagehandling import (
     save_white_matter,
     save_grey_matter_components,
 )
-from NFACT.base.matrix_handling import img_save_failed
+from NFACT.base.matrix_handling import comp_disk_save
 from NFACT.base.utils import colours, nprint
 
 
@@ -72,7 +72,7 @@ def save_images(
                     grey_prefix,
                 )
             except Exception as e:
-                img_save_failed(
+                comp_disk_save(
                     components[comp],
                     os.path.join(nfact_path, algo_path),
                     f"{col['red']}Unable to save GM component due to: {e}{col['reset']}",
@@ -97,14 +97,33 @@ def save_images(
                     os.path.join(nfact_path, algo_path, w_file_name),
                 )
             except Exception as e:
-                img_save_failed(
+                comp_disk_save(
                     components[comp],
                     os.path.join(nfact_path, algo_path),
                     f"{col['red']}Unable to save WM component due to: {e}{col['reset']}",
                     w_file_name,
                     to_exit=True,
                 )
+def save_components_to_disk(component_dict: dict, nfact_path: str, dim: str, algo: str):
+    algo_path = os.path.join("components", algo, "normalised")
+    for comp in component_dict.keys():
+        if "grey" in comp:
+            name = f"G_{algo.upper()}"
+        if "white" in comp:
+            name = f"G_{algo.upper()}"
+        w_file_name = f"W_{algo.upper()}_dim{dim}"
+        grey_prefix = 
+        if "":
+            algo_path = os.path.join("components", algo, "normalised")
+            w_file_name = f"W_{algo.upper()}_norm_dim{dim}"
+            grey_prefix = f"G_{algo.upper()}_norm"
 
+        comp_disk_save(
+                    component_dict[comp],
+                    os.path.join(nfact_path, algo_path),
+                    "",
+                    w_file_name,
+                )
 
 def winner_takes_all(
     components: dict,

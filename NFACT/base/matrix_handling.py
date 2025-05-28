@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 
-def img_save_failed(
+def comp_disk_save(
     component: np.ndarray,
     save_path: str,
     fail_message: str,
