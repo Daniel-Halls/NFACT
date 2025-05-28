@@ -26,7 +26,11 @@ from NFACT.decomp.decomposition.matrix_handling import (
     process_fdt_matrix2,
     load_previous_matrix,
 )
-from NFACT.decomp.pipes.image_handling import winner_takes_all, save_images
+from NFACT.decomp.pipes.image_handling import (
+    winner_takes_all,
+    save_images,
+    save_components_to_disk,
+)
 from NFACT.base.matrix_handling import thresholding, threshold_grey_components
 from NFACT.decomp.setup.arg_check import process_command_args
 import os
@@ -173,35 +177,42 @@ def nfact_decomp_main(args: dict = None) -> None:
             args["seeds"],
             int(args["threshold"]),
         )
-
-    # Save the results
-    save_images(
-        components,
-        os.path.join(
-            args["outdir"],
-            "nfact_decomp",
-        ),
-        args["seeds"],
-        args["algo"].upper(),
-        args["dim"],
-        args["roi"],
-    )
-
-    if args["wta"]:
-        # Save winner-takes-all maps
-        nprint("Saving winner-take-all maps\n")
-        winner_takes_all(
+    if args["disk"]:
+        save_components_to_disk(
             components,
-            args["wta_zthr"],
+            os.path.join(args["outdir"], "nfact_decomp"),
             args["algo"].upper(),
+            args["dim"],
+        )
+    else:
+        # Save the results
+        save_images(
+            components,
             os.path.join(
                 args["outdir"],
                 "nfact_decomp",
             ),
             args["seeds"],
+            args["algo"].upper(),
             args["dim"],
             args["roi"],
         )
+
+        if args["wta"]:
+            # Save winner-takes-all maps
+            nprint("Saving winner-take-all maps\n")
+            winner_takes_all(
+                components,
+                args["wta_zthr"],
+                args["algo"].upper(),
+                os.path.join(
+                    args["outdir"],
+                    "nfact_decomp",
+                ),
+                args["seeds"],
+                args["dim"],
+                args["roi"],
+            )
     nprint(f"{col['darker_pink']}NFACT decomp has finished{col['reset']}")
 
     log.clear_logging()

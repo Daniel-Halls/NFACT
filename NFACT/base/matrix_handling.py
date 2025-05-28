@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 
-def img_save_failed(
+def comp_disk_save(
     component: np.ndarray,
     save_path: str,
     fail_message: str,
@@ -89,7 +89,7 @@ def normalise_matrix(waytotal: str, matrix: object) -> np.ndarray:
     return matrix.multiply(1e8 / waytotal)
 
 
-def load_fdt_matrix(matfile: str) -> np.ndarray:
+def load_single_matrix(matfile: str) -> object:
     """
     Function to load a single fdt matrix
     as a ptx sparse matrix format.
@@ -101,9 +101,8 @@ def load_fdt_matrix(matfile: str) -> np.ndarray:
 
     Returns
     -------
-    sparse_matrix: np.array
-       sparse matrix in numpy array
-       form.
+    sparse_matrix: csc_matrix
+       sparse matrix in csc_matrix
     """
     mat = np.loadtxt(matfile)
     data = mat[:-1, -1]
@@ -112,10 +111,27 @@ def load_fdt_matrix(matfile: str) -> np.ndarray:
     nrows = int(mat[-1, 0])
     ncols = int(mat[-1, 1])
     sparse_mat = sps.csc_matrix((data, (rows, cols)), shape=(nrows, ncols))
-    normalised = normalise_matrix(
+    return normalise_matrix(
         os.path.join(os.path.dirname(matfile), "waytotal"), sparse_mat
     )
-    return normalised.toarray()
+
+
+def load_fdt_matrix(matfile: str) -> np.ndarray:
+    """
+    Function to a load fdt matrix
+
+    Parameters
+    ----------
+    matfile: str
+       path to file
+
+    Returns
+    -------
+    np.ndarray: np.array
+        fdt_matrix2 matrix in numpy array form.
+
+    """
+    return load_single_matrix(matfile).toarray().astype(np.float32)
 
 
 def save_matrix(matrix: np.array, directory: str, matrix_name: str) -> None:
