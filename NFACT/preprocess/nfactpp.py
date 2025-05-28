@@ -90,7 +90,7 @@ def process_surface(nfactpp_diretory: str, seed: list, roi: list) -> str:
             )
         else:
             print(
-                f"{col['pink']}Adding Volume seed:{col['reset']} {os.path.basename(seed[img])}"
+                f"{col['pink']}Adding additional seed:{col['reset']} {os.path.basename(seed[img])}"
             )
     surf_mode_seeds = [
         os.path.join(nfactpp_diretory, "files", f"{seed}_surf.asc")
