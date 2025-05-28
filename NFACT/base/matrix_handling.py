@@ -116,11 +116,22 @@ def load_single_matrix(matfile: str) -> object:
     )
 
 
-def load_fdt_matrix(matfile: str):
+def load_fdt_matrix(matfile: str) -> np.ndarray:
     """
-    Function to load fdt_matrix
+    Function to a load fdt matrix
+
+    Parameters
+    ----------
+    matfile: str
+       path to file
+
+    Returns
+    -------
+    np.ndarray: np.array
+        fdt_matrix2 matrix in numpy array form.
+
     """
-    return load_single_matrix(matfile).to_array().astype(np.float32)
+    return load_single_matrix(matfile).toarray().astype(np.float32)
 
 
 def save_matrix(matrix: np.array, directory: str, matrix_name: str) -> None:
