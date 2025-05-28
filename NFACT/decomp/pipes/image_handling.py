@@ -104,26 +104,45 @@ def save_images(
                     w_file_name,
                     to_exit=True,
                 )
-def save_components_to_disk(component_dict: dict, nfact_path: str, dim: str, algo: str):
-    algo_path = os.path.join("components", algo, "normalised")
-    for comp in component_dict.keys():
-        if "grey" in comp:
-            name = f"G_{algo.upper()}"
-        if "white" in comp:
-            name = f"G_{algo.upper()}"
-        w_file_name = f"W_{algo.upper()}_dim{dim}"
-        grey_prefix = 
-        if "":
-            algo_path = os.path.join("components", algo, "normalised")
-            w_file_name = f"W_{algo.upper()}_norm_dim{dim}"
-            grey_prefix = f"G_{algo.upper()}_norm"
 
-        comp_disk_save(
-                    component_dict[comp],
-                    os.path.join(nfact_path, algo_path),
-                    "",
-                    w_file_name,
-                )
+
+def save_components_to_disk(
+    component_dict: dict, nfact_path: str, algo: str, dim: str
+) -> None:
+    """
+    Function to save components
+    to disk when requested
+
+    Parameters
+    ----------
+    components: dict
+        dictionary of components
+    nfact_path: str
+        str to nfact directory
+    algo: str
+        str of algo
+    dim: int
+        number of dimensions
+        used for naming output
+
+    Returns
+    -------
+    None
+    """
+    base_path = os.path.join(nfact_path, "components", algo)
+    prefix_map = {"grey": "G", "white": "W"}
+
+    for comp_name, comp_data in component_dict.items():
+        prefix = next(
+            (value for key, value in prefix_map.items() if key in comp_name), None
+        )
+        name = f"{prefix}_{algo.upper()}_dim{dim}"
+        subfolder = "normalised" if "normalised" in comp_name else "decomp"
+        if subfolder == "normalised":
+            name += "_norm"
+        save_path = os.path.join(base_path, subfolder)
+        comp_disk_save(comp_data, save_path, "", name)
+
 
 def winner_takes_all(
     components: dict,
