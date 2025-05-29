@@ -383,15 +383,20 @@ def save_grey_matter_components(
     coord_mat2 = np.loadtxt(coord_path, dtype=int)
     seeds_id = coord_mat2[:, -2]
     if cifti_save:
-        cifti_saved = save_cifti(
-            seeds,
-            roi,
-            grey_matter_components,
-            os.path.join(nfact_path, directory, f"G_{dim}.dscalar.nii"),
-            seeds_id,
-        )
-        if cifti_saved:
+        try:
+            save_cifti(
+                seeds,
+                roi,
+                grey_matter_components,
+                coord_mat2,
+                seeds_id,
+                os.path.join(nfact_path, directory, f"{prefix}.dscalar.nii"),
+            )
             return None
+        except Exception as e:
+            col = colours()
+            nprint(f"{col['red']} Unable to save as Cifti due to: {e}")
+            nprint(f"Saving as gii/nii.gz files{col['reset']}")
     for idx, seed in enumerate(seeds):
         save_type = imaging_type(seed)
         mask_to_get_seed = seeds_id == idx
@@ -409,145 +414,162 @@ def save_grey_matter_components(
             raise ValueError(f"Unsupported imaging type: {save_type}")
 
 
-def check_cifti_components(seeds: list, rois: list) -> bool:
+def add_nifti(seeds: list, brainmodel: object, coords: np.ndarray) -> object:
     """
-    Function to check that given seeds/rois
-    are currently compatable with dscalar format.
-    Currently supported is 2 sufaces +/- subcortical
-    nifti
+    Function to added
+    nifti component to cifti
+
+    Parameters
+    -----------
+    seeds: list
+        list of seeds (without surfaces)
+    brainmodel: BrainModelAxis
+        brain model axis to
+        add to
+    coords: np.ndarray
+        array of ndarry co-ordinates
+
+    Returns
+    -------
+    brainmodel: BrainModelAxis
+        brain model axis
+
+    """
+    seed_ref = nb.load(seeds[0])
+    for idx, seed in enumerate(seeds):
+        seed_name = re.sub(r".nii.gz|.nii", "", os.path.basename(seed))
+        if "CIFTI_STRUCTURE_" not in seed_name:
+            seed_name = "OTHER"
+        number_of_voxels = coords[coords[:, 3] == idx + 2][:, :3]
+        brainmodel += cifti2.BrainModelAxis(
+            name=seed_name,
+            voxel=number_of_voxels,
+            affine=seed_ref.affine,
+            volume_shape=seed_ref.shape,
+        )
+    return brainmodel
+
+
+def cifti_surfaces(seeds: list) -> object:
+    """
+    Function to add surfaces
+    to brain model axis from mask
 
     Parameters
     ----------
     seeds: list
-        list of seeds
-    rois: list
-        list of rois
+        list of seeds, expected that the first
+        seed is the left side
+        and right is second
 
     Returns
     -------
-    bool: Boolean
-        True if cifti structure
-        is able to be processed,
-        else False
+    brainmodel: BrainModelAxis
+        brain model axis
+
     """
-    try:
-        if len(rois) > 2:
-            return False
-    except Exception:
-        return False
-    gii_seeds = [seed for seed in seeds if imaging_type(seed) == "gifti"]
-    nii_seeds = [seed for seed in seeds if imaging_type(seed) == "nifti"]
-    if len(gii_seeds) != 2 or len(nii_seeds) > 1:
-        return False
-    return True
+    left_seed = nb.load(seeds[0]).darrays[0].data != 0
+    right_seed = nb.load(seeds[1]).darrays[0].data != 0
+    bm_l = cifti2.BrainModelAxis.from_mask(
+        left_seed[:, 0], name="CIFTI_STRUCTURE_CORTEX_LEFT"
+    )
+    bm_r = cifti2.BrainModelAxis.from_mask(
+        right_seed[:, 0], name="CIFTI_STRUCTURE_CORTEX_RIGHT"
+    )
+    return bm_l + bm_r
+
+
+def cifit_medial_wall(
+    grey_component: np.ndarray, rois: list, seeds_id: np.ndarray
+) -> np.ndarray:
+    """
+    Function for adding in medial wall
+    to grey_component to save as a cifti
+
+    Parameters
+    ----------
+    grey_matter_component: np.ndarray
+        grey matter component
+    rois: list
+        list of rois. Expected to match
+        the first two elements of
+        the seeds
+    seeds_id: np.ndarray
+        seed id from coords file
+    Returns
+    -------
+    np.ndarray: array
+        grey matter component
+        with added in medial wall
+
+    """
+    m_wall = np.concatenate([(nb.load(roi).darrays[0].data != 0) for roi in rois])
+    gm = add_medial_wall(m_wall, grey_component[(seeds_id == 0) | (seeds_id == 1), :])
+    return np.concatenate([gm, grey_component[(seeds_id != 0) & (seeds_id != 1), :]])
+
+
+def create_dscalar(grey_component: np.ndarray, brainmodel: object) -> object:
+    """
+    Function to create dscalar
+
+    Parameters
+    ----------
+    grey_matter_component: np.ndarray
+        grey matter component
+    brainmodel: BrainModelAxis
+        brain model axis
+
+    Returns
+    --------
+    object: Cifti2Image
+        Cifti2Image with
+        correct headers
+    """
+    scalar = cifti2.cifti2_axes.ScalarAxis(
+        np.linspace(0, grey_component.shape[1], grey_component.shape[1], dtype="int")
+    )
+    header = cifti2.Cifti2Header.from_axes((scalar, brainmodel))
+    return cifti2.Cifti2Image(grey_component.T, header)
 
 
 def save_cifti(
     seeds: list,
     rois: list,
-    grey_component: np.ndarray,
-    save_path: str,
+    grey_matter_component: np.ndarray,
+    coords: np.ndarray,
     seeds_id: np.ndarray,
-) -> bool:
+    save_path: str,
+) -> None:
     """
-    Wrapper function to save
-    cifti.
+    Function to create and save a cifti
+    dscalar file
 
     Parameters
-    -----------
-    seeds: list
-        list of seeds
+    ----------
+    seeds: list,
+        list of seeds, expected that the first
+        seed is the left side
+        and right is second
     rois: list
-        list of rois
-    grey_component: np.ndarray
-        NMF grey matter component
+        list of rois. Expected to match
+        the first two elements of
+        the seeds
+    grey_matter_component: np.ndarray
+        grey matter component
+    coords: np.ndarray
+        coordinates matrix
+    seeds_id: np.ndarray
+        seed id from coords file
     save_path: str
-        path to save img file
-    seeds_id: np.ndarry
-        index and array of seeds
-
-    Returns
-    --------
-    bool: boolean
-        True if saved sucessfuly
-        else False
-    """
-    cifti_components = check_cifti_components(seeds, rois)
-    if not cifti_components:
-        col = colours()
-        nprint(f"{col['red']} Unable to save as ciftis as invalid seeds{col['reset']}")
-        return False
-    m_wall = np.concatenate([(nb.load(roi).darrays[0].data != 0) for roi in rois])
-    gm = add_medial_wall(m_wall, grey_component[(seeds_id == 0) | (seeds_id == 1), :])
-    if len(seeds) == 3:
-        gm = np.concatenate([gm, grey_component[seeds_id == 2, :]])
-    cifti = create_dscalar(gm, seeds)
-    try:
-        nb.save(cifti, save_path)
-        return True
-    except Exception:
-        return False
-
-
-def parse_seed_data(seeds: list) -> dict:
-    """
-    Function to return parsed seed
-    data.
-
-    Parameters
-    ----------
-    seeds: list
-        list of seeds
+        path to save file to
 
     Returns
     -------
-    save_data: dict
-        dictionary of
-        parsed seed data
+    None
     """
-    save_data = {
-        "l_seed": nb.load(seeds[0]).darrays[0].data != 0,
-        "r_seed": nb.load(seeds[1]).darrays[0].data != 0,
-    }
-    if len(seeds) == 3:
-        save_data["subcortical"] = nb.load(seeds[2]).get_fdata().flatten() != 0
-    return save_data
-
-
-def create_dscalar(grey_component: np.ndarray, seeds: list) -> object:
-    """
-    Function to create a cifti
-    dscalar
-
-    Parameters
-    ----------
-    grey_component: np.ndarray
-        NMF grey matter component
-    seeds: list
-        list of seeds
-
-    Returns
-    -------
-    object: Cifti2Image
-        Cifti dscalar
-    """
-
-    parsed_seed = parse_seed_data(seeds)
-    bm_l = cifti2.BrainModelAxis.from_mask(
-        parsed_seed["l_seed"][:, 0], name="CIFTI_STRUCTURE_CORTEX_LEFT"
-    )
-    bm_r = cifti2.BrainModelAxis.from_mask(
-        parsed_seed["r_seed"][:, 0], name="CIFTI_STRUCTURE_CORTEX_RIGHT"
-    )
-
-    bm_full = bm_l + bm_r
-    if len(parsed_seed.keys()) == 3:
-        bm_sub = cifti2.BrainModelAxis.from_mask(
-            parsed_seed["subcortical"], name="Other"
-        )
-        bm_full = bm_full + bm_sub
-    scalar = cifti2.cifti2_axes.ScalarAxis(
-        np.linspace(0, grey_component.shape[1], grey_component.shape[1], dtype="int")
-    )
-    header = cifti2.Cifti2Header.from_axes((scalar, bm_full))
-    return cifti2.Cifti2Image(grey_component.T, header)
+    grey_comp = cifit_medial_wall(grey_matter_component, rois, seeds_id)
+    brainmodel = cifti_surfaces(seeds)
+    if len(seeds) > 2:
+        brainmodel = add_nifti(seeds[2:], brainmodel, coords)
+    dscalar_object = create_dscalar(grey_comp, brainmodel)
+    nb.save(dscalar_object, save_path)

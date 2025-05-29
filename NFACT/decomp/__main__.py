@@ -200,6 +200,7 @@ def nfact_decomp_main(args: dict = None) -> None:
             args["algo"].upper(),
             args["dim"],
             args["roi"],
+            args["cifti"],
         )
 
         if args["wta"]:

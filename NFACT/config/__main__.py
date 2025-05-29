@@ -6,6 +6,7 @@ from NFACT.config.nfact_config_functions import (
     check_arguments,
     create_config,
 )
+from NFACT.base.utils import error_and_exit
 
 
 def nfact_config_main() -> None:
@@ -35,7 +36,10 @@ def nfact_config_main() -> None:
         file_name = f"{args['file_name']}.pipeline"
 
     print(f'Saving {file_name}.config to {args["output_dir"]}\n')
-    save_to_json(args["output_dir"], arguments, file_name)
+    try:
+        save_to_json(args["output_dir"], arguments, file_name)
+    except Exception as e:
+        error_and_exit(False, f"Unable to save file due to {e}", False)
     exit(0)
 
 
