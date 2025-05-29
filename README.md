@@ -184,6 +184,12 @@ Use of custom filetree
 -----------------------
 seed files are aliased as (seed), roi as (roi), warps as (diff2std, std2diff) and bedpostX as (bedpostX). Two seeds are supported if the seeds are bilateral indicated with {hemi}.seed, with the actual seed names being L.seed.nii.gz/R.seed.nii.gz. A singe seed can be given as well.
 
+CIFTI support
+--------------
+NFACT can save files as cifti dscalars. However, seeds must be in the following order: left_hemisphere.gii, right hemisphere.nii, follwed by optional nifti files as subcortical structures. Left and right surfaces are needed however the subcortical structures are optional, and you can put as many or as few as you would (or none at all).
+
+Subcortical structures must be named as standard cifti structures (i.e CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz) or subcortical data is put as the CIFTI structure OTHER. For further details on naming conventions please see the hcp_cifti in the NFACT/filetree folder in this repo
+
 ### Usage:
 
 ```
