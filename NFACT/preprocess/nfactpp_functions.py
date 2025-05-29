@@ -124,8 +124,8 @@ def process_filetree_args(arg: dict, sub: str) -> dict:
         filetree_get_files(arg["file_tree"], sub, hemi, "seed") for hemi in ["L", "R"]
     ]
 
-    if "vol_seed" in arg["file_tree"].template_keys():
-        arg["seed"].append(filetree_get_files(arg["file_tree"], sub, "L", "vol_seed"))
+    if "add_seed1" in arg["file_tree"].template_keys():
+        arg["seed"] = arg["seed"] + get_additional_seeds(arg["file_tree"], sub)
 
     if "waypoints" in arg["file_tree"].template_keys():
         arg["waypoints"] = filetree_get_files(arg["file_tree"], sub, "L", "waypoints")
@@ -168,10 +168,35 @@ def update_seeds_file(file_path: str) -> None:
         error_and_exit(False, f"Unable to change seeds file due to {e}")
 
 
+def get_additional_seeds(files_tree: object, subject: str) -> list:
+    """
+    Function to get additional seeds from
+    filetree
+
+    Parameters
+    ----------
+    files_tree: object
+        FSL.filetree object
+    subject: str
+        str of subject
+
+    Returns
+    -------
+    list: list object
+        list of paths for additional
+        seeds
+    """
+    return [
+        filetree_get_files(files_tree, subject, "L", file)
+        for file in files_tree.template_keys()
+        if "add_seed" in file
+    ]
+
+
 def get_stop_files_filestree(files_tree: object, subject: str) -> dict:
     """
     Function to get stopping files path
-    from
+    from filetree
 
     Parameters
     ----------

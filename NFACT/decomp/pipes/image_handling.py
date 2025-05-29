@@ -16,6 +16,7 @@ def save_images(
     algo: str,
     dim: int,
     roi: list,
+    cifti_save: bool = False,
 ) -> None:
     """
     Function to save  grey and white
@@ -37,6 +38,8 @@ def save_images(
     roi: list
         rois. Needed
         for surface
+    cifti_save: bool
+        should save type be
 
     Returns
     -------
@@ -70,6 +73,7 @@ def save_images(
                     ),
                     roi,
                     grey_prefix,
+                    cifti_save,
                 )
             except Exception as e:
                 comp_disk_save(

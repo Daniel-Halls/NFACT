@@ -126,7 +126,7 @@ nfact –config /absolute path/nfact_config.config
 
 ```
 ## NFACT PP
-Pre-processing of tractography data for decomposition with NFACT (Non-negative matrix Factorisation of Tractography data)
+Pre-processing module of NFACT.
 
 Under the hood NFACT PP is probtrackx2 omatrix2 option to get a seed by target connectivity matrix 
 
@@ -153,11 +153,17 @@ Input needed for both surface and volume mode:
 Input for surface seed mode:
     - Seeds as surfaces (relative path, must be same across subjects)
     - ROI as surfaces. This is files to restrict seeding to (for example surface files that exclude medial wall, this is a relative path, must be same across subjects)
-    
+
 Input needed for volume mode:
     - Seeds as volumes (relative path, must be same across subjects)
 
 Warps must be ordered Standard2diff and Diff2standard. If your target fdt paths doesn't match up to the template then it is most likely the warps being the wrong way around.
+
+#### Other NFACT_PP inputs
+
+NFACT_PP needs a seed reference space to define seed space used by probtrackx. This is optional however this default is Human MNI. 
+
+NFACT_PP needs a target2 img (a target for the seeds). This can be a whole brain mask or an ROIs mask, and it is recommended that they are downsampled. If the target2 is not given then the seedrefernce will be used. 
 
 
 ### NFACT PP input folder 
@@ -177,6 +183,12 @@ Filetrees are saved in filetrees folder in nfact, so custom filetrees can be put
 Use of custom filetree
 -----------------------
 seed files are aliased as (seed), roi as (roi), warps as (diff2std, std2diff) and bedpostX as (bedpostX). Two seeds are supported if the seeds are bilateral indicated with {hemi}.seed, with the actual seed names being L.seed.nii.gz/R.seed.nii.gz. A singe seed can be given as well.
+
+CIFTI support
+--------------
+NFACT can save files as cifti dscalars. However, seeds must be in the following order: left_hemisphere.gii, right hemisphere.nii, follwed by optional nifti files as subcortical structures. Left and right surfaces are needed however the subcortical structures are optional, and you can put as many or as few as you would (or none at all).
+
+Subcortical structures must be named as standard cifti structures (i.e CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz) or subcortical data is put as the CIFTI structure OTHER. For further details on naming conventions please see the hcp_cifti in the NFACT/filetree folder in this repo
 
 ### Usage:
 
@@ -286,8 +298,7 @@ components are the "winner" in that region
 
 ### Usage
 ```
-usage: nfact_decomp [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [--seeds SEEDS] [--roi ROI] [-n CONFIG] [-d DIM] [-a ALGO] [-W]
-                    [-z WTA_ZTHR] [-N] [-t THRESHOLD] [-c COMPONENTS] [-p PCA_TYPE] [-S]
+usage: nfact_decomp [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [--seeds SEEDS] [--roi ROI] [-n CONFIG] [-d DIM] [-a ALGO] [-C] [-D] [-W] [-z WTA_ZTHR] [-N] [-t THRESHOLD] [-c COMPONENTS] [-p PCA_TYPE] [-S]
 
 options:
   -h, --help            show this help message and exit
@@ -302,37 +313,32 @@ Set Up Arguments:
 
 Decomposition inputs:
   --seeds SEEDS, -s SEEDS
-                        Absolute path to a text file of seed(s) used in nfact_pp/probtrackx. If used nfact_pp this is the
-                        seeds_for_decomp.txt in the nfact_pp directory.
-  --roi ROI, -r ROI     Absolute path to a text file containing the absolute path ROI(s) paths to restrict seeding to (e.g. medial
-                        wall masks). This is not needed if seeds are not surfaces. If used nfact_pp then this is the
-                        roi_for_decomp.txt file in the nfact_pp directory.
+                        Absolute path to a text file of seed(s) used in nfact_pp/probtrackx. If used nfact_pp this is the seeds_for_decomp.txt in the nfact_pp directory.
+  --roi ROI, -r ROI     Absolute path to a text file containing the absolute path ROI(s) paths to restrict seeding to (e.g. medial wall masks). This is not needed if seeds are not surfaces. If used nfact_pp then this is the roi_for_decomp.txt file in the nfact_pp
+                        directory.
   -n CONFIG, --nfact_config CONFIG
-                        Absolute path to a configuration file. Congifuration file provides available hyperparameters for ICA and NMF.
-                        Use nfact_config -D to create a config file. Please see sckit learn documentation for NMF and FASTICA for
-                        further details
+                        Absolute path to a configuration file. Congifuration file provides available hyperparameters for ICA and NMF. Use nfact_config -D to create a config file. Please see sckit learn documentation for NMF and FASTICA for further details
 
 Decomposition options:
   -d DIM, --dim DIM     This is compulsory option. Number of dimensions/components to retain after running NMF/ICA.
   -a ALGO, --algo ALGO  Which decomposition algorithm. Options are: NMF (default), or ICA. This is case insensitive
 
 Output options:
+  -C, --cifti           Option to save GM as a cifti dscalar. Seeds must be left and right surfaces with an optional nifti for subcortical structures.
+  -D, --disk            Save the decompistion matricies directly to disk rather than as nii/gii files.
   -W, --wta             Option to create and save winner-takes-all maps.
   -z WTA_ZTHR, --wta_zthr WTA_ZTHR
                         Winner-takes-all threshold. Default is 0
   -N, --normalise       Convert component values into Z scores and saves map. This is useful for visualization
   -t THRESHOLD, --threshold THRESHOLD
-                        Value at which to threshold W components at. Set to 0 to do no thresholding.
+                        Value at which to threshold Components at. Set to 0 to do no thresholding.
 
 ICA options:
   -c COMPONENTS, --components COMPONENTS
                         Number of component to be retained following the PCA. Default is 1000
   -p PCA_TYPE, --pca_type PCA_TYPE
-                        Which type of PCA to do before ICA. Options are 'pca' which is sckit learns default PCA or 'migp' (MELODIC's
-                        Incremental Group-PCA dimensionality). Default is 'pca' as for most cases 'migp' is slow and not needed.
-                        Option is case insensitive.
-  -S, --sign_flip       nfact_decomp by default sign flips the ICA distribution to reduce the number of negative values. Use this
-                        option to stop the sign_flip
+                        Which type of PCA to do before ICA. Options are 'pca' which is sckit learns default PCA or 'migp' (MELODIC's Incremental Group-PCA dimensionality). Default is 'pca' as for most cases 'migp' is slow and not needed. Option is case insensitive.
+  -S, --sign_flip       nfact_decomp by default sign flips the ICA distribution to reduce the number of negative values. Use this option to stop the sign_flip
 
 
 Basic NMF with volume seeds usage:
@@ -364,6 +370,7 @@ Advanced ICA Usage:
                  --normalise \
                  --wta \
                  --wta_zthr 0.5
+
 
 ```
 ------------------------------------------------------------------------------------------------------------------------------------------
@@ -532,7 +539,16 @@ This is the config file for the nfact pipeline. Please check the individual modu
         "qc_skip": false,
         "folder_name": "nfact"
     },
+    "cluster": {
+        "cluster": false,
+        "cluster_queue": "None",
+        "cluster_ram": "60",
+        "cluster_time": false,
+        "cluster_qos": false
+    },
+    
     "nfact_pp": {
+        "gpu": false,
         "file_tree": false,
         "warps": [],
         "bpx_path": false,
@@ -540,37 +556,38 @@ This is the config file for the nfact pipeline. Please check the individual modu
         "seedref": false,
         "target2": false,
         "nsamples": "1000",
-        "mm_res": "2",
+        "mm_res": "3",
         "ptx_options": false,
         "exclusion": false,
         "stop": false,
-        "n_cores": false,
-        "cluster": false,
-        "cluster_queue": "None",
-        "cluster_ram": "60",
-        "cluster_time": false,
-        "cluster_qos": false
+        "absolute": false,
+        "n_cores": false
     },
+
     "nfact_decomp": {
         "dim": "Required",
-        "roi": false,
         "algo": "NMF",
-        "components": "1000",
-        "pca_type": "pca",
+        "roi": false,
+        "config": false,
+        "cifti": false,
         "wta": false,
         "wta_zthr": "0.0",
         "normalise": false,
-        "sign_flip": true,
-        "config": false
+        "threshold": "3",
+        "components": "1000",
+        "pca_type": "pca",
+        "sign_flip": true
     },
+    
     "nfact_dr": {
-        "roi": false,
-        "normalise": false
+        "normalise": false,
+        "n_cores": false
     },
+
     "nfact_qc": {
         "threshold": "2"
     }
-}
+
 ```
 
 Everything that has says is required must be given. rois, warps and seed must be given in python list format like this

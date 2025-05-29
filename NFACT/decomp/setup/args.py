@@ -60,6 +60,19 @@ def nfact_decomp_args() -> dict:
         f"{col['darker_pink']}Output options{col['reset']}"
     )
     output_args.add_argument(
+        "-C",
+        "--cifti",
+        dest="cifti",
+        action="store_true",
+        default=False,
+        help="""
+        Option to save GM as a cifti dscalar. 
+        Seeds must be left and right surfaces 
+        with an optional nifti for subcortical
+        structures.
+        """,
+    )
+    output_args.add_argument(
         "-D",
         "--disk",
         dest="disk",
