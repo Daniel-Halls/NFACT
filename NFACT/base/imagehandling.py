@@ -390,7 +390,7 @@ def save_grey_matter_components(
                 grey_matter_components,
                 coord_mat2,
                 seeds_id,
-                os.path.join(nfact_path, directory, f"{prefix}.dscalar.nii"),
+                os.path.join(nfact_path, directory, f"{prefix}_dim{dim}.dscalar.nii"),
             )
             return None
         except Exception as e:

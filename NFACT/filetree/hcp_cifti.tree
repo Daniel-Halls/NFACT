@@ -14,6 +14,7 @@ downsample
     CIFTI_STRUCTURE_PUTAMEN_LEFT.nii.gz (add_seed11)
     CIFTI_STRUCTURE_PUTAMEN_RIGHT.nii.gz (add_seed12)
     CIFTI_STRUCTURE_THALAMUS_LEFT.nii.gz (add_seed13)
+    CIFTI_STRUCTURE_THALAMUS_RIGHT.nii.gz (add_seed14)
 
 MNINonLinear                 
     xfms
