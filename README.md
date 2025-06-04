@@ -332,8 +332,23 @@ Example Usage:
 
 ```
 ## NFACT decomp
-This is the main decompoisition module of NFACT. Runs either ICA or NMF and saves the components in the nfact_decomp directory. Components can also be normalised with the zscore maps saved, which is useful for visualization. Winner takes all maps can be created with the brain represented by which 
-components are the "winner" in that region
+This is the main decompoisition module of NFACT. Runs either ICA or NMF and saves the components in the nfact_decomp directory. 
+
+By default nfact_decomp will threshold components to remove noise. nfact_decomp will consider noise anything values less than a zscore value (default is 3). To turn this off do -t 0
+
+Components can also be normalised with the zscore maps saved, which is useful for visualization. Winner takes all maps can be created with the brain represented by which components are the "winner" in that region
+
+Components can also be saved directly as .npz files by giving the -D argument. 
+
+The Grey component can be saved as a cifti as long as files are named in a set way (see cifti support in the nfact_pp section). 
+
+
+Notes on saving files
+----------------------
+
+Files are saved as W_ (white matter decomposition) G_ (grey matter or seed decompostion). Multiple W_ and G_ can be saved in the decomp folder assuming that the number of dimensions differs between what is already saved. i.e running nfact_decomp with --dim 100 will save a W_NMF_dim100.nii.gz. If nfact_decomp --dim 50 is ran then a W_NMF_dim50.nii.gz will also be saved. However, if nfact_decomp --dim 100 is run again it will overwrite the orginal file
+
+If nfact_decomp can't save files as ciftis (assuming the -C is given) then it will save files as corresponding gii/nii files depending on seed type. If nfact_decomp can't save white and grey components as nii/gii files it will save them as .npz files so that the decomposition isn't wasted. 
 
 ### Usage
 ```
@@ -501,6 +516,10 @@ Prefix:
 - mask_*_raw.nii.gz: Volume nii component. Binary mask of unthresholded components     
 - *.gii: Surface gii component. Components are thresholded by zscoring to remove noise
 - *_raw.gii: Surface gii component. Components are not thresholded   
+
+Note on output
+---------------
+If nfact_decomp has been run with thresholding then look at the _raw files as noise should have been filtered out. However, if not thresholding has been done at the decomp stage then look at the threshold images as this is a propably a more accurate view of how many times a vertex or voxel actually appears
 
 ## Usage:
 
