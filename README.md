@@ -193,12 +193,19 @@ nfact_pp comes with a number of hcp folder structure filetrees:
 
 nfact_pp also allows for custom filetrees. These can be passed in by giving the full path to the --file_tree. 
 A nfact_pp filetree can have the following labels:
+
 (seed) - this is complusory and is the filepath to a seed. A seed must also have the following naming structure {sub}.{hemi}.filename.gii/nii.gz
+
 (bedpostX) - this is complusory and is the filepath to a bedpostx directory
+
 (diff2std) and (std2diff) - complusory. Path to diff2std and std2diff warp files
+
 (roi) - this is complusory for surface mode. Must be named {sub}.{hemi}.filename.gii/nii.gz
+
 (add_seed1)..(add_seed2)..etc: additional seeds and can have as many as you want, as long as they have a a number suffix at the end. This is used to add cifti structures/subcortical volumes 
+
 (wtstop1)..(wtstop2)..etc: wtstop files. Again can have as many you want as long as they have a number suffix
+
 (stop1)..(stop2)..etc: stop files. Same as approach as wtstop and add_seed
 
 
@@ -209,23 +216,27 @@ CIFTI support
 NFACT can save files as cifti dscalars. However, seeds must be in the following order: left_hemisphere.gii (complusory), right hemisphere.nii (complusory), follwed by optional nifti files as subcortical structures (can also have no subcortical files)
 
 If there are subcortical structures, they must be named as standard cifti structures (i.e CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz) or subcortical data is put as the CIFTI structure OTHER. 
+
 Examples are: 
-            CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz 
-            CIFTI_STRUCTURE_ACCUMBENS_RIGHT.nii.gz
-            CIFTI_STRUCTURE_AMYGDALA_LEFT.nii.gz 
-            CIFTI_STRUCTURE_AMYGDALA_RIGHT.nii.gz 
-            CIFTI_STRUCTURE_CAUDATE_LEFT.nii.gz 
-            CIFTI_STRUCTURE_CAUDATE_RIGHT.nii.gz 
-            CIFTI_STRUCTURE_CEREBELLUM_LEFT.nii.gz
-            CIFTI_STRUCTURE_CEREBELLUM_RIGHT.nii.g
-            CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT.nii.g
-            CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT.nii.gz
-            CIFTI_STRUCTURE_PALLIDUM_LEFT.nii.gz 
-            CIFTI_STRUCTURE_PALLIDUM_RIGHT.nii.gz
-            CIFTI_STRUCTURE_PUTAMEN_LEFT.nii.gz 
-            CIFTI_STRUCTURE_PUTAMEN_RIGHT.nii.gz
-            CIFTI_STRUCTURE_THALAMUS_LEFT.nii.gz
-            CIFTI_STRUCTURE_THALAMUS_RIGHT.nii.gz 
+```
+CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz 
+CIFTI_STRUCTURE_ACCUMBENS_RIGHT.nii.gz
+CIFTI_STRUCTURE_AMYGDALA_LEFT.nii.gz 
+CIFTI_STRUCTURE_AMYGDALA_RIGHT.nii.gz 
+CIFTI_STRUCTURE_CAUDATE_LEFT.nii.gz 
+CIFTI_STRUCTURE_CAUDATE_RIGHT.nii.gz 
+CIFTI_STRUCTURE_CEREBELLUM_LEFT.nii.gz
+CIFTI_STRUCTURE_CEREBELLUM_RIGHT.nii.g
+CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT.nii.g
+CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT.nii.gz
+CIFTI_STRUCTURE_PALLIDUM_LEFT.nii.gz 
+CIFTI_STRUCTURE_PALLIDUM_RIGHT.nii.gz
+CIFTI_STRUCTURE_PUTAMEN_LEFT.nii.gz 
+CIFTI_STRUCTURE_PUTAMEN_RIGHT.nii.gz
+CIFTI_STRUCTURE_THALAMUS_LEFT.nii.gz
+CIFTI_STRUCTURE_THALAMUS_RIGHT.nii.gz 
+```
+
 
 
 ### Usage:
