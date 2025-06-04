@@ -202,12 +202,26 @@ def get_data(data_type: str, img_path: str) -> np.ndarray:
 
 def create_hitmaps(
     img_type: str, img_data: np.ndarray, filename: str, threshold: int, img_to_load: str
-):
+) -> None:
     """
     Wrapper to create hitmaps
 
     Parameters
     ----------
+    img_type: str
+        str of img type
+    img_data: np.ndarray
+        array of img data
+    filename: str
+        filename of imag
+    threshold: int
+        threshold value
+    img_to_load: str
+        str of img to load
+
+    Returns
+    -------
+    None
     """
     hitmap_loaders = {"gifti": create_gifti_hitmap, "nifti": create_nifti_hitmap}
 
@@ -362,7 +376,21 @@ def check_Qc_dir(nfactQc_directory: str, white_name: str) -> None:
         )
 
 
-def get_img_name(img) -> str:
+def get_img_name(img: str) -> str:
+    """
+    Function to get imag name from
+    file path.
+
+    Parameters
+    ----------
+    img: str
+        img path
+
+    Returns
+    -------
+    name: str
+        name of img
+    """
     try:
         name = os.path.basename(img).split(".")[0]
         return name
