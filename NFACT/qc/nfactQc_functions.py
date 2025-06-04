@@ -8,19 +8,19 @@ from NFACT.base.setup import make_directory
 from NFACT.base.imagehandling import get_volume_data, get_surface_data, get_cifti_data
 
 
-def save_gifit(filename: str, seed: object, surf_data: np.array):
+def save_gifit(filename: str, meta_data: object, img_data: np.ndarray) -> np.ndarray:
     """
     Function to save gifti file from a
     numpy array
 
     Parameters
     ---------
-    data: np.array
-        array of data to save as image
-    affine: np.array
-        affine of image
     filename: str
         filename of image to save
+    meta_data: object
+        meat data for img
+    img_data: np.ndarray
+        data to save in img
 
     Returns
     -------
@@ -28,36 +28,38 @@ def save_gifit(filename: str, seed: object, surf_data: np.array):
     """
     darrays = [
         nb.gifti.GiftiDataArray(
-            surf_data,
+            img_data,
             datatype="NIFTI_TYPE_FLOAT32",
             intent=2001,
-            meta=seed.darrays[0].meta,
+            meta=meta_data,
         )
     ]
-    nb.gifti.GiftiImage(darrays=darrays, meta=seed.darrays[0].meta).to_filename(
+    nb.gifti.GiftiImage(darrays=darrays, meta=meta_data).to_filename(
         f"{filename}.func.gii"
     )
 
 
-def save_nifti(data: np.array, affine: np.array, filename: str) -> None:
+def save_nifti(filename: str, meta_data: np.array, data: np.array) -> None:
     """
     Function to save nifti file from a
     numpy array
 
     Parameters
-    ---------
-    data: np.array
-        array of data to save as image
-    affine: np.array
-        affine of image
+    ----------
     filename: str
         filename of image to save
+    meta_data: np.array
+        affine of image
+    data: np.array
+        array of data to save as image
+
+
 
     Returns
     -------
     None
     """
-    nb.Nifti1Image(data.astype(np.float32), affine).to_filename(filename)
+    nb.Nifti1Image(data.astype(np.float32), meta_data).to_filename(filename)
 
 
 def normalization(img_data: np.array) -> np.array:
@@ -189,12 +191,13 @@ def get_data(data_type: str, img_path: str) -> np.ndarray:
         array of imaging data
 
     """
-    if data_type == "gifti":
-        return get_surface_data(img_path)
-    if data_type == "nifti":
-        return get_volume_data(img_path)
-    if data_type == "cifti":
-        return get_cifti_data(img_path)
+    data_loaders = {
+        "gifti": get_surface_data,
+        "nifti": get_volume_data,
+        "cifti": get_cifti_data,
+    }
+
+    return data_loaders[data_type](img_path)
 
 
 def hitmap(img_type: str, threshold: int, filename: str, img_to_load: str):
@@ -204,12 +207,18 @@ def hitmap(img_type: str, threshold: int, filename: str, img_to_load: str):
     Parameters
     ----------
     """
+    hitmap_loaders = {"gifti": create_gifti_hitmap, "nifti": create_nifti_hitmap}
+
+    img = nb.load(img_to_load)
+    meta_data = img.affine if img_type == "nifti" else img.darrays[0].meta
+    hitmap_loaders[img_type]()
+    hitmap_loaders[img_type](normalize=True)
     create_gifti_hitmap(img_to_load, filename, threshold)
     create_gifti_hitmap(img_to_load, filename, threshold, normalize=True)
 
 
 def create_gifti_hitmap(
-    seed_path: str, filename: str, threshold: int, normalize=True
+    data: np.ndarray, filename: str, threshold: int, meta_data, normalize=True
 ) -> None:
     """
     Function to create hitmap from
@@ -227,15 +236,10 @@ def create_gifti_hitmap(
     -------
     None
     """
-    seed = nb.load(seed_path)
 
-    combinearray = np.array(
-        [seed.darrays[idx].data for idx, _ in enumerate(seed.darrays)]
-    )
-
-    comp_scores = scoring(combinearray, normalize, threshold)
+    comp_scores = scoring(data, normalize, threshold)
     hitmap = np.sum(comp_scores["scores"] > comp_scores["threshold"], axis=0)
-    save_gifit(filename, seed, hitmap)
+    save_gifit(filename, meta_data, hitmap)
 
 
 def create_nifti_hitmap(
