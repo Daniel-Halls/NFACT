@@ -21,7 +21,9 @@ as well as two axillary "modules":
 
 and a pipeline wrapper
     
-    - nfact (runs nfact_pp, nfact_decomp, nfact_Qc and nfact_dr. nfact_pp, nfact_Qc and nfact_dr can all individually be skipped)
+    - nfact 
+    (runs nfact_pp, nfact_decomp, nfact_Qc and nfact_dr. 
+    nfact_pp, nfact_Qc and nfact_dr can all individually be skipped)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
