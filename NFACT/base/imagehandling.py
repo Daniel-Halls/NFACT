@@ -644,8 +644,7 @@ def get_cifti_data(img: object) -> dict:
     """
     data = img.get_fdata(dtype=np.float32)
     brain_models = img.header.get_axis(1)
-    return {
-        "vol": volume_from_cifti(data, brain_models),
+    cifti_data = {
         "L_surf": surf_data_from_cifti(
             data, brain_models, "CIFTI_STRUCTURE_CORTEX_LEFT"
         ),
@@ -653,6 +652,11 @@ def get_cifti_data(img: object) -> dict:
             data, brain_models, "CIFTI_STRUCTURE_CORTEX_RIGHT"
         ),
     }
+    try:
+        cifti_data["vol"] = volume_from_cifti(data, brain_models)
+        return cifti_data
+    except Exception:
+        return cifti_data
 
 
 def get_volume_data(img_path: str) -> np.ndarray:
