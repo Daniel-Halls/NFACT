@@ -248,7 +248,8 @@ Set Up Arguments:
 
 Filetree option:
   -f FILE_TREE, --file_tree FILE_TREE
-                        Use this option to provide name of a predefined file tree to perform whole brain tractography. nfact_pp currently comes with a number of HCP filetrees. See documentation for further information.
+                        Use this option to provide name of a predefined file tree to perform whole brain tractography. nfact_pp currently comes with a number of HCP filetrees, or can accept a custom filetree (provide abosulte path) See documentation for further
+                        information.
 
 Tractography options:
   -s SEED [SEED ...], --seed SEED [SEED ...]
@@ -262,7 +263,7 @@ Tractography options:
   -sr SEEDREF, --seedref SEEDREF
                         Absolute path to a reference volume to define seed space used by probtrackx. Default is MNI space ($FSLDIR/data/standard/MNI152_T1_2mm.nii.gz).
   -t TARGET2, --target TARGET2
-                        Absolute path to a target image. If not provided will use the seedref. Default is human MNI ($FSLDIR/data/standard/MNI152_T1_2mm.nii.gz).
+                        Absolute path to a target image. If not provided will use the seedref.
   -ns NSAMPLES, --nsamples NSAMPLES
                         Number of samples per seed used in tractography. Default is 1000
   -mm MM_RES, --mm_res MM_RES
@@ -288,9 +289,10 @@ Cluster Arguments:
   -cr CLUSTER_RAM, --cluster_ram CLUSTER_RAM
                         Ram that job will take. Default is 60
   -ct CLUSTER_TIME, --cluster_time CLUSTER_TIME
-                        Time that job will take. nfact_pp will assign a time if none given
+                        Time that job will take. nfact will assign a time if none given
   -cqos CLUSTER_QOS, --cluster_qos CLUSTER_QOS
                         Set the qos for the cluster
+
 
 Example Usage:
     Surface mode:
@@ -315,7 +317,6 @@ Example Usage:
         nfact_pp --filestree hcp
             --list_of_subjects /absolute_path/study/sub_list
             --outdir /absolute_path/study
-
 
 ```
 
