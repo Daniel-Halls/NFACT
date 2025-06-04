@@ -257,6 +257,13 @@ def create_hitmaps(
     )
 
 
+def create_cifti_hitmap(
+    img_data: dict, filename: str, threshold: int, meta_data, normalize=False
+):
+    left_hitmap = surface_hitcount_maps(img_data["L_surf"], normalize, threshold)
+    return None
+
+
 def create_gifti_hitmap(
     img_data: np.ndarray, filename: str, threshold: int, meta_data, normalize=False
 ) -> None:
