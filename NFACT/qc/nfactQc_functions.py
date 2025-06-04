@@ -3,6 +3,7 @@ import numpy as np
 import nibabel as nb
 from sklearn.preprocessing import StandardScaler
 from glob import glob
+import re
 from NFACT.base.utils import error_and_exit
 from NFACT.base.setup import make_directory
 from NFACT.base.imagehandling import get_volume_data, get_surface_data, get_cifti_data
@@ -150,7 +151,7 @@ def scoring(img_data: np.array, normalize: bool, threshold: int) -> dict:
     return {"scores": img_data, "threshold": 0}
 
 
-def nifti_hitcount_maps(img_data: np.array, threshold: int, normalize=True) -> dict:
+def volume_hitcount_maps(img_data: np.array, threshold: int, normalize=True) -> dict:
     """
     Function to create a binary coverage mask
     and a hitmap of voxels
@@ -170,6 +171,28 @@ def nifti_hitcount_maps(img_data: np.array, threshold: int, normalize=True) -> d
 
     comp_scores = scoring(img_data, normalize, threshold)
     return hitcount(comp_scores["scores"], comp_scores["threshold"])
+
+
+def surface_hitcount_maps(img_data: np.array, threshold: int, normalize=True) -> dict:
+    """
+    Function to create a binary coverage mask
+    and a hitmap of voxels
+
+    Parameters
+    ----------
+    img_data: np.array
+        Array of image data
+    threshold: int
+        value to threshold array at
+
+    Returns
+    --------
+    dictionary: dict
+        dictionary of hitcount and bin mask
+    """
+
+    comp_scores = scoring(img_data, normalize, threshold)
+    return np.sum(comp_scores["scores"] > comp_scores["threshold"], axis=0)
 
 
 def get_data(data_type: str, img_path: str) -> np.ndarray:
@@ -228,7 +251,10 @@ def create_hitmaps(
     img = nb.load(img_to_load)
     meta_data = img.affine if img_type == "nifti" else img.darrays[0].meta
     hitmap_loaders[img_type](img_data, filename, threshold, meta_data)
-    hitmap_loaders[img_type](img_data, filename, threshold, meta_data, normalize=True)
+    threshold_filename = re.sub("nfactQc/", "nfactQc/threshold_", filename)
+    hitmap_loaders[img_type](
+        img_data, threshold_filename, threshold, meta_data, normalize=True
+    )
 
 
 def create_gifti_hitmap(
@@ -250,9 +276,7 @@ def create_gifti_hitmap(
     -------
     None
     """
-
-    comp_scores = scoring(img_data, normalize, threshold)
-    hitmap = np.sum(comp_scores["scores"] > comp_scores["threshold"], axis=0)
+    hitmap = surface_hitcount_maps(img_data, normalize, threshold)
     save_gifit(filename, meta_data, hitmap)
 
 
@@ -278,7 +302,7 @@ def create_nifti_hitmap(
        float of percentage coverage
     """
 
-    maps = nifti_hitcount_maps(img_data, threshold, normalize)
+    maps = volume_hitcount_maps(img_data, threshold, normalize)
     image_name_hitmap = os.path.join(
         os.path.dirname(filename), f"hitmap_{os.path.basename(filename)}.nii.gz"
     )

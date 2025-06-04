@@ -521,12 +521,12 @@ Each map contains the number of times that voxel/vertex appears in the decomposi
 ## Output:
 
 Prefix:
-- hitmap_*.nii.gz: Volume nii component. Components are thresholded by zscoring to remove noise
-- hitmap_*_raw.nii.gz: Volume nii component. Components are not thresholded
-- mask_*.nii.gz: Volume nii component. Binary mask of thresholded components
-- mask_*_raw.nii.gz: Volume nii component. Binary mask of unthresholded components     
-- *.gii: Surface gii component. Components are thresholded by zscoring to remove noise
-- *_raw.gii: Surface gii component. Components are not thresholded   
+- hitmap_*.nii.gz: Volume nii component. Components are not thresholded 
+- hitmap_threshold*_.nii.gz: Volume nii component. Components are thresholded by zscoring to remove noise
+- mask_*.nii.gz: Volume nii component. Binary mask of unthresholded components    
+- mask_threshold*.nii.gz: Volume nii component. Binary mask of thresholded components
+- *.gii: Surface gii component. Components are not thresholded
+- threshold_*.gii: Surface gii component. Components are thresholded by zscoring to remove noise
 
 Note on output
 ---------------
