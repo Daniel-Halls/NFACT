@@ -655,7 +655,7 @@ def get_cifti_data(img: object) -> dict:
     }
 
 
-def get_volume_data(img_path: str) -> np.ndarry:
+def get_volume_data(img_path: str) -> np.ndarray:
     """
     Function to get volume data
 

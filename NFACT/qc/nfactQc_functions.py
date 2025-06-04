@@ -3,7 +3,7 @@ import numpy as np
 import nibabel as nb
 from sklearn.preprocessing import StandardScaler
 from glob import glob
-from NFACT.base.utils import colours, error_and_exit
+from NFACT.base.utils import error_and_exit
 from NFACT.base.setup import make_directory
 from NFACT.base.imagehandling import get_volume_data, get_surface_data, get_cifti_data
 
@@ -200,7 +200,9 @@ def get_data(data_type: str, img_path: str) -> np.ndarray:
     return data_loaders[data_type](img_path)
 
 
-def hitmap(img_type: str, threshold: int, filename: str, img_to_load: str):
+def create_hitmaps(
+    img_type: str, img_data: np.ndarray, filename: str, threshold: int, img_to_load: str
+):
     """
     Wrapper to create hitmaps
 
@@ -211,14 +213,12 @@ def hitmap(img_type: str, threshold: int, filename: str, img_to_load: str):
 
     img = nb.load(img_to_load)
     meta_data = img.affine if img_type == "nifti" else img.darrays[0].meta
-    hitmap_loaders[img_type]()
-    hitmap_loaders[img_type](normalize=True)
-    create_gifti_hitmap(img_to_load, filename, threshold)
-    create_gifti_hitmap(img_to_load, filename, threshold, normalize=True)
+    hitmap_loaders[img_type](img_data, filename, threshold, meta_data)
+    hitmap_loaders[img_type](img_data, filename, threshold, meta_data, normalize=True)
 
 
 def create_gifti_hitmap(
-    data: np.ndarray, filename: str, threshold: int, meta_data, normalize=True
+    img_data: np.ndarray, filename: str, threshold: int, meta_data, normalize=False
 ) -> None:
     """
     Function to create hitmap from
@@ -237,13 +237,13 @@ def create_gifti_hitmap(
     None
     """
 
-    comp_scores = scoring(data, normalize, threshold)
+    comp_scores = scoring(img_data, normalize, threshold)
     hitmap = np.sum(comp_scores["scores"] > comp_scores["threshold"], axis=0)
     save_gifit(filename, meta_data, hitmap)
 
 
 def create_nifti_hitmap(
-    img_path: str, img_name: str, threshold: int, normalize=True
+    img_data: str, filename: str, threshold: int, meta_data: np.ndarray, normalize=False
 ) -> None:
     """
     Wrapper function to create a binary coverage mask
@@ -263,21 +263,17 @@ def create_nifti_hitmap(
     float: float
        float of percentage coverage
     """
-    col = colours()
-    img_comp = nb.load(img_path)
-    img_data = img_comp.get_fdata()
+
     maps = nifti_hitcount_maps(img_data, threshold, normalize)
-    print(f"{col['pink']}Image:{col['reset']} Saving Hitmap")
     image_name_hitmap = os.path.join(
-        os.path.dirname(img_name), f"hitmap_{os.path.basename(img_name)}.nii.gz"
+        os.path.dirname(filename), f"hitmap_{os.path.basename(filename)}.nii.gz"
     )
-    save_nifti(maps["hitcount"], img_comp.affine, image_name_hitmap)
+    save_nifti(image_name_hitmap, meta_data, maps["hitcount"])
     coverage_map_mask = binary_mask(maps["bin_mask"])
     image_name_mask = os.path.join(
-        os.path.dirname(img_name), f"mask_{os.path.basename(img_name)}.nii.gz"
+        os.path.dirname(filename), f"mask_{os.path.basename(filename)}.nii.gz"
     )
-    print(f"{col['pink']}Image:{col['reset']} Saving Binary Mask")
-    save_nifti(coverage_map_mask, img_comp.affine, image_name_mask)
+    save_nifti(image_name_mask, meta_data, coverage_map_mask)
 
 
 def get_images(nfact_directory: str, dim: str, algo: str) -> dict:
@@ -363,4 +359,16 @@ def check_Qc_dir(nfactQc_directory: str, white_name: str) -> None:
     if f"hitmap_{white_name}.nii.gz" in os.listdir(nfactQc_directory):
         error_and_exit(
             False, "QC images aleady exist. Please use --overwrite to continue", False
+        )
+
+
+def get_img_name(img) -> str:
+    try:
+        name = os.path.basename(img).split(".")[0]
+        return name
+    except IndexError:
+        error_and_exit(
+            False,
+            "Unable to find imaging files. Please check nfact_decomp directory",
+            False,
         )
