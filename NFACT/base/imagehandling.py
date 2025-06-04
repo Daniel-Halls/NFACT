@@ -618,7 +618,6 @@ def volume_from_cifti(data: np.ndarray, axis: object) -> object:
     object: nb.Nifti1Image
         nifti image
     """
-    assert isinstance(axis, nb.cifti2.BrainModelAxis)
     data = data.T[axis.volume_mask]
     vox_indices = tuple(axis.voxel[axis.volume_mask].T)
     vol_data = np.zeros(axis.volume_shape + data.shape[1:], dtype=data.dtype)
@@ -642,7 +641,7 @@ def decompose_cifti(img: object) -> dict:
         surfaces
     """
     data = img.get_fdata(dtype=np.float32)
-    brain_models = img.header.get_axis(1)  # Assume we know this
+    brain_models = img.header.get_axis(1)
     return {
         "vol": volume_from_cifti(data, brain_models),
         "L_surf": surf_data_from_cifti(
