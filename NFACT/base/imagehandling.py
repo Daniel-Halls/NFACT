@@ -627,9 +627,9 @@ def volume_from_cifti(data: np.ndarray, axis: object) -> object:
     return nb.Nifti1Image(vol_data, axis.affine)
 
 
-def decompose_cifti(img: object) -> dict:
+def get_cifti_data(img: object) -> dict:
     """
-    Function to decompose a loaded cifti
+    Function to get cifti data
 
     Parameters
     ----------
@@ -653,3 +653,42 @@ def decompose_cifti(img: object) -> dict:
             data, brain_models, "CIFTI_STRUCTURE_CORTEX_RIGHT"
         ),
     }
+
+
+def get_volume_data(img_path: str) -> np.ndarry:
+    """
+    Function to get volume data
+
+    Parameters
+    -----------
+    img_path: str
+        str to volume image
+
+    Returns
+    -------
+    np.ndarray: array
+        array of volume data
+    """
+    vol = nb.load(img_path)
+    return vol.get_fdata().astype(np.int32)
+
+
+def get_surface_data(img_path: str) -> np.ndarray:
+    """
+    Function to get surface data
+
+    Parameters
+    -----------
+    img_path: str
+        str to surface image
+
+    Returns
+    -------
+    np.ndarray: array
+        array of surface data
+    """
+    surface = nb.load(img_path)
+
+    return np.array(
+        [surface.darrays[idx].data for idx, _ in enumerate(surface.darrays)]
+    )

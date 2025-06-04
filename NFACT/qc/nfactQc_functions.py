@@ -5,6 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from glob import glob
 from NFACT.base.utils import colours, error_and_exit
 from NFACT.base.setup import make_directory
+from NFACT.base.imagehandling import get_volume_data, get_surface_data, get_cifti_data
 
 
 def save_gifit(filename: str, seed: object, surf_data: np.array):
@@ -167,6 +168,44 @@ def nifti_hitcount_maps(img_data: np.array, threshold: int, normalize=True) -> d
 
     comp_scores = scoring(img_data, normalize, threshold)
     return hitcount(comp_scores["scores"], comp_scores["threshold"])
+
+
+def get_data(data_type: str, img_path: str) -> np.ndarray:
+    """
+    Function to parse data type
+    and get corresponding data
+
+    Parameters
+    ----------
+    data_type: str
+        which data type is
+        the img
+    img_path: str
+        path to image
+
+    Returns
+    -------
+    np.ndarray: array
+        array of imaging data
+
+    """
+    if data_type == "gifti":
+        return get_surface_data(img_path)
+    if data_type == "nifti":
+        return get_volume_data(img_path)
+    if data_type == "cifti":
+        return get_cifti_data(img_path)
+
+
+def hitmap(img_type: str, threshold: int, filename: str, img_to_load: str):
+    """
+    Wrapper to create hitmaps
+
+    Parameters
+    ----------
+    """
+    create_gifti_hitmap(img_to_load, filename, threshold)
+    create_gifti_hitmap(img_to_load, filename, threshold, normalize=True)
 
 
 def create_gifti_hitmap(
