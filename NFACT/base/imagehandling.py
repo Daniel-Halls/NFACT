@@ -33,6 +33,8 @@ def imaging_type(path: str) -> str:
         str of nifit or gifti
     """
     file_extensions = get_imaging_details_from_path(path)["file_extensions"]
+    if ".dscalar" in file_extensions:
+        return "cifti"
     if ".nii" in file_extensions:
         return "nifti"
     if ".gii" in file_extensions:
