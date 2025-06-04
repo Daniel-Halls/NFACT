@@ -49,7 +49,8 @@ def nfact_pp_args() -> dict:
         dest="file_tree",
         default=False,
         help="""Use this option to provide name of a predefined file tree to 
-        perform whole brain tractography. nfact_pp currently comes with a number of HCP filetrees. 
+        perform whole brain tractography. nfact_pp currently comes with a number of HCP filetrees,
+        or can accept a custom filetree (provide abosulte path) 
         See documentation for further information.""",
     )
     tractography_input = base_args.add_argument_group(
@@ -109,8 +110,7 @@ def nfact_pp_args() -> dict:
         default=False,
         help="""
         Absolute path to a target image. 
-        If not provided will use the seedref. 
-        Default is human MNI ($FSLDIR/data/standard/MNI152_T1_2mm.nii.gz).
+        If not provided will use the seedref.
         """,
     )
     tractography_input.add_argument(

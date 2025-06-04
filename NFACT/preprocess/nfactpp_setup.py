@@ -120,10 +120,15 @@ def load_file_tree(tree_name: str) -> object:
     tree: FileTree object
         filetree object
     """
-
-    return FileTree.read(
-        os.path.join(os.path.dirname(os.path.dirname(__file__)), "filetree", tree_name)
-    )
+    if os.path.exists(tree_name):
+        filetree_to_load = tree_name
+    else:
+        filetree_to_load = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "filetree",
+            f"{tree_name.lower()}.tree",
+        )
+    return FileTree.read(filetree_to_load)
 
 
 def check_provided_img(image_to_check: str, error_messgae: str) -> None:

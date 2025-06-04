@@ -1,7 +1,5 @@
 # NFACT
 
-*This is a repo merging NFacT (Shaun Warrington, Ellie Thompson, and Stamatios Sotiropoulos) and ptx_decomp (Saad Jbabdi and Rogier Mars).*
-
 ## What is NFACT
 
 NFACT (Non-negative matrix Factorisation of Tractography data) is a set of modules (as well as an end to end pipeline) that decomposes 
@@ -23,7 +21,9 @@ as well as two axillary "modules":
 
 and a pipeline wrapper
     
-    - nfact (runs nfact_pp, nfact_decomp, nfact_Qc and nfact_dr. nfact_pp, nfact_Qc and nfact_dr can all individually be skipped)
+    - nfact 
+    (runs nfact_pp, nfact_decomp, nfact_Qc and nfact_dr. 
+    nfact_pp, nfact_Qc and nfact_dr can all individually be skipped)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -171,24 +171,73 @@ NFACT_PP needs a target2 img (a target for the seeds). This can be a whole brain
 NFACT pp can be used in a folder agnostic way by providing the paths to seeds/bedpostX/target inside a subject folder (i.e --seeds seeds/amygdala.nii.gz).
 However, NFACT pp does have an  --absolute option which will treat the seeds (and rois) as absolute paths. This way one set of seeds and rois can be passed to all subjects
 
-The other way is to use the --file_tree command with the name of a file tree (see https://open.win.ox.ac.uk/pages/fsl/file-tree/index.html for further details on filetree).
-In this case seeds/rois/bedpostx do not need to be specified as nfact_pp will try and find the appropriate files.
+Use of filetrees
+-----------------------
+nfact_pp can accept filetrees via the --file_tree command. The filetree has specific paths for seeds/rois/bedpostx etc in it so that these do not need to be specified when calling nfact_pp. For example:  
 
 ```
 nfact_pp --file_tree hcp --list_of_subjects /home/study/list_of_subjects
 ```
 
-Filetrees are saved in filetrees folder in nfact, so custom filetrees can be put there and called similar to the command above. NFACT_PP currently has a built in a filetree for HCP and a hcp_qunex (HCP in qunex format) to perform full brain tractography. 
+nfact_pp comes with a number of hcp folder structure filetrees:
+- hcp: standard hcp folder structure with seeds as L/R white.32k_fs_LR.surf.gii boundary and atlasroi.32k_fs_LR.shape.gii as rois.
+       stop/wtstop files specified
+- hcp_qunex: The same as hcp but assumes the qunex hcp folder set up
+- hcp_downsample_surfaces: hcp style data but assumes there is a downsample folder in the top level directory (same level as the MNINonLinear).
+                  seeds are expected to be called {sub}.{hemi}.white.resampled_fs_LR.surf.gii and rois {sub}.{hemi}.atlasroi.resampled_fs_LR.shape.gii
+                  where sub is your subject id and hemi is eithe L or R. 
+- hcp_donwsample: Same as hcp_downsample_surfaces but with an additional subcortical.nii.gz (mask of subcortical structures)
+- hc_cifti: Same as hcp_downsample_surfaces but with subcortical volumes labelled for cifti support (See CIFTI support in this readme)
 
-Use of custom filetree
------------------------
-seed files are aliased as (seed), roi as (roi), warps as (diff2std, std2diff) and bedpostX as (bedpostX). Two seeds are supported if the seeds are bilateral indicated with {hemi}.seed, with the actual seed names being L.seed.nii.gz/R.seed.nii.gz. A singe seed can be given as well.
+### Building custom filetrees for nfact_pp
+
+nfact_pp also allows for custom filetrees. These can be passed in by giving the full path to the --file_tree. 
+A nfact_pp filetree can have the following labels:
+
+(seed) - this is complusory and is the filepath to a seed. A seed must also have the following naming structure {sub}.{hemi}.filename.gii/nii.gz
+
+(bedpostX) - this is complusory and is the filepath to a bedpostx directory
+
+(diff2std) and (std2diff) - complusory. Path to diff2std and std2diff warp files
+
+(roi) - this is complusory for surface mode. Must be named {sub}.{hemi}.filename.gii/nii.gz
+
+(add_seed1)..(add_seed2)..etc: additional seeds and can have as many as you want, as long as they have a a number suffix at the end. This is used to add cifti structures/subcortical volumes 
+
+(wtstop1)..(wtstop2)..etc: wtstop files. Again can have as many you want as long as they have a number suffix
+
+(stop1)..(stop2)..etc: stop files. Same as approach as wtstop and add_seed
+
+
+Please see https://open.win.ox.ac.uk/pages/fsl/file-tree/index.html for further details on filetrees.
 
 CIFTI support
 --------------
-NFACT can save files as cifti dscalars. However, seeds must be in the following order: left_hemisphere.gii, right hemisphere.nii, follwed by optional nifti files as subcortical structures. Left and right surfaces are needed however the subcortical structures are optional, and you can put as many or as few as you would (or none at all).
+NFACT can save files as cifti dscalars. However, seeds must be in the following order: left_hemisphere.gii (complusory), right hemisphere.nii (complusory), follwed by optional nifti files as subcortical structures (can also have no subcortical files)
 
-Subcortical structures must be named as standard cifti structures (i.e CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz) or subcortical data is put as the CIFTI structure OTHER. For further details on naming conventions please see the hcp_cifti in the NFACT/filetree folder in this repo
+If there are subcortical structures, they must be named as standard cifti structures (i.e CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz) or subcortical data is put as the CIFTI structure OTHER. 
+
+Examples are: 
+```
+CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz 
+CIFTI_STRUCTURE_ACCUMBENS_RIGHT.nii.gz
+CIFTI_STRUCTURE_AMYGDALA_LEFT.nii.gz 
+CIFTI_STRUCTURE_AMYGDALA_RIGHT.nii.gz 
+CIFTI_STRUCTURE_CAUDATE_LEFT.nii.gz 
+CIFTI_STRUCTURE_CAUDATE_RIGHT.nii.gz 
+CIFTI_STRUCTURE_CEREBELLUM_LEFT.nii.gz
+CIFTI_STRUCTURE_CEREBELLUM_RIGHT.nii.g
+CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT.nii.g
+CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT.nii.gz
+CIFTI_STRUCTURE_PALLIDUM_LEFT.nii.gz 
+CIFTI_STRUCTURE_PALLIDUM_RIGHT.nii.gz
+CIFTI_STRUCTURE_PUTAMEN_LEFT.nii.gz 
+CIFTI_STRUCTURE_PUTAMEN_RIGHT.nii.gz
+CIFTI_STRUCTURE_THALAMUS_LEFT.nii.gz
+CIFTI_STRUCTURE_THALAMUS_RIGHT.nii.gz 
+```
+
+
 
 ### Usage:
 
@@ -210,7 +259,8 @@ Set Up Arguments:
 
 Filetree option:
   -f FILE_TREE, --file_tree FILE_TREE
-                        Use this option to provide name of a predefined file tree to perform whole brain tractography. nfact_pp currently comes with a number of HCP filetrees. See documentation for further information.
+                        Use this option to provide name of a predefined file tree to perform whole brain tractography. nfact_pp currently comes with a number of HCP filetrees, or can accept a custom filetree (provide abosulte path) See documentation for further
+                        information.
 
 Tractography options:
   -s SEED [SEED ...], --seed SEED [SEED ...]
@@ -224,7 +274,7 @@ Tractography options:
   -sr SEEDREF, --seedref SEEDREF
                         Absolute path to a reference volume to define seed space used by probtrackx. Default is MNI space ($FSLDIR/data/standard/MNI152_T1_2mm.nii.gz).
   -t TARGET2, --target TARGET2
-                        Absolute path to a target image. If not provided will use the seedref. Default is human MNI ($FSLDIR/data/standard/MNI152_T1_2mm.nii.gz).
+                        Absolute path to a target image. If not provided will use the seedref.
   -ns NSAMPLES, --nsamples NSAMPLES
                         Number of samples per seed used in tractography. Default is 1000
   -mm MM_RES, --mm_res MM_RES
@@ -250,9 +300,10 @@ Cluster Arguments:
   -cr CLUSTER_RAM, --cluster_ram CLUSTER_RAM
                         Ram that job will take. Default is 60
   -ct CLUSTER_TIME, --cluster_time CLUSTER_TIME
-                        Time that job will take. nfact_pp will assign a time if none given
+                        Time that job will take. nfact will assign a time if none given
   -cqos CLUSTER_QOS, --cluster_qos CLUSTER_QOS
                         Set the qos for the cluster
+
 
 Example Usage:
     Surface mode:
@@ -278,7 +329,6 @@ Example Usage:
             --list_of_subjects /absolute_path/study/sub_list
             --outdir /absolute_path/study
 
-
 ```
 
 ------------------------------------------------------------------------------------------------------------------------------------------
@@ -293,8 +343,23 @@ Example Usage:
 
 ```
 ## NFACT decomp
-This is the main decompoisition module of NFACT. Runs either ICA or NMF and saves the components in the nfact_decomp directory. Components can also be normalised with the zscore maps saved, which is useful for visualization. Winner takes all maps can be created with the brain represented by which 
-components are the "winner" in that region
+This is the main decompoisition module of NFACT. Runs either ICA or NMF and saves the components in the nfact_decomp directory. 
+
+By default nfact_decomp will threshold components to remove noise. nfact_decomp will consider noise anything values less than a zscore value (default is 3). To turn this off do -t 0
+
+Components can also be normalised with the zscore maps saved, which is useful for visualization. Winner takes all maps can be created with the brain represented by which components are the "winner" in that region
+
+Components can also be saved directly as .npz files by giving the -D argument. 
+
+The Grey component can be saved as a cifti as long as files are named in a set way (see cifti support in the nfact_pp section). 
+
+
+Notes on saving files
+----------------------
+
+Files are saved as W_ (white matter decomposition) G_ (grey matter or seed decompostion). Multiple W_ and G_ can be saved in the decomp folder assuming that the number of dimensions differs between what is already saved. i.e running nfact_decomp with --dim 100 will save a W_NMF_dim100.nii.gz. If nfact_decomp --dim 50 is ran then a W_NMF_dim50.nii.gz will also be saved. However, if nfact_decomp --dim 100 is run again it will overwrite the orginal file
+
+If nfact_decomp can't save files as ciftis (assuming the -C is given) then it will save files as corresponding gii/nii files depending on seed type. If nfact_decomp can't save white and grey components as nii/gii files it will save them as .npz files so that the decomposition isn't wasted. 
 
 ### Usage
 ```
@@ -325,7 +390,7 @@ Decomposition options:
 
 Output options:
   -C, --cifti           Option to save GM as a cifti dscalar. Seeds must be left and right surfaces with an optional nifti for subcortical structures.
-  -D, --disk            Save the decompistion matricies directly to disk rather than as nii/gii files.
+  -D, --disk            Save the decomposition matrices directly to disk rather than as nii/gii files.
   -W, --wta             Option to create and save winner-takes-all maps.
   -z WTA_ZTHR, --wta_zthr WTA_ZTHR
                         Winner-takes-all threshold. Default is 0
@@ -463,6 +528,10 @@ Prefix:
 - *.gii: Surface gii component. Components are thresholded by zscoring to remove noise
 - *_raw.gii: Surface gii component. Components are not thresholded   
 
+Note on output
+---------------
+If nfact_decomp has been run with thresholding then look at the _raw files as noise should have been filtered out. However, if not thresholding has been done at the decomp stage then look at the threshold images as this is a propably a more accurate view of how many times a vertex or voxel actually appears
+
 ## Usage:
 
 ```
@@ -587,6 +656,7 @@ This is the config file for the nfact pipeline. Please check the individual modu
     "nfact_qc": {
         "threshold": "2"
     }
+}
 
 ```
 
@@ -634,3 +704,7 @@ NFACT does its decomposition using sckit-learn's FastICA (https://scikit-learn.o
 
 NFACT config will attempt to given a directory work out and write to a file all the subjects in that file. Though nfact will try and filter out 
 folders that aren't subjects, it isn't perfect so please check the subject list. 
+
+## Credits
+
+This is a repo merging NFacT (Shaun Warrington, Ellie Thompson, and Stamatios Sotiropoulos) and ptx_decomp (Saad Jbabdi and Rogier Mars).
