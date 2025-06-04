@@ -219,7 +219,7 @@ def set_up_filestree(arg: dict) -> dict:
         dict of processed cmd line args
     """
     try:
-        arg["file_tree"] = load_file_tree(f"{arg['file_tree'].lower()}.tree")
+        arg["file_tree"] = load_file_tree(arg["file_tree"])
     except Exception as e:
         error_and_exit(False, f"Unable to load filetree due to: {e}")
 
