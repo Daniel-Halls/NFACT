@@ -79,7 +79,7 @@ def nfact_decomp_args() -> dict:
         action="store_true",
         default=False,
         help="""
-        Save the decompistion matricies directly to disk rather than as nii/gii files.
+        Save the decomposition matrices directly to disk rather than as nii/gii files      
         """,
     )
     output_args.add_argument(

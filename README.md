@@ -171,24 +171,62 @@ NFACT_PP needs a target2 img (a target for the seeds). This can be a whole brain
 NFACT pp can be used in a folder agnostic way by providing the paths to seeds/bedpostX/target inside a subject folder (i.e --seeds seeds/amygdala.nii.gz).
 However, NFACT pp does have an  --absolute option which will treat the seeds (and rois) as absolute paths. This way one set of seeds and rois can be passed to all subjects
 
-The other way is to use the --file_tree command with the name of a file tree (see https://open.win.ox.ac.uk/pages/fsl/file-tree/index.html for further details on filetree).
-In this case seeds/rois/bedpostx do not need to be specified as nfact_pp will try and find the appropriate files.
+Use of filetrees
+-----------------------
+nfact_pp can accept filetrees via the --file_tree command. The filetree has specific paths for seeds/rois/bedpostx etc in it so that these do not need to be specified when calling nfact_pp. For example:  
 
 ```
 nfact_pp --file_tree hcp --list_of_subjects /home/study/list_of_subjects
 ```
 
-Filetrees are saved in filetrees folder in nfact, so custom filetrees can be put there and called similar to the command above. NFACT_PP currently has a built in a filetree for HCP and a hcp_qunex (HCP in qunex format) to perform full brain tractography. 
+nfact_pp comes with a number of hcp folder structure filetrees:
+- hcp: standard hcp folder structure with seeds as L/R white.32k_fs_LR.surf.gii boundary and atlasroi.32k_fs_LR.shape.gii as rois.
+       stop/wtstop files specified
+- hcp_qunex: The same as hcp but assumes the qunex hcp folder set up
+- hcp_downsample_surfaces: hcp style data but assumes there is a downsample folder in the top level directory (same level as the MNINonLinear).
+                  seeds are expected to be called {sub}.{hemi}.white.resampled_fs_LR.surf.gii and rois {sub}.{hemi}.atlasroi.resampled_fs_LR.shape.gii
+                  where sub is your subject id and hemi is eithe L or R. 
+- hcp_donwsample: Same as hcp_downsample_surfaces but with an additional subcortical.nii.gz (mask of subcortical structures)
+- hc_cifti: Same as hcp_downsample_surfaces but with subcortical volumes labelled for cifti support (See CIFTI support in this readme)
 
-Use of custom filetree
------------------------
-seed files are aliased as (seed), roi as (roi), warps as (diff2std, std2diff) and bedpostX as (bedpostX). Two seeds are supported if the seeds are bilateral indicated with {hemi}.seed, with the actual seed names being L.seed.nii.gz/R.seed.nii.gz. A singe seed can be given as well.
+### Building custom filetrees for nfact_pp
+
+nfact_pp also allows for custom filetrees. These can be passed in by giving the full path to the --file_tree. 
+A nfact_pp filetree can have the following labels:
+(seed) - this is complusory and is the filepath to a seed. A seed must also have the following naming structure {sub}.{hemi}.filename.gii/nii.gz
+(bedpostX) - this is complusory and is the filepath to a bedpostx directory
+(diff2std) and (std2diff) - complusory. Path to diff2std and std2diff warp files
+(roi) - this is complusory for surface mode. Must be named {sub}.{hemi}.filename.gii/nii.gz
+(add_seed1)..(add_seed2)..etc: additional seeds and can have as many as you want, as long as they have a a number suffix at the end. This is used to add cifti structures/subcortical volumes 
+(wtstop1)..(wtstop2)..etc: wtstop files. Again can have as many you want as long as they have a number suffix
+(stop1)..(stop2)..etc: stop files. Same as approach as wtstop and add_seed
+
+
+Please see https://open.win.ox.ac.uk/pages/fsl/file-tree/index.html for further details on filetrees.
 
 CIFTI support
 --------------
-NFACT can save files as cifti dscalars. However, seeds must be in the following order: left_hemisphere.gii, right hemisphere.nii, follwed by optional nifti files as subcortical structures. Left and right surfaces are needed however the subcortical structures are optional, and you can put as many or as few as you would (or none at all).
+NFACT can save files as cifti dscalars. However, seeds must be in the following order: left_hemisphere.gii (complusory), right hemisphere.nii (complusory), follwed by optional nifti files as subcortical structures (can also have no subcortical files)
 
-Subcortical structures must be named as standard cifti structures (i.e CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz) or subcortical data is put as the CIFTI structure OTHER. For further details on naming conventions please see the hcp_cifti in the NFACT/filetree folder in this repo
+If there are subcortical structures, they must be named as standard cifti structures (i.e CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz) or subcortical data is put as the CIFTI structure OTHER. 
+Examples are: 
+            CIFTI_STRUCTURE_ACCUMBENS_LEFT.nii.gz 
+            CIFTI_STRUCTURE_ACCUMBENS_RIGHT.nii.gz
+            CIFTI_STRUCTURE_AMYGDALA_LEFT.nii.gz 
+            CIFTI_STRUCTURE_AMYGDALA_RIGHT.nii.gz 
+            CIFTI_STRUCTURE_CAUDATE_LEFT.nii.gz 
+            CIFTI_STRUCTURE_CAUDATE_RIGHT.nii.gz 
+            CIFTI_STRUCTURE_CEREBELLUM_LEFT.nii.gz
+            CIFTI_STRUCTURE_CEREBELLUM_RIGHT.nii.g
+            CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT.nii.g
+            CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT.nii.gz
+            CIFTI_STRUCTURE_PALLIDUM_LEFT.nii.gz 
+            CIFTI_STRUCTURE_PALLIDUM_RIGHT.nii.gz
+            CIFTI_STRUCTURE_PUTAMEN_LEFT.nii.gz 
+            CIFTI_STRUCTURE_PUTAMEN_RIGHT.nii.gz
+            CIFTI_STRUCTURE_THALAMUS_LEFT.nii.gz
+            CIFTI_STRUCTURE_THALAMUS_RIGHT.nii.gz 
+
 
 ### Usage:
 
@@ -325,7 +363,7 @@ Decomposition options:
 
 Output options:
   -C, --cifti           Option to save GM as a cifti dscalar. Seeds must be left and right surfaces with an optional nifti for subcortical structures.
-  -D, --disk            Save the decompistion matricies directly to disk rather than as nii/gii files.
+  -D, --disk            Save the decomposition matrices directly to disk rather than as nii/gii files.
   -W, --wta             Option to create and save winner-takes-all maps.
   -z WTA_ZTHR, --wta_zthr WTA_ZTHR
                         Winner-takes-all threshold. Default is 0
@@ -587,6 +625,7 @@ This is the config file for the nfact pipeline. Please check the individual modu
     "nfact_qc": {
         "threshold": "2"
     }
+}
 
 ```
 
