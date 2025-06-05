@@ -455,6 +455,32 @@ def add_nifti(seeds: list, brainmodel: object, coords: np.ndarray) -> object:
     return brainmodel
 
 
+def create_surface_brain_masks(left_seed: np.ndarray, right_seed: np.ndarray) -> object:
+    """
+    Function to create surface brain model axis
+    from numpy array
+
+    Parameters
+    ----------
+    left_seed: np.ndarray
+        left surface data
+    right_seed: np.ndarray
+        right surface data
+
+    Returns
+    -------
+    brainmodel: BrainModelAxis
+        brain model axis
+    """
+    bm_l = cifti2.BrainModelAxis.from_mask(
+        left_seed, name="CIFTI_STRUCTURE_CORTEX_LEFT"
+    )
+    bm_r = cifti2.BrainModelAxis.from_mask(
+        right_seed, name="CIFTI_STRUCTURE_CORTEX_RIGHT"
+    )
+    return bm_l + bm_r
+
+
 def cifti_surfaces(seeds: list) -> object:
     """
     Function to add surfaces
@@ -471,17 +497,11 @@ def cifti_surfaces(seeds: list) -> object:
     -------
     brainmodel: BrainModelAxis
         brain model axis
-
     """
+
     left_seed = nb.load(seeds[0]).darrays[0].data != 0
     right_seed = nb.load(seeds[1]).darrays[0].data != 0
-    bm_l = cifti2.BrainModelAxis.from_mask(
-        left_seed[:, 0], name="CIFTI_STRUCTURE_CORTEX_LEFT"
-    )
-    bm_r = cifti2.BrainModelAxis.from_mask(
-        right_seed[:, 0], name="CIFTI_STRUCTURE_CORTEX_RIGHT"
-    )
-    return bm_l + bm_r
+    return create_surface_brain_masks(left_seed[:, 0], right_seed[:, 0])
 
 
 def cifit_medial_wall(
@@ -630,14 +650,14 @@ def volume_from_cifti(data: np.ndarray, axis: object) -> object:
     return nb.Nifti1Image(vol_data, axis.affine)
 
 
-def get_cifti_data(img: object) -> dict:
+def get_cifti_data(img_path: object) -> dict:
     """
     Function to get cifti data
 
     Parameters
     ----------
-    img: object
-        loaded cifit object
+    img_path: path
+        path to cifti object
 
     Returns
     -------
@@ -645,6 +665,7 @@ def get_cifti_data(img: object) -> dict:
         dict of volume and L/R
         surfaces
     """
+    img = nb.load(img_path)
     data = img.get_fdata(dtype=np.float32)
     brain_models = img.header.get_axis(1)
     cifti_data = {

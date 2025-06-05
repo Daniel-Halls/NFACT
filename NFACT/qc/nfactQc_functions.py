@@ -6,7 +6,12 @@ from glob import glob
 import re
 from NFACT.base.utils import error_and_exit
 from NFACT.base.setup import make_directory
-from NFACT.base.imagehandling import get_volume_data, get_surface_data, get_cifti_data
+from NFACT.base.imagehandling import (
+    get_volume_data,
+    get_surface_data,
+    get_cifti_data,
+    create_surface_brain_masks,
+)
 
 
 def save_gifit(filename: str, meta_data: object, img_data: np.ndarray) -> np.ndarray:
@@ -246,10 +251,18 @@ def create_hitmaps(
     -------
     None
     """
-    hitmap_loaders = {"gifti": create_gifti_hitmap, "nifti": create_nifti_hitmap}
+    hitmap_loaders = {
+        "gifti": create_gifti_hitmap,
+        "nifti": create_nifti_hitmap,
+        "cifti": create_cifti_hitmap,
+    }
 
     img = nb.load(img_to_load)
-    meta_data = img.affine if img_type == "nifti" else img.darrays[0].meta
+    meta_data = (
+        img.affine
+        if img_type == "nifti"
+        else (img.darrays[0].meta if img_type == "gifti" else None)
+    )
     hitmap_loaders[img_type](img_data, filename, threshold, meta_data)
     threshold_filename = re.sub("nfactQc/", "nfactQc/threshold_", filename)
     hitmap_loaders[img_type](
@@ -257,18 +270,27 @@ def create_hitmaps(
     )
 
 
-# def save_cifti():
+def save_cifti():
+    return None
+
+
+#    list_of_seeds =
 
 
 def create_cifti_hitmap(
     img_data: dict, filename: str, threshold: int, meta_data, normalize=False
 ):
-    left_hitmap = surface_hitcount_maps(img_data["L_surf"], normalize, threshold)
-    right_hitmap = surface_hitcount_maps(img_data["R_surf"], normalize, threshold)
-    cifti_data = np.vstack([left_hitmap, right_hitmap])
+    left_hitmap = surface_hitcount_maps(img_data["L_surf"].T, normalize, threshold)
+    right_hitmap = surface_hitcount_maps(img_data["R_surf"].T, normalize, threshold)
+    bm = create_surface_brain_masks(left_hitmap, right_hitmap)
+    breakpoint()
     if "vol" in img_data.keys():
-        vol_hitmap = volume_hitcount_maps(img_data["L_surf"], normalize, threshold)
+        vol_hitmap = volume_hitcount_maps(
+            img_data["vol"].get_fdata(), normalize, threshold
+        )
         cifti_data = np.vstack([cifti_data, vol_hitmap])
+    breakpoint()
+    save_cifti()
 
 
 def create_gifti_hitmap(
@@ -315,7 +337,6 @@ def create_nifti_hitmap(
     float: float
        float of percentage coverage
     """
-
     maps = volume_hitcount_maps(img_data, threshold, normalize)
     image_name_hitmap = os.path.join(
         os.path.dirname(filename), f"hitmap_{os.path.basename(filename)}.nii.gz"
