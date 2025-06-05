@@ -257,11 +257,18 @@ def create_hitmaps(
     )
 
 
+# def save_cifti():
+
+
 def create_cifti_hitmap(
     img_data: dict, filename: str, threshold: int, meta_data, normalize=False
 ):
     left_hitmap = surface_hitcount_maps(img_data["L_surf"], normalize, threshold)
-    return None
+    right_hitmap = surface_hitcount_maps(img_data["R_surf"], normalize, threshold)
+    cifti_data = np.vstack([left_hitmap, right_hitmap])
+    if "vol" in img_data.keys():
+        vol_hitmap = volume_hitcount_maps(img_data["L_surf"], normalize, threshold)
+        cifti_data = np.vstack([cifti_data, vol_hitmap])
 
 
 def create_gifti_hitmap(
