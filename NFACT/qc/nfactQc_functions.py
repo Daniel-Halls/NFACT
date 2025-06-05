@@ -283,13 +283,11 @@ def create_cifti_hitmap(
     left_hitmap = surface_hitcount_maps(img_data["L_surf"].T, normalize, threshold)
     right_hitmap = surface_hitcount_maps(img_data["R_surf"].T, normalize, threshold)
     bm = create_surface_brain_masks(left_hitmap, right_hitmap)
-    breakpoint()
     if "vol" in img_data.keys():
         vol_hitmap = volume_hitcount_maps(
             img_data["vol"].get_fdata(), normalize, threshold
         )
-        cifti_data = np.vstack([cifti_data, vol_hitmap])
-    breakpoint()
+
     save_cifti()
 
 
