@@ -33,10 +33,15 @@ def imaging_type(path: str) -> str:
         str of nifit or gifti
     """
     file_extensions = get_imaging_details_from_path(path)["file_extensions"]
-    if ".nii" in file_extensions:
-        return "nifti"
-    if ".gii" in file_extensions:
-        return "gifti"
+    mapping_type = {".dscalar": "cifti", ".nii": "nifti", ".gii": "gifti"}
+    img_type = next(
+        (mapping_type[ext] for ext in file_extensions if ext in mapping_type), None
+    )
+    error_and_exit(
+        img_type,
+        "Unable to determine imaging type. Please make sure files have correct imging extension",
+    )
+    return img_type
 
 
 def mat2vol(
@@ -422,7 +427,7 @@ def add_nifti(seeds: list, brainmodel: object, coords: np.ndarray) -> object:
     Parameters
     -----------
     seeds: list
-        list of seeds (without surfaces)
+        list of seeds (assumes surfaces)
     brainmodel: BrainModelAxis
         brain model axis to
         add to
@@ -435,12 +440,14 @@ def add_nifti(seeds: list, brainmodel: object, coords: np.ndarray) -> object:
         brain model axis
 
     """
-    seed_ref = nb.load(seeds[0])
+    seed_ref = nb.load(seeds[2])
     for idx, seed in enumerate(seeds):
+        if idx < 2:
+            continue
         seed_name = re.sub(r".nii.gz|.nii", "", os.path.basename(seed))
         if "CIFTI_STRUCTURE_" not in seed_name:
             seed_name = "OTHER"
-        number_of_voxels = coords[coords[:, 3] == idx + 2][:, :3]
+        number_of_voxels = coords[coords[:, 3] == idx][:, :3]
         brainmodel += cifti2.BrainModelAxis(
             name=seed_name,
             voxel=number_of_voxels,
@@ -448,6 +455,32 @@ def add_nifti(seeds: list, brainmodel: object, coords: np.ndarray) -> object:
             volume_shape=seed_ref.shape,
         )
     return brainmodel
+
+
+def create_surface_brain_masks(left_seed: np.ndarray, right_seed: np.ndarray) -> object:
+    """
+    Function to create surface brain model axis
+    from numpy array
+
+    Parameters
+    ----------
+    left_seed: np.ndarray
+        left surface data
+    right_seed: np.ndarray
+        right surface data
+
+    Returns
+    -------
+    brainmodel: BrainModelAxis
+        brain model axis
+    """
+    bm_l = cifti2.BrainModelAxis.from_mask(
+        left_seed, name="CIFTI_STRUCTURE_CORTEX_LEFT"
+    )
+    bm_r = cifti2.BrainModelAxis.from_mask(
+        right_seed, name="CIFTI_STRUCTURE_CORTEX_RIGHT"
+    )
+    return bm_l + bm_r
 
 
 def cifti_surfaces(seeds: list) -> object:
@@ -466,17 +499,11 @@ def cifti_surfaces(seeds: list) -> object:
     -------
     brainmodel: BrainModelAxis
         brain model axis
-
     """
+
     left_seed = nb.load(seeds[0]).darrays[0].data != 0
     right_seed = nb.load(seeds[1]).darrays[0].data != 0
-    bm_l = cifti2.BrainModelAxis.from_mask(
-        left_seed[:, 0], name="CIFTI_STRUCTURE_CORTEX_LEFT"
-    )
-    bm_r = cifti2.BrainModelAxis.from_mask(
-        right_seed[:, 0], name="CIFTI_STRUCTURE_CORTEX_RIGHT"
-    )
-    return bm_l + bm_r
+    return create_surface_brain_masks(left_seed[:, 0], right_seed[:, 0])
 
 
 def cifit_medial_wall(
@@ -508,14 +535,18 @@ def cifit_medial_wall(
     return np.concatenate([gm, grey_component[(seeds_id != 0) & (seeds_id != 1), :]])
 
 
-def create_dscalar(grey_component: np.ndarray, brainmodel: object) -> object:
+def create_dscalar(
+    cifti_data: np.ndarray, scalar_shape: int, brainmodel: object
+) -> object:
     """
     Function to create dscalar
 
     Parameters
     ----------
-    grey_matter_component: np.ndarray
-        grey matter component
+    cifti_data: np.ndarray
+        cifti data to store
+    scalar_shape: int
+        shape for the dscalar
     brainmodel: BrainModelAxis
         brain model axis
 
@@ -526,10 +557,10 @@ def create_dscalar(grey_component: np.ndarray, brainmodel: object) -> object:
         correct headers
     """
     scalar = cifti2.cifti2_axes.ScalarAxis(
-        np.linspace(0, grey_component.shape[1], grey_component.shape[1], dtype="int")
+        np.linspace(0, scalar_shape, scalar_shape, dtype="int")
     )
     header = cifti2.Cifti2Header.from_axes((scalar, brainmodel))
-    return cifti2.Cifti2Image(grey_component.T, header)
+    return cifti2.Cifti2Image(cifti_data, header)
 
 
 def save_cifti(
@@ -570,6 +601,128 @@ def save_cifti(
     grey_comp = cifit_medial_wall(grey_matter_component, rois, seeds_id)
     brainmodel = cifti_surfaces(seeds)
     if len(seeds) > 2:
-        brainmodel = add_nifti(seeds[2:], brainmodel, coords)
-    dscalar_object = create_dscalar(grey_comp, brainmodel)
+        brainmodel = add_nifti(seeds, brainmodel, coords)
+    dscalar_object = create_dscalar(grey_comp.T, grey_comp.shape[1], brainmodel)
     nb.save(dscalar_object, save_path)
+
+
+def surf_data_from_cifti(data: np.ndarray, axis: object, surf_name: str) -> np.ndarray:
+    """
+    Function to get surface data from cifti
+
+    Parameters
+    ----------
+    data: np.ndarray
+        np.array of imaging data
+    axis: nbabel.cifti2.cifti2_axes.BrainModelAxis
+    surf_name: str
+        string of surface name.
+
+    Returns
+    -------
+    surf_data: np.ndarray
+        np.array of surface data
+    """
+    for name, data_indices, model in axis.iter_structures():
+        if name == surf_name:
+            data = data.T[data_indices]
+            vtx_indices = model.vertex
+            surf_data = np.zeros(
+                (vtx_indices.max() + 1,) + data.shape[1:], dtype=data.dtype
+            )
+            surf_data[vtx_indices] = data
+            return surf_data
+
+
+def volume_from_cifti(data: np.ndarray, axis: object) -> object:
+    """
+    Function to return the nifti from a cifti
+
+    Parameters
+    ----------
+    data: np.ndarray
+        np.array of imaging data
+    axis: nbabel.cifti2.cifti2_axes.BrainModelAxis
+
+    Returns
+    -------
+    object: nb.Nifti1Image
+        nifti image
+    """
+    data = data.T[axis.volume_mask]
+    vox_indices = tuple(axis.voxel[axis.volume_mask].T)
+    vol_data = np.zeros(axis.volume_shape + data.shape[1:], dtype=data.dtype)
+    vol_data[vox_indices] = data
+    return nb.Nifti1Image(vol_data, axis.affine)
+
+
+def get_cifti_data(img_path: object) -> dict:
+    """
+    Function to get cifti data
+
+    Parameters
+    ----------
+    img_path: path
+        path to cifti object
+
+    Returns
+    -------
+    dict: dictionary
+        dict of volume and L/R
+        surfaces
+    """
+    img = nb.load(img_path)
+    data = img.get_fdata(dtype=np.float32)
+    brain_models = img.header.get_axis(1)
+    cifti_data = {
+        "L_surf": surf_data_from_cifti(
+            data, brain_models, "CIFTI_STRUCTURE_CORTEX_LEFT"
+        ),
+        "R_surf": surf_data_from_cifti(
+            data, brain_models, "CIFTI_STRUCTURE_CORTEX_RIGHT"
+        ),
+    }
+    try:
+        cifti_data["vol"] = volume_from_cifti(data, brain_models)
+        return cifti_data
+    except Exception:
+        return cifti_data
+
+
+def get_volume_data(img_path: str) -> np.ndarray:
+    """
+    Function to get volume data
+
+    Parameters
+    -----------
+    img_path: str
+        str to volume image
+
+    Returns
+    -------
+    np.ndarray: array
+        array of volume data
+    """
+    vol = nb.load(img_path)
+    return vol.get_fdata().astype(np.int32)
+
+
+def get_surface_data(img_path: str) -> np.ndarray:
+    """
+    Function to get surface data
+
+    Parameters
+    -----------
+    img_path: str
+        str to surface image
+
+    Returns
+    -------
+    np.ndarray: array
+        array of surface data
+    """
+    surface = nb.load(img_path)
+
+    return np.array(
+        [surface.darrays[idx].data for idx, _ in enumerate(surface.darrays)]
+    )

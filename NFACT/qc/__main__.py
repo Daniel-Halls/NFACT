@@ -3,8 +3,9 @@ from NFACT.qc.nfactQc_functions import (
     nfactQc_dir,
     check_Qc_dir,
     get_images,
-    create_nifti_hitmap,
-    create_gifti_hitmap,
+    create_hitmaps,
+    get_data,
+    get_img_name,
 )
 from NFACT.base.setup import check_arguments, check_algo, process_dim
 from NFACT.base.utils import error_and_exit, colours
@@ -45,59 +46,34 @@ def nfactQc_main(args: dict = None) -> None:
     args["dim"] = process_dim(args["dim"])
     nfactQc_directory = os.path.join(args["nfact_folder"], "nfactQc")
     images = get_images(args["nfact_folder"], args["dim"], args["algo"])
+    white_name = get_img_name(os.path.basename(images["white_image"][0]))
 
-    try:
-        white_name = os.path.basename(images["white_image"][0]).split(".")[0]
-    except IndexError:
-        error_and_exit(
-            False,
-            "Unable to find imaging files. Please check nfact_decomp directory",
-            False,
-        )
-    print(f"{col['plum']}nfactQC directory:{col['reset']} {nfactQc_directory}")
+    print(f"{col['plum']}nfactQC directory:{col['reset']} {nfactQc_directory}\n")
     nfactQc_dir(nfactQc_directory, args["overwrite"])
     check_Qc_dir(nfactQc_directory, white_name)
-    print("\nQC")
-    print("-" * 100)
-    print(f"{col['pink']}QC WM:{col['reset']} Zscoring")
-    create_nifti_hitmap(
-        images["white_image"][0],
+    print(f"{col['pink']}QC:{col['reset']} WM")
+    img_type = imaging_type(images["white_image"][0])
+    w_data = get_data(img_type, images["white_image"][0])
+    create_hitmaps(
+        img_type,
+        w_data,
         os.path.join(nfactQc_directory, white_name),
         args["threshold"],
-    )
-    print(f"{col['pink']}QC WM:{col['reset']} No thresholding")
-    create_nifti_hitmap(
         images["white_image"][0],
-        os.path.join(nfactQc_directory, f"{white_name}_raw"),
-        args["threshold"],
-        normalize=False,
     )
+
+    print(f"{col['pink']}QC:{col['reset']} GM")
     for grey_img in images["grey_images"]:
-        grey_name = os.path.basename(grey_img).split(".")[0]
+        grey_name = get_img_name(grey_img)
         img_type = imaging_type(grey_img)
-        if img_type == "gifti":
-            print(f"{col['pink']}QC GM Surface:{col['reset']} Zscoring")
-            create_gifti_hitmap(
-                grey_img, os.path.join(nfactQc_directory, grey_name), args["threshold"]
-            )
-            print(f"{col['pink']}QC GM Surface:{col['reset']} No thresholding")
-            create_gifti_hitmap(
-                grey_img,
-                os.path.join(nfactQc_directory, f"{grey_name}_raw"),
-                args["threshold"],
-                normalize=False,
-            )
-        if img_type == "nifti":
-            print(f"{col['pink']}QC GM Volume:{col['reset']} Zscoring")
-            create_nifti_hitmap(
-                grey_img, os.path.join(nfactQc_directory, grey_name), args["threshold"]
-            )
-            print(f"{col['pink']}QC GM Volume:{col['reset']} No thresholding")
-            create_nifti_hitmap(
-                grey_img,
-                os.path.join(nfactQc_directory, f"{grey_name}_raw"),
-                args["threshold"],
-            )
+        grey_data = get_data(img_type, grey_img)
+        create_hitmaps(
+            img_type,
+            grey_data,
+            os.path.join(nfactQc_directory, grey_name),
+            args["threshold"],
+            grey_img,
+        )
 
     if to_exit:
         exit(0)

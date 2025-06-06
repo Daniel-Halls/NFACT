@@ -1,25 +1,85 @@
 import os
+from pathlib import Path
+import re
+from ast import literal_eval
 import numpy as np
 import nibabel as nb
 from sklearn.preprocessing import StandardScaler
 from glob import glob
-from NFACT.base.utils import colours, error_and_exit
+from NFACT.base.utils import error_and_exit, colours
 from NFACT.base.setup import make_directory
+from NFACT.base.imagehandling import (
+    get_volume_data,
+    get_surface_data,
+    get_cifti_data,
+    create_surface_brain_masks,
+    add_nifti,
+    create_dscalar,
+)
 
 
-def save_gifit(filename: str, seed: object, surf_data: np.array):
+def extract_seeds_from_log(log_file: str) -> list:
+    """
+    Function to extract seeds from logs
+
+    Parameters
+    ----------
+    log_file: str
+        str of path to log file
+
+    Returns
+    --------
+    list: list object
+        list of seeds
+    """
+    log_path = Path(log_file).resolve()
+    with open(log_path, "r") as log:
+        content = log.read()
+
+    match = re.search(r'"seeds":\s*(\[[^\]]*\])', content)
+    if not match:
+        raise ValueError("No seeds list found in the log file.")
+    seeds_str = match.group(1)
+    return literal_eval(seeds_str)
+
+
+def get_latest_log_file(log_dir: str) -> str:
+    """
+    Function to get the latest
+    log file from log directory
+
+    Parameters
+    ----------
+    log_dir: str
+        path to log directory
+
+    Returns
+    -------
+    path: str
+        str of path to latest log file
+    """
+    log_path = Path(log_dir)
+    log_files = list(log_path.glob("*.log"))
+
+    if not log_files:
+        raise FileNotFoundError(f"No .log files found in {log_dir}")
+
+    return max(log_files, key=lambda fil: fil.stat().st_mtime)
+
+
+def save_gifti(filename: str, meta_data: object, img_data: np.ndarray) -> np.ndarray:
     """
     Function to save gifti file from a
     numpy array
 
     Parameters
     ---------
-    data: np.array
-        array of data to save as image
-    affine: np.array
-        affine of image
     filename: str
         filename of image to save
+    meta_data: object
+        meat data for img
+    img_data: np.ndarray
+        data to save in img
 
     Returns
     -------
@@ -27,36 +87,36 @@ def save_gifit(filename: str, seed: object, surf_data: np.array):
     """
     darrays = [
         nb.gifti.GiftiDataArray(
-            surf_data,
+            img_data,
             datatype="NIFTI_TYPE_FLOAT32",
             intent=2001,
-            meta=seed.darrays[0].meta,
+            meta=meta_data,
         )
     ]
-    nb.gifti.GiftiImage(darrays=darrays, meta=seed.darrays[0].meta).to_filename(
+    nb.gifti.GiftiImage(darrays=darrays, meta=meta_data).to_filename(
         f"{filename}.func.gii"
     )
 
 
-def save_nifti(data: np.array, affine: np.array, filename: str) -> None:
+def save_nifti(filename: str, meta_data: np.array, data: np.array) -> None:
     """
     Function to save nifti file from a
     numpy array
 
     Parameters
-    ---------
-    data: np.array
-        array of data to save as image
-    affine: np.array
-        affine of image
+    ----------
     filename: str
         filename of image to save
+    meta_data: np.array
+        affine of image
+    data: np.array
+        array of data to save as image
 
     Returns
     -------
     None
     """
-    nb.Nifti1Image(data.astype(np.float32), affine).to_filename(filename)
+    nb.Nifti1Image(data.astype(np.float32), meta_data).to_filename(filename)
 
 
 def normalization(img_data: np.array) -> np.array:
@@ -147,7 +207,7 @@ def scoring(img_data: np.array, normalize: bool, threshold: int) -> dict:
     return {"scores": img_data, "threshold": 0}
 
 
-def nifti_hitcount_maps(img_data: np.array, threshold: int, normalize=True) -> dict:
+def volume_hitcount_maps(img_data: np.array, threshold: int, normalize=True) -> dict:
     """
     Function to create a binary coverage mask
     and a hitmap of voxels
@@ -169,8 +229,224 @@ def nifti_hitcount_maps(img_data: np.array, threshold: int, normalize=True) -> d
     return hitcount(comp_scores["scores"], comp_scores["threshold"])
 
 
+def surface_hitcount_maps(img_data: np.array, threshold: int, normalize=True) -> dict:
+    """
+    Function to create a binary coverage mask
+    and a hitmap of voxels
+
+    Parameters
+    ----------
+    img_data: np.array
+        Array of image data
+    threshold: int
+        value to threshold array at
+
+    Returns
+    --------
+    dictionary: dict
+        dictionary of hitcount and bin mask
+    """
+
+    comp_scores = scoring(img_data, normalize, threshold)
+    return np.sum(comp_scores["scores"] > comp_scores["threshold"], axis=0)
+
+
+def get_data(data_type: str, img_path: str) -> np.ndarray:
+    """
+    Function to parse data type
+    and get corresponding data
+
+    Parameters
+    ----------
+    data_type: str
+        which data type is
+        the img
+    img_path: str
+        path to image
+
+    Returns
+    -------
+    np.ndarray: array
+        array of imaging data
+
+    """
+    data_loaders = {
+        "gifti": get_surface_data,
+        "nifti": get_volume_data,
+        "cifti": get_cifti_data,
+    }
+
+    return data_loaders[data_type](img_path)
+
+
+def create_hitmaps(
+    img_type: str, img_data: np.ndarray, filename: str, threshold: int, img_to_load: str
+) -> None:
+    """
+    Wrapper to create hitmaps
+
+    Parameters
+    ----------
+    img_type: str
+        str of img type
+    img_data: np.ndarray
+        array of img data
+    filename: str
+        filename of imag
+    threshold: int
+        threshold value
+    img_to_load: str
+        str of img to load
+
+    Returns
+    -------
+    None
+    """
+    hitmap_loaders = {
+        "gifti": create_gifti_hitmap,
+        "nifti": create_nifti_hitmap,
+        "cifti": create_cifti_hitmap,
+    }
+
+    img = nb.load(img_to_load)
+    meta_data = (
+        img.affine
+        if img_type == "nifti"
+        else (img.darrays[0].meta if img_type == "gifti" else None)
+    )
+    hitmap_loaders[img_type](img_data, filename, threshold, meta_data)
+    threshold_filename = re.sub("nfactQc/", "nfactQc/threshold_", filename)
+    hitmap_loaders[img_type](
+        img_data, threshold_filename, threshold, meta_data, normalize=True
+    )
+
+
+def cifti_volume_utils(nfact_decomp_dir: str) -> dict:
+    """
+    Function to create the utils needed
+    for saving cifti as a volume
+
+    Parameters
+    ----------
+    nfact_decomp_dir: str
+         directory path to nfact_decomp
+         directory
+
+    Returns
+    -------
+    dict: dictionary object
+        dict with a list of seeds
+        and coords file
+    """
+    logs_dir = os.path.join(nfact_decomp_dir, "logs")
+    coords_dir = os.path.join(nfact_decomp_dir, "group_averages")
+    try:
+        log_with_seeds = get_latest_log_file(logs_dir)
+        seeds = extract_seeds_from_log(log_with_seeds)
+        coords = np.loadtxt(
+            os.path.join(coords_dir, "coords_for_fdt_matrix2"), dtype=int
+        )
+    except Exception:
+        return None
+    return {"seeds": seeds, "coords": coords}
+
+
+def split_subcortical_data(
+    seeds: list, coords: np.ndarray, vol_hitmap: np.ndarray
+) -> np.ndarray:
+    """
+    Function to split subcortical data
+    by seed
+
+    Parameters
+    ----------
+    seeds: list
+        list of seeds
+    coords: np.ndarry
+        np array of coordinates
+    vol_hitmap: np.ndarray
+        hitmap of volume data
+
+    Returns
+    -------
+    subcortical_data: list
+        list of subcortical data
+    """
+    subcortical_data = []
+    for idx, _ in enumerate(seeds):
+        if idx < 2:
+            continue
+        voxels = coords[coords[:, 3] == idx][:, :3]
+        vals = [vol_hitmap[tuple(voxel)] for voxel in voxels]
+        subcortical_data.extend(vals)
+    return np.array(subcortical_data)
+
+
+def create_cifti_hitmap(
+    img_data: dict,
+    filename: str,
+    threshold: int,
+    meta_data: object,
+    normalize: bool = False,
+) -> None:
+    """
+     Function to create cifti hitmap
+
+    Parameters
+     ----------
+     seed_path: str
+         str of path to img
+     filename: str
+         name of file.
+     threshold: int
+         value to threshold
+         components at
+     meta_data: object
+         NOT USED in this function.
+         However argument must be
+         kept for earlier parts to work
+     normalize: bool
+         to normalise the
+         hitmap (default is false)
+
+     Returns
+     -------
+     None
+
+    """
+    col = colours()
+    left_hitmap = surface_hitcount_maps(img_data["L_surf"].T, normalize, threshold)
+    right_hitmap = surface_hitcount_maps(img_data["R_surf"].T, normalize, threshold)
+    combined_data = np.concatenate(
+        [left_hitmap[left_hitmap > 0], right_hitmap[right_hitmap > 0]]
+    )[np.newaxis, :]
+    bm = create_surface_brain_masks(left_hitmap > 0, right_hitmap > 0)
+
+    if "vol" in img_data.keys():
+        vol_hitmap = volume_hitcount_maps(
+            img_data["vol"].get_fdata(), threshold, normalize
+        )["hitcount"]
+
+        cifti_vol = cifti_volume_utils(os.path.dirname(os.path.dirname(filename)))
+        if not cifti_vol:
+            print(f"{col['red']}Unable to save volume part of cifti{col['reset']}")
+        bm = add_nifti(cifti_vol["seeds"], bm, cifti_vol["coords"])
+        subcortical_data = split_subcortical_data(
+            cifti_vol["seeds"], cifti_vol["coords"], vol_hitmap
+        )
+        combined_data = np.concatenate(
+            [combined_data, subcortical_data[np.newaxis, :]], axis=1
+        )
+    cifti = create_dscalar(combined_data, 1, bm)
+    nb.save(cifti, f"{filename}.dscalar.nii")
+
+
 def create_gifti_hitmap(
-    seed_path: str, filename: str, threshold: int, normalize=True
+    img_data: np.ndarray,
+    filename: str,
+    threshold: int,
+    meta_data: object,
+    normalize: bool = False,
 ) -> None:
     """
     Function to create hitmap from
@@ -179,28 +455,32 @@ def create_gifti_hitmap(
     Parameters
     ----------
     seed_path: str
-        str of path to seed
+        str of path to img
     filename: str
-        name of file. Does not
-        need .func.gii
+        name of file.
+    threshold: int
+        value to threshold
+        components at
+    meta_data: object
+        img file meta data
+    normalize: bool
+        to normalise the
+        hitmap (default is false)
 
     Returns
     -------
     None
     """
-    seed = nb.load(seed_path)
-
-    combinearray = np.array(
-        [seed.darrays[idx].data for idx, _ in enumerate(seed.darrays)]
-    )
-
-    comp_scores = scoring(combinearray, normalize, threshold)
-    hitmap = np.sum(comp_scores["scores"] > comp_scores["threshold"], axis=0)
-    save_gifit(filename, seed, hitmap)
+    hitmap = surface_hitcount_maps(img_data, normalize, threshold)
+    save_gifti(filename, meta_data, hitmap)
 
 
 def create_nifti_hitmap(
-    img_path: str, img_name: str, threshold: int, normalize=True
+    img_data: str,
+    filename: str,
+    threshold: int,
+    meta_data: object,
+    normalize: bool = False,
 ) -> None:
     """
     Wrapper function to create a binary coverage mask
@@ -208,33 +488,34 @@ def create_nifti_hitmap(
 
     Parameters
     ----------
-    img_path: str
-        path to image
-    img_name: str
-        name of image
+    seed_path: str
+        str of path to img
+    filename: str
+        name of file.
     threshold: int
-        value to thres
+        value to threshold
+        components at
+    meta_data: object
+        img file meta data
+    normalize: bool
+        to normalise the
+        hitmap (default is false)
 
     Returns
     --------
     float: float
        float of percentage coverage
     """
-    col = colours()
-    img_comp = nb.load(img_path)
-    img_data = img_comp.get_fdata()
-    maps = nifti_hitcount_maps(img_data, threshold, normalize)
-    print(f"{col['pink']}Image:{col['reset']} Saving Hitmap")
+    maps = volume_hitcount_maps(img_data, threshold, normalize)
     image_name_hitmap = os.path.join(
-        os.path.dirname(img_name), f"hitmap_{os.path.basename(img_name)}.nii.gz"
+        os.path.dirname(filename), f"hitmap_{os.path.basename(filename)}.nii.gz"
     )
-    save_nifti(maps["hitcount"], img_comp.affine, image_name_hitmap)
+    save_nifti(image_name_hitmap, meta_data, maps["hitcount"])
     coverage_map_mask = binary_mask(maps["bin_mask"])
     image_name_mask = os.path.join(
-        os.path.dirname(img_name), f"mask_{os.path.basename(img_name)}.nii.gz"
+        os.path.dirname(filename), f"mask_{os.path.basename(filename)}.nii.gz"
     )
-    print(f"{col['pink']}Image:{col['reset']} Saving Binary Mask")
-    save_nifti(coverage_map_mask, img_comp.affine, image_name_mask)
+    save_nifti(image_name_mask, meta_data, coverage_map_mask)
 
 
 def get_images(nfact_directory: str, dim: str, algo: str) -> dict:
@@ -320,4 +601,30 @@ def check_Qc_dir(nfactQc_directory: str, white_name: str) -> None:
     if f"hitmap_{white_name}.nii.gz" in os.listdir(nfactQc_directory):
         error_and_exit(
             False, "QC images aleady exist. Please use --overwrite to continue", False
+        )
+
+
+def get_img_name(img: str) -> str:
+    """
+    Function to get imag name from
+    file path.
+
+    Parameters
+    ----------
+    img: str
+        img path
+
+    Returns
+    -------
+    name: str
+        name of img
+    """
+    try:
+        name = os.path.basename(img).split(".")[0]
+        return name
+    except IndexError:
+        error_and_exit(
+            False,
+            "Unable to find imaging files. Please check nfact_decomp directory",
+            False,
         )
