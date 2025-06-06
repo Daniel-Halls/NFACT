@@ -287,6 +287,9 @@ Tractography options:
                         Use wtstop and stop in the tractography. Takes an absolute file path to a json file containing stop and wtstop masks, JSON keys must be stopping_mask and wtstop_mask. Argument can be used with the --filetree, in that case no json file is
                         needed.
   -A, --absolute        Treat seeds and rois as absolute paths, providing one set of seeds and rois for tractography across all subjects.
+  -D, --dont_save_fdt_img
+                        Don't save the fdt path as a nifti file. This is useful to save space
+
 
 Parallel Processing arguments:
   -n N_CORES, --n_cores N_CORES

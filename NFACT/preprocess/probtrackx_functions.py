@@ -244,7 +244,6 @@ def build_probtrackx2_arguments(arg: dict, sub: str, ptx_options=False) -> list:
         f"--target2={target_mask}",
         "--loopcheck",
         "--forcedir",
-        "--opd",
         "--pd",
         f"--nsamples={arg['nsamples']}",
         f"--dir={output_dir}",
@@ -261,6 +260,8 @@ def build_probtrackx2_arguments(arg: dict, sub: str, ptx_options=False) -> list:
         )
     if "waypoints" in arg.keys():
         command.extend([f'--waypoints={os.path.join(sub, arg["waypoints"])}'])
+    if not arg["dont_save_fdt_img"]:
+        command.append("--opd")
     if ptx_options:
         command.extend(ptx_options)
     return command

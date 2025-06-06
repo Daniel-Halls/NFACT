@@ -175,6 +175,16 @@ def nfact_pp_args() -> dict:
         across all subjects.
         """,
     )
+    tractography_input.add_argument(
+        "-D",
+        "--dont_save_fdt_img",
+        action="store_true",
+        default=False,
+        dest="dont_save_fdt_img",
+        help="""
+        Don't save the fdt path as a nifti file. This is useful to save space
+        """,
+    )
     parallel_args(
         base_args,
         col,
