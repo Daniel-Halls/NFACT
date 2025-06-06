@@ -1,17 +1,71 @@
 import os
+from pathlib import Path
+import re
+from ast import literal_eval
 import numpy as np
 import nibabel as nb
 from sklearn.preprocessing import StandardScaler
 from glob import glob
 import re
-from NFACT.base.utils import error_and_exit
+from NFACT.base.utils import error_and_exit, colours
 from NFACT.base.setup import make_directory
 from NFACT.base.imagehandling import (
     get_volume_data,
     get_surface_data,
     get_cifti_data,
     create_surface_brain_masks,
+    add_nifti,
+
 )
+
+def extract_seeds_from_log(log_file: str) -> list:
+    """
+    Function to extract seeds from logs
+
+    Parameters
+    ----------
+    log_file: str
+        str of path to log file
+    
+    Returns
+    --------
+    list: list object
+        list of seeds
+    """
+    log_path = Path(log_file).resolve()
+    with open(log_path, "r") as log:
+        content = log.read()
+
+    match = re.search(r'"seeds":\s*(\[[^\]]*\])', content)
+    if not match:
+        raise ValueError("No seeds list found in the log file.")
+    seeds_str = match.group(1)
+    return literal_eval(seeds_str)
+
+
+def get_latest_log_file(log_dir: str) -> str:
+    """
+    Function to get the latest
+    log file from log directory
+
+    Parameters
+    ----------
+    log_dir: str
+        path to log directory
+
+    Returns
+    -------
+    path: str
+        str of path to latest log file
+    """
+    log_path = Path(log_dir)
+    log_files = list(log_path.glob("*.log"))
+    
+    if not log_files:
+        raise FileNotFoundError(f"No .log files found in {log_dir}")
+
+    return max(log_files, key=lambda fil: fil.stat().st_mtime)
+    #return os.path.join(log_dir, latest_log)
 
 
 def save_gifit(filename: str, meta_data: object, img_data: np.ndarray) -> np.ndarray:
@@ -58,8 +112,6 @@ def save_nifti(filename: str, meta_data: np.array, data: np.array) -> None:
         affine of image
     data: np.array
         array of data to save as image
-
-
 
     Returns
     -------
@@ -270,16 +322,29 @@ def create_hitmaps(
     )
 
 
-def save_cifti():
-    return None
+
+def cifti_volume_utils(nfact_decomp_dir):
+    breakpoint()
+    logs_dir = os.path.join(nfact_decomp_dir, "logs")
+    coords_dir = os.path.join(nfact_decomp_dir, "group_averages")
+    try:
+        log_with_seeds = get_latest_log_file(logs_dir)
+        seeds = extract_seeds_from_log(log_with_seeds)
+        coords = np.loadtxt(os.path.join(coords_dir, "coords_for_fdt_matrix2"), dtype=int)
+    except Exception:
+        return None
+    return {
+        "seeds": seeds,
+        "coords": coords
+    }
 
 
-#    list_of_seeds =
 
 
 def create_cifti_hitmap(
-    img_data: dict, filename: str, threshold: int, meta_data, normalize=False
-):
+    img_data: dict, filename: str, threshold: int, meta_data: object, normalize=False
+): 
+    col = colours()
     left_hitmap = surface_hitcount_maps(img_data["L_surf"].T, normalize, threshold)
     right_hitmap = surface_hitcount_maps(img_data["R_surf"].T, normalize, threshold)
     bm = create_surface_brain_masks(left_hitmap, right_hitmap)
@@ -287,12 +352,14 @@ def create_cifti_hitmap(
         vol_hitmap = volume_hitcount_maps(
             img_data["vol"].get_fdata(), normalize, threshold
         )
-
-    save_cifti()
+        cifti_vol = cifti_volume_utils(os.path.dirname(os.path.dirname(filename)))
+        if not cifti_vol:
+            print("Unable to save volume part of cifti") 
+        breakpoint()
 
 
 def create_gifti_hitmap(
-    img_data: np.ndarray, filename: str, threshold: int, meta_data, normalize=False
+    img_data: np.ndarray, filename: str, threshold: int, meta_data: object, normalize=False
 ) -> None:
     """
     Function to create hitmap from
