@@ -351,14 +351,35 @@ def cifti_volume_utils(nfact_decomp_dir: str) -> dict:
     return {"seeds": seeds, "coords": coords}
 
 
-# def split_subcortical_data(seeds, vol_hitmap):
-#    subcortical_data = []
-#        for idx, _ in enumerate(cifti_vol['seeds']):
-#            if idx < 2:
-#                continue
-#            voxels = cifti_vol['coords'][cifti_vol['coords'][:, 3] == idx][:, :3]
-#            vals = [vol_hitmap[tuple(v)] for v in voxels]
-#            subcortical_data.extend(vals)
+def split_subcortical_data(
+    seeds: list, coords: np.ndarry, vol_hitmap: np.ndarray
+) -> list:
+    """
+    Function to split subcortical data
+    by seed
+
+    Parameters
+    ----------
+    seeds: list
+        list of seeds
+    coords: np.ndarry
+        np array of coordinates
+    vol_hitmap: np.ndarray
+        hitmap of volume data
+
+    Returns
+    -------
+    subcortical_data: list
+        list of subcortical data
+    """
+    subcortical_data = []
+    for idx, _ in enumerate(seeds):
+        if idx < 2:
+            continue
+        voxels = coords[coords[:, 3] == idx][:, :3]
+        vals = [vol_hitmap[tuple(voxel)] for voxel in voxels]
+        subcortical_data.extend(vals)
+    return subcortical_data
 
 
 def create_cifti_hitmap(
@@ -367,18 +388,30 @@ def create_cifti_hitmap(
     threshold: int,
     meta_data: object,
     normalize: bool = False,
-):
+) -> None:
     """
-    Function to create cifti hitmap
+     Function to create cifti hitmap
 
     Parameters
-    ----------
-    img_data: dict,
-    filename: str,
-    threshold: int,
-    meta_data: object
-        img
-    normalize=False
+     ----------
+     seed_path: str
+         str of path to img
+     filename: str
+         name of file.
+     threshold: int
+         value to threshold
+         components at
+     meta_data: object
+         NOT USED in this function.
+         However argument must be
+         kept for earlier parts to work
+     normalize: bool
+         to normalise the
+         hitmap (default is false)
+
+     Returns
+     -------
+     None
 
     """
     col = colours()
@@ -398,13 +431,9 @@ def create_cifti_hitmap(
         if not cifti_vol:
             print(f"{col['red']}Unable to save volume part of cifti{col['reset']}")
         bm = add_nifti(cifti_vol["seeds"], bm, cifti_vol["coords"])
-        subcortical_data = []
-        for idx, _ in enumerate(cifti_vol["seeds"]):
-            if idx < 2:
-                continue
-            voxels = cifti_vol["coords"][cifti_vol["coords"][:, 3] == idx][:, :3]
-            vals = [vol_hitmap[tuple(v)] for v in voxels]
-            subcortical_data.extend(vals)
+        subcortical_data = split_subcortical_data(
+            cifti_vol["seeds"], cifti_vol["coords"], vol_hitmap
+        )
         combined_data = np.concatenate([combined_data, subcortical_data])[np.newaxis, :]
 
     cifti = create_dscalar(combined_data, 1, bm)
@@ -416,7 +445,7 @@ def create_gifti_hitmap(
     filename: str,
     threshold: int,
     meta_data: object,
-    normalize=False,
+    normalize: bool = False,
 ) -> None:
     """
     Function to create hitmap from
@@ -429,7 +458,13 @@ def create_gifti_hitmap(
     filename: str
         name of file.
     threshold: int
-
+        value to threshold
+        components at
+    meta_data: object
+        img file meta data
+    normalize: bool
+        to normalise the
+        hitmap (default is false)
 
     Returns
     -------
@@ -440,7 +475,11 @@ def create_gifti_hitmap(
 
 
 def create_nifti_hitmap(
-    img_data: str, filename: str, threshold: int, meta_data: np.ndarray, normalize=False
+    img_data: str,
+    filename: str,
+    threshold: int,
+    meta_data: object,
+    normalize: bool = False,
 ) -> None:
     """
     Wrapper function to create a binary coverage mask
@@ -448,12 +487,18 @@ def create_nifti_hitmap(
 
     Parameters
     ----------
-    img_path: str
-        path to image
-    img_name: str
-        name of image
+    seed_path: str
+        str of path to img
+    filename: str
+        name of file.
     threshold: int
-        value to thres
+        value to threshold
+        components at
+    meta_data: object
+        img file meta data
+    normalize: bool
+        to normalise the
+        hitmap (default is false)
 
     Returns
     --------

@@ -427,7 +427,7 @@ def add_nifti(seeds: list, brainmodel: object, coords: np.ndarray) -> object:
     Parameters
     -----------
     seeds: list
-        list of seeds (without surfaces)
+        list of seeds (assumes surfaces)
     brainmodel: BrainModelAxis
         brain model axis to
         add to
@@ -536,15 +536,15 @@ def cifit_medial_wall(
 
 
 def create_dscalar(
-    grey_component: np.ndarray, scalar_shape: int, brainmodel: object
+    cifti_data: np.ndarray, scalar_shape: int, brainmodel: object
 ) -> object:
     """
     Function to create dscalar
 
     Parameters
     ----------
-    grey_matter_component: np.ndarray
-        grey matter component
+    cifti_data: np.ndarray
+        cifti data to store
     scalar_shape: int
         shape for the dscalar
     brainmodel: BrainModelAxis
@@ -560,7 +560,7 @@ def create_dscalar(
         np.linspace(0, scalar_shape, scalar_shape, dtype="int")
     )
     header = cifti2.Cifti2Header.from_axes((scalar, brainmodel))
-    return cifti2.Cifti2Image(grey_component, header)
+    return cifti2.Cifti2Image(cifti_data, header)
 
 
 def save_cifti(
