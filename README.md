@@ -523,6 +523,8 @@ Each map contains the number of times that voxel/vertex appears in the decomposi
 
 ## Output:
 
+Output depends on what imging files are present in the decomp directory. As a minimum (due to how nfact works) there will be a nii.gz file. However, depending on if the grey component is nii.gz/gii/.dscalar.nii will depend on the output
+
 Prefix:
 - hitmap_*.nii.gz: Volume nii component. Components are not thresholded 
 - hitmap_threshold*_.nii.gz: Volume nii component. Components are thresholded by zscoring to remove noise
@@ -530,6 +532,9 @@ Prefix:
 - mask_threshold*.nii.gz: Volume nii component. Binary mask of thresholded components
 - *.gii: Surface gii component. Components are not thresholded
 - threshold_*.gii: Surface gii component. Components are thresholded by zscoring to remove noise
+- *.dscalar.nii: Cifti component, not thresholded 
+- threshold_*.dscalar.nii: Cifti component. Components are thresholded by zscoring to remove noise
+
 
 Note on output
 ---------------
