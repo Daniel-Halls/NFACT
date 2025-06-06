@@ -381,7 +381,6 @@ def create_cifti_hitmap(
     normalize=False
 
     """
-    meta_data = None  # This is not needed in this function but as an argument is needed for earlier in the pipeline
     col = colours()
     left_hitmap = surface_hitcount_maps(img_data["L_surf"].T, normalize, threshold)
     right_hitmap = surface_hitcount_maps(img_data["R_surf"].T, normalize, threshold)
