@@ -1,6 +1,8 @@
 from NFACT.base.imagehandling import (
     save_grey_matter_components,
     save_white_matter,
+    imaging_type,
+    get_cifti_data,
 )
 from NFACT.base.utils import colours, nprint, error_and_exit
 import numpy as np
@@ -222,13 +224,16 @@ def load_grey_matter_volume(nifti_file: str, x_y_z_coordinates: np.array) -> np.
     np.array
         Grey matter component matrix
     """
-    img = nb.load(nifti_file)
-    data = img.get_fdata()
-    vol_shape = data.shape[:3]
-    xyz_idx = np.ravel_multi_index(x_y_z_coordinates.T, vol_shape)
-    ncols = data.shape[3] if len(data.shape) > 3 else 1
-    flattened_data = data.reshape(-1, ncols)
+    img_data = nb.load(nifti_file).get_fdata()
+    xyz_idx = np.ravel_multi_index(x_y_z_coordinates.T, img_data.shape[:3])
+    ncols = img_data.shape[3] if len(img_data.shape) > 3 else 1
+    flattened_data = img_data.reshape(-1, ncols)
     return flattened_data[xyz_idx, :]
+
+
+def remove_medial_wall(grey_component, roi):
+    m_wall = nb.load(roi).darrays[0].data != 0
+    return grey_component[m_wall == 1, :]
 
 
 def load_grey_matter_gifti_seed(file_name: str, roi: str) -> np.array:
@@ -248,11 +253,33 @@ def load_grey_matter_gifti_seed(file_name: str, roi: str) -> np.array:
         Reconstructed grey matter component.
     """
 
-    m_wall = nb.load(roi).darrays[0].data != 0
     gifti_img = nb.load(file_name)
     grey_component = np.column_stack([darray.data for darray in gifti_img.darrays])
-    grey_component = grey_component[m_wall == 1, :]
-    return grey_component
+    return remove_medial_wall(grey_component, roi)
+
+
+def load_grey_cifit(cifti_file, roi, x_y_z_coordinates):
+    grey_cifti = get_cifti_data(cifti_file)
+    left_surface = remove_medial_wall(grey_cifti["L_surf"], roi[0])
+    right_surface = remove_medial_wall(grey_cifti["R_surf"], roi[0])
+    grey_comp = np.vstack([left_surface, right_surface])
+
+    if "vol" in grey_cifti.keys():
+        subcortical = load_grey_matter_volume(grey_cifti["vol"], x_y_z_coordinates)
+        grey_comp = np.vstack([grey_comp, subcortical])
+
+    return grey_comp
+
+
+# THis may not work as medial wall is not always given
+def load_type(seed, idx, coords_by_idx, mw):
+    loaders = {
+        "nii": lambda: load_grey_matter_volume(seed, coords_by_idx[idx]),
+        "gii": lambda: load_grey_matter_gifti_seed(seed, mw[idx]),
+        "cifti": lambda: load_grey_cifit(seed),
+    }
+    loader = loaders.get(imaging_type(seed))
+    return loader() if loader else None
 
 
 def grey_components(
@@ -277,31 +304,34 @@ def grey_components(
     np.ndarray: np.array
         grey matter components array
     """
+
     grey_matter = glob(os.path.join(decomp_dir, "G_*dim*"))
     seed_key_word = get_key_to_organise_list(seeds[0])
     sorted_components = sort_grey_matter_order(grey_matter, seed_key_word)
-    save_type = "gii" if "gii" in sorted_components[0] else "nii"
+    coord_file = np.loadtxt(
+        os.path.join(group_averages, "coords_for_fdt_matrix2"),
+        dtype=int,
+    )
+    coords_by_idx = {
+        idx: coord_file[coord_file[:, 3] == idx][:, :3]
+        for idx in range(coord_file[:, 3].max() + 1)
+    }
+    grey_component = []
+    for idx, seed in sorted_components:
+        save_type = imaging_type(seed)
 
-    if save_type == "nii":
-        coord_file = np.loadtxt(
-            os.path.join(group_averages, "coords_for_fdt_matrix2"),
-            dtype=int,
-        )
-        return np.vstack(
-            [
-                load_grey_matter_volume(
-                    seed, coord_file[coord_file[:, 3] == idx][:, :3]
-                )
-                for idx, seed in enumerate(sorted_components)
-            ]
-        )
-    if save_type == "gii":
-        return np.vstack(
-            [
-                load_grey_matter_gifti_seed(seed, mw[idx])
-                for idx, seed in enumerate(sorted_components)
-            ]
-        )
+        if save_type == "nii":
+            grey_comp = load_grey_matter_volume(
+                seed, coord_file[coord_file[:, 3] == idx][:, :3]
+            )
+
+        if save_type == "gii":
+            grey_comp = load_grey_matter_gifti_seed(seed, mw[idx])
+
+        if save_type == "cifti":
+            grey_comp = load_grey_cifit(seed)
+
+        grey_component.append(grey_comp)
 
 
 def get_group_level_components(
