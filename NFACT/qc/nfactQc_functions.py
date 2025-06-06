@@ -6,7 +6,6 @@ import numpy as np
 import nibabel as nb
 from sklearn.preprocessing import StandardScaler
 from glob import glob
-import re
 from NFACT.base.utils import error_and_exit, colours
 from NFACT.base.setup import make_directory
 from NFACT.base.imagehandling import (
@@ -15,8 +14,9 @@ from NFACT.base.imagehandling import (
     get_cifti_data,
     create_surface_brain_masks,
     add_nifti,
-
+    create_dscalar,
 )
+
 
 def extract_seeds_from_log(log_file: str) -> list:
     """
@@ -26,7 +26,7 @@ def extract_seeds_from_log(log_file: str) -> list:
     ----------
     log_file: str
         str of path to log file
-    
+
     Returns
     --------
     list: list object
@@ -60,15 +60,14 @@ def get_latest_log_file(log_dir: str) -> str:
     """
     log_path = Path(log_dir)
     log_files = list(log_path.glob("*.log"))
-    
+
     if not log_files:
         raise FileNotFoundError(f"No .log files found in {log_dir}")
 
     return max(log_files, key=lambda fil: fil.stat().st_mtime)
-    #return os.path.join(log_dir, latest_log)
 
 
-def save_gifit(filename: str, meta_data: object, img_data: np.ndarray) -> np.ndarray:
+def save_gifti(filename: str, meta_data: object, img_data: np.ndarray) -> np.ndarray:
     """
     Function to save gifti file from a
     numpy array
@@ -322,44 +321,103 @@ def create_hitmaps(
     )
 
 
+def cifti_volume_utils(nfact_decomp_dir: str) -> dict:
+    """
+    Function to create the utils needed
+    for saving cifti as a volume
 
-def cifti_volume_utils(nfact_decomp_dir):
-    breakpoint()
+    Parameters
+    ----------
+    nfact_decomp_dir: str
+         directory path to nfact_decomp
+         directory
+
+    Returns
+    -------
+    dict: dictionary object
+        dict with a list of seeds
+        and coords file
+    """
     logs_dir = os.path.join(nfact_decomp_dir, "logs")
     coords_dir = os.path.join(nfact_decomp_dir, "group_averages")
     try:
         log_with_seeds = get_latest_log_file(logs_dir)
         seeds = extract_seeds_from_log(log_with_seeds)
-        coords = np.loadtxt(os.path.join(coords_dir, "coords_for_fdt_matrix2"), dtype=int)
+        coords = np.loadtxt(
+            os.path.join(coords_dir, "coords_for_fdt_matrix2"), dtype=int
+        )
     except Exception:
         return None
-    return {
-        "seeds": seeds,
-        "coords": coords
-    }
+    return {"seeds": seeds, "coords": coords}
 
 
+# def split_subcortical_data(seeds, vol_hitmap):
+#    subcortical_data = []
+#        for idx, _ in enumerate(cifti_vol['seeds']):
+#            if idx < 2:
+#                continue
+#            voxels = cifti_vol['coords'][cifti_vol['coords'][:, 3] == idx][:, :3]
+#            vals = [vol_hitmap[tuple(v)] for v in voxels]
+#            subcortical_data.extend(vals)
 
 
 def create_cifti_hitmap(
-    img_data: dict, filename: str, threshold: int, meta_data: object, normalize=False
-): 
+    img_data: dict,
+    filename: str,
+    threshold: int,
+    meta_data: object,
+    normalize: bool = False,
+):
+    """
+    Function to create cifti hitmap
+
+    Parameters
+    ----------
+    img_data: dict,
+    filename: str,
+    threshold: int,
+    meta_data: object
+        img
+    normalize=False
+
+    """
+    meta_data = None  # This is not needed in this function but as an argument is needed for earlier in the pipeline
     col = colours()
     left_hitmap = surface_hitcount_maps(img_data["L_surf"].T, normalize, threshold)
     right_hitmap = surface_hitcount_maps(img_data["R_surf"].T, normalize, threshold)
-    bm = create_surface_brain_masks(left_hitmap, right_hitmap)
+    combined_data = np.concatenate(
+        [left_hitmap[left_hitmap > 0], right_hitmap[right_hitmap > 0]]
+    )
+    bm = create_surface_brain_masks(left_hitmap > 0, right_hitmap > 0)
+
     if "vol" in img_data.keys():
         vol_hitmap = volume_hitcount_maps(
-            img_data["vol"].get_fdata(), normalize, threshold
-        )
+            img_data["vol"].get_fdata(), threshold, normalize
+        )["hitcount"]
+
         cifti_vol = cifti_volume_utils(os.path.dirname(os.path.dirname(filename)))
         if not cifti_vol:
-            print("Unable to save volume part of cifti") 
-        breakpoint()
+            print(f"{col['red']}Unable to save volume part of cifti{col['reset']}")
+        bm = add_nifti(cifti_vol["seeds"], bm, cifti_vol["coords"])
+        subcortical_data = []
+        for idx, _ in enumerate(cifti_vol["seeds"]):
+            if idx < 2:
+                continue
+            voxels = cifti_vol["coords"][cifti_vol["coords"][:, 3] == idx][:, :3]
+            vals = [vol_hitmap[tuple(v)] for v in voxels]
+            subcortical_data.extend(vals)
+        combined_data = np.concatenate([combined_data, subcortical_data])[np.newaxis, :]
+
+    cifti = create_dscalar(combined_data, 1, bm)
+    nb.save(cifti, f"{filename}.dscalar.nii")
 
 
 def create_gifti_hitmap(
-    img_data: np.ndarray, filename: str, threshold: int, meta_data: object, normalize=False
+    img_data: np.ndarray,
+    filename: str,
+    threshold: int,
+    meta_data: object,
+    normalize=False,
 ) -> None:
     """
     Function to create hitmap from
@@ -368,17 +426,18 @@ def create_gifti_hitmap(
     Parameters
     ----------
     seed_path: str
-        str of path to seed
+        str of path to img
     filename: str
-        name of file. Does not
-        need .func.gii
+        name of file.
+    threshold: int
+
 
     Returns
     -------
     None
     """
     hitmap = surface_hitcount_maps(img_data, normalize, threshold)
-    save_gifit(filename, meta_data, hitmap)
+    save_gifti(filename, meta_data, hitmap)
 
 
 def create_nifti_hitmap(

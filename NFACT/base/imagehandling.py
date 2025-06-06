@@ -440,12 +440,14 @@ def add_nifti(seeds: list, brainmodel: object, coords: np.ndarray) -> object:
         brain model axis
 
     """
-    seed_ref = nb.load(seeds[0])
+    seed_ref = nb.load(seeds[2])
     for idx, seed in enumerate(seeds):
+        if idx < 2:
+            continue
         seed_name = re.sub(r".nii.gz|.nii", "", os.path.basename(seed))
         if "CIFTI_STRUCTURE_" not in seed_name:
             seed_name = "OTHER"
-        number_of_voxels = coords[coords[:, 3] == idx + 2][:, :3]
+        number_of_voxels = coords[coords[:, 3] == idx][:, :3]
         brainmodel += cifti2.BrainModelAxis(
             name=seed_name,
             voxel=number_of_voxels,
@@ -533,7 +535,9 @@ def cifit_medial_wall(
     return np.concatenate([gm, grey_component[(seeds_id != 0) & (seeds_id != 1), :]])
 
 
-def create_dscalar(grey_component: np.ndarray, brainmodel: object) -> object:
+def create_dscalar(
+    grey_component: np.ndarray, scalar_shape: int, brainmodel: object
+) -> object:
     """
     Function to create dscalar
 
@@ -541,6 +545,8 @@ def create_dscalar(grey_component: np.ndarray, brainmodel: object) -> object:
     ----------
     grey_matter_component: np.ndarray
         grey matter component
+    scalar_shape: int
+        shape for the dscalar
     brainmodel: BrainModelAxis
         brain model axis
 
@@ -551,10 +557,10 @@ def create_dscalar(grey_component: np.ndarray, brainmodel: object) -> object:
         correct headers
     """
     scalar = cifti2.cifti2_axes.ScalarAxis(
-        np.linspace(0, grey_component.shape[1], grey_component.shape[1], dtype="int")
+        np.linspace(0, scalar_shape, scalar_shape, dtype="int")
     )
     header = cifti2.Cifti2Header.from_axes((scalar, brainmodel))
-    return cifti2.Cifti2Image(grey_component.T, header)
+    return cifti2.Cifti2Image(grey_component, header)
 
 
 def save_cifti(
@@ -595,8 +601,8 @@ def save_cifti(
     grey_comp = cifit_medial_wall(grey_matter_component, rois, seeds_id)
     brainmodel = cifti_surfaces(seeds)
     if len(seeds) > 2:
-        brainmodel = add_nifti(seeds[2:], brainmodel, coords)
-    dscalar_object = create_dscalar(grey_comp, brainmodel)
+        brainmodel = add_nifti(seeds, brainmodel, coords)
+    dscalar_object = create_dscalar(grey_comp.T, grey_comp.shape[1], brainmodel)
     nb.save(dscalar_object, save_path)
 
 
