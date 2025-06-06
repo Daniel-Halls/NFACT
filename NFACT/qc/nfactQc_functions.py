@@ -352,8 +352,8 @@ def cifti_volume_utils(nfact_decomp_dir: str) -> dict:
 
 
 def split_subcortical_data(
-    seeds: list, coords: np.ndarry, vol_hitmap: np.ndarray
-) -> list:
+    seeds: list, coords: np.ndarray, vol_hitmap: np.ndarray
+) -> np.ndarray:
     """
     Function to split subcortical data
     by seed
@@ -379,7 +379,7 @@ def split_subcortical_data(
         voxels = coords[coords[:, 3] == idx][:, :3]
         vals = [vol_hitmap[tuple(voxel)] for voxel in voxels]
         subcortical_data.extend(vals)
-    return subcortical_data
+    return np.array(subcortical_data)
 
 
 def create_cifti_hitmap(
@@ -419,7 +419,7 @@ def create_cifti_hitmap(
     right_hitmap = surface_hitcount_maps(img_data["R_surf"].T, normalize, threshold)
     combined_data = np.concatenate(
         [left_hitmap[left_hitmap > 0], right_hitmap[right_hitmap > 0]]
-    )
+    )[np.newaxis, :]
     bm = create_surface_brain_masks(left_hitmap > 0, right_hitmap > 0)
 
     if "vol" in img_data.keys():
@@ -434,8 +434,9 @@ def create_cifti_hitmap(
         subcortical_data = split_subcortical_data(
             cifti_vol["seeds"], cifti_vol["coords"], vol_hitmap
         )
-        combined_data = np.concatenate([combined_data, subcortical_data])[np.newaxis, :]
-
+        combined_data = np.concatenate(
+            [combined_data, subcortical_data[np.newaxis, :]], axis=1
+        )
     cifti = create_dscalar(combined_data, 1, bm)
     nb.save(cifti, f"{filename}.dscalar.nii")
 
