@@ -173,4 +173,5 @@ if __name__ == "__main__":
         sub_id=args["id"],
         roi=args["roi"],
         parallel=args["parallel"],
+        dscalar=args["dscalar"],
     )

@@ -101,6 +101,7 @@ def build_cluster_command(
         str(sub_id),
         "--roi",
         *roi,
+        "--dscalar",
     ]
     if parallel:
         command.extend(["--parallel", str(parallel)])
@@ -228,4 +229,5 @@ def run_locally(args: dict, paths: dict) -> None:
             roi=args["roi"],
             parallel=args["n_cores"],
             components=components,
+            dscalar=args["cifti"],
         )
