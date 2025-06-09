@@ -57,6 +57,16 @@ def nfactdr_args() -> dict:
         default=False,
         help="normalise components by scaling",
     )
+    dr_args.add_argument(
+        "-D",
+        "--dscalar",
+        dest="cifti",
+        action="store_true",
+        default=False,
+        help="""
+        Save GM as cifti dscalar. 
+        Seeds must be left and right surfaces with an optional nifti for subcortical structures""",
+    )
 
     parallel_args(base_args, col, "To parallelize dual regression")
     cluster_args(base_args, col)

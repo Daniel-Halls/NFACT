@@ -47,6 +47,9 @@ def cluster_mode_args() -> dict:
     parser.add_argument(
         "--parallel", default=1, type=int, help="Number of cores to parallel with"
     )
+    parser.add_argument(
+        "--dscalar", default=False, action="store_true", help="Save as dscalar"
+    )
     return vars(parser.parse_args())
 
 
@@ -61,6 +64,7 @@ def dual_regression_pipeline(
     roi: str,
     parallel: int = 1,
     components: np.ndarray = False,
+    dscalar: bool = False,
 ) -> None:
     """
     The dual regression pipeline function.
@@ -95,6 +99,9 @@ def dual_regression_pipeline(
         Can be False (default)
         and pipeline will get group
         components
+    dscalar: bool
+        save gm as dscalar.
+        Default is False
 
     Returns
     -------
@@ -145,6 +152,7 @@ def dual_regression_pipeline(
             sub_id,
             fdt_path,
             roi,
+            dscalar,
         )
     except Exception as e:
         error_and_exit(False, f"Unable to save images due to {e}")

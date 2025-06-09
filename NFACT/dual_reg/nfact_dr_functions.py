@@ -533,9 +533,10 @@ def save_dual_regression_images(
     sub: str,
     ptx_directory: str,
     roi: list,
+    cifti_save: bool = False,
 ) -> None:
     """
-    Function to save regression images
+    Wrapper function to save regression images
 
     Parameters
     ----------
@@ -558,6 +559,9 @@ def save_dual_regression_images(
     roi: list
         list of roi. Needed
         for surfaces.
+    cifti_save: bool
+        save gm as dscalar.
+        Default is False
 
     Returns
     -------
@@ -586,6 +590,7 @@ def save_dual_regression_images(
                 os.path.join(ptx_directory, "coords_for_fdt_matrix2"),
                 roi,
                 grey_prefix,
+                cifti_save,
             )
         if "white" in comp:
             nprint(f"{col['pink']}Image:{col['reset']} {comp}")
