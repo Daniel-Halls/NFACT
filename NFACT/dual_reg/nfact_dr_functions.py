@@ -243,7 +243,7 @@ def load_grey_matter_volume(
         Grey matter component matrix
     """
     img_data = nb.load(nifti_file).get_fdata()
-    return convert_volume_to_component_matrix(img_data, x_y_z_coordinates.T)
+    return convert_volume_to_component_matrix(img_data, x_y_z_coordinates)
 
 
 def remove_medial_wall(grey_component: np.ndarray, roi: str) -> np.ndarray:
@@ -405,7 +405,6 @@ def grey_components(
     np.ndarray: np.array
         grey matter components array
     """
-
     grey_matter = glob(os.path.join(decomp_dir, "G_*dim*"))
     sorted_components = reorder_file_inputs(seeds[0], grey_matter)
     # Needed if mw are not given
@@ -419,10 +418,10 @@ def grey_components(
         return load_grey_cifit(sorted_components[0], mw, coords_by_idx)
 
     loaders = load_type(coords_by_idx, mw)
-    grey_component = [
-        loaders[imaging_type(seed)](seed, idx)
-        for idx, seed in enumerate(sorted_components)
-    ]
+    grey_component = []
+    for idx, seed in enumerate(sorted_components):
+        grey_comp = loaders[imaging_type(seed)](seed, idx)
+        grey_component.append(grey_comp)
 
     return np.vstack(grey_component)
 
