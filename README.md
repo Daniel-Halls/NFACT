@@ -461,22 +461,46 @@ then it will be standard regression.
 
 ### Usage
 ```
+usage: nfact_dr [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [-a ALGO] [--seeds SEEDS] [--roi ROI] [-d NFACT_DECOMP_DIR] [-dd DECOMP_DIR] [-N] [-D] [-n N_CORES] [-C] [-cq CLUSTER_QUEUE] [-cr CLUSTER_RAM] [-ct CLUSTER_TIME] [-cqos CLUSTER_QOS]
+
 options:
   -h, --help            show this help message and exit
+  -hh, --verbose_help   Verbose help message. Prints help message and example usages
+  -O, --overwrite       Overwrites previous file structure
+
+Set Up Arguments:
   -l LIST_OF_SUBJECTS, --list_of_subjects LIST_OF_SUBJECTS
-                        REQUIRED: Filepath to a list of subjects
+                        Filepath to a list of subjects
   -o OUTDIR, --outdir OUTDIR
-                        REQUIRED: Path to output directory
-  -a ALGO, --algo ALGO  REQUIRED: Which NFACT algorithm to perform dual regression on
+                        Path to output directory
+
+Dual Regression Arguments:
+  -a ALGO, --algo ALGO  Which decomposition algorithm. Options are: NMF (default), or ICA. This is case insensitive
   --seeds SEEDS, -s SEEDS
-                        REQUIRED: File of seeds used in NFACT_PP/probtrackx
-  --roi ROI, -r ROI     RECOMMENDED FOR SURFACE SEEDS: Txt file with ROI(s) paths to restrict seeding to (e.g. medial wall masks).
-  -n NFACT_DECOMP_DIR, --nfact_decomp_dir NFACT_DECOMP_DIR
-                        REQUIRED IF NFACT_DECOMP: Filepath to the NFACT_decomp directory. Use this if you have ran NFACT decomp
-  -d DECOMP_DIR, --decomp_dir DECOMP_DIR
-                        REQUIRED IF NOT NFACT_DECOMP: Filepath to decomposition components. WARNING NFACT decomp expects components to be named in a set way. See documentation for further info.
+                        Absolute path to a text file of seed(s) used in nfact_pp/probtrackx. If used nfact_pp this is the seeds_for_decomp.txt in the nfact_pp directory.
+  --roi ROI, -r ROI     Absolute path to a text file containing the absolute path ROI(s) paths to restrict seeding to (e.g. medial wall masks). This is not needed if seeds are not surfaces. If used nfact_pp then this is the roi_for_decomp.txt file in the nfact_pp
+                        directory.
+  -d NFACT_DECOMP_DIR, --nfact_decomp_dir NFACT_DECOMP_DIR
+                        Filepath to the NFACT_decomp directory. Use this if you have ran NFACT decomp
+  -dd DECOMP_DIR, --decomp_dir DECOMP_DIR
+                        Filepath to decomposition components. WARNING NFACT decomp expects components to be named in a set way. See documentation for further info.
   -N, --normalise       normalise components by scaling
-  -hh, --verbose_help   Prints help message and example usages
+  -D, --dscalar         Save GM as cifti dscalar. Seeds must be left and right surfaces with an optional nifti for subcortical structures
+
+Parallel Processing arguments:
+  -n N_CORES, --n_cores N_CORES
+                        To parallelize dual regression
+
+Cluster Arguments:
+  -C, --cluster         Use cluster enviornment
+  -cq CLUSTER_QUEUE, --queue CLUSTER_QUEUE
+                        Cluster queue to submit to
+  -cr CLUSTER_RAM, --cluster_ram CLUSTER_RAM
+                        Ram that job will take. Default is 60
+  -ct CLUSTER_TIME, --cluster_time CLUSTER_TIME
+                        Time that job will take. nfact will assign a time if none given
+  -cqos CLUSTER_QOS, --cluster_qos CLUSTER_QOS
+                        Set the qos for the cluster
 
 
 Dual regression usage:
@@ -488,7 +512,7 @@ Dual regression usage:
 
 ICA Dual regression usage:
     nfact_dr --list_of_subjects /path/to/nfact_config_sublist \
-        --seeds /path/to/seeds.txt \
+        --seeds /path/to//seeds.txt \
         --nfact_decomp_dir /path/to/nfact_decomp \
         --outdir /path/to/output_directory \
         --algo ICA
@@ -500,9 +524,12 @@ Dual regression with roi seeds usage:
         --outdir /path/to/output_directory \
         --roi /path/to/roi.txt \
         --algo NMF
+
 ```
 
 nfact_dr is independent from nfact_decomp however, nfact_decomp expects a strict naming convention of files. If nfact_decomp has not been ran then group average files and components must all be in the same folder. Components must be named W_dim* and G_dim* with group average files named coords_for_fdt_matrix2, lookup_tractspace_fdt_matrix2.nii.gz. 
+
+Similar to nfact_decomp nfact_dr can save components as cifti dscalars (as well as accepting cifti dscalars as inputs). Please see cifti support in nfact_pp and nfact_decomp for further info on cifti dscalar support.
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -623,7 +650,6 @@ This is the config file for the nfact pipeline. Please check the individual modu
         "cluster_time": false,
         "cluster_qos": false
     },
-    
     "nfact_pp": {
         "gpu": false,
         "file_tree": false,
@@ -638,15 +664,16 @@ This is the config file for the nfact pipeline. Please check the individual modu
         "exclusion": false,
         "stop": false,
         "absolute": false,
+        "dont_save_fdt_img": false,
         "n_cores": false
     },
-
     "nfact_decomp": {
         "dim": "Required",
         "algo": "NMF",
         "roi": false,
         "config": false,
         "cifti": false,
+        "disk": false,
         "wta": false,
         "wta_zthr": "0.0",
         "normalise": false,
@@ -655,16 +682,16 @@ This is the config file for the nfact pipeline. Please check the individual modu
         "pca_type": "pca",
         "sign_flip": true
     },
-    
     "nfact_dr": {
         "normalise": false,
+        "cifti": false,
         "n_cores": false
     },
-
     "nfact_qc": {
         "threshold": "2"
     }
 }
+
 
 ```
 
