@@ -101,6 +101,7 @@ def build_cluster_command(
         str(sub_id),
         "--roi",
         *roi,
+        "--dscalar",
     ]
     if parallel:
         command.extend(["--parallel", str(parallel)])
@@ -212,8 +213,8 @@ def run_locally(args: dict, paths: dict) -> None:
             args["seeds"],
             args["roi"],
         )
-    except Exception:
-        error_and_exit(False, "Unable to find components")
+    except Exception as e:
+        error_and_exit(False, f"Unable to find components due to {e}")
 
     for idx, subject in enumerate(args["ptxdir"]):
         subject_id = get_subject_id(subject, idx)
@@ -228,4 +229,5 @@ def run_locally(args: dict, paths: dict) -> None:
             roi=args["roi"],
             parallel=args["n_cores"],
             components=components,
+            dscalar=args["cifti"],
         )

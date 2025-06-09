@@ -446,7 +446,7 @@ def processing_cluster(arg: dict) -> dict:
     print(f"{col['deep_pink']}Checking:{col['reset']} Cluster Availability\n")
     try:
         arg = Cluster_parameters(arg).process_parameters()
-        print(f"{col['amethyst']}Using:{col['reset']} Cluster")
+        print(f"{col['plum']}Using:{col['reset']} Cluster")
     except NoClusterQueuesException:
         arg["cluster"] = no_cluster_queues()
     return arg

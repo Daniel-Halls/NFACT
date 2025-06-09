@@ -194,7 +194,8 @@ def threshold_grey_components(
 def thresholding(component: np.ndarray, zscore_val: int) -> np.ndarray:
     """
     Function to threshold components
-    to remove noise
+    to remove noise. This is done in
+    place.
 
     Parameteres
     -----------

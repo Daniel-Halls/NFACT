@@ -1,6 +1,8 @@
 from NFACT.base.imagehandling import (
     save_grey_matter_components,
     save_white_matter,
+    imaging_type,
+    get_cifti_data,
 )
 from NFACT.base.utils import colours, nprint, error_and_exit
 import numpy as np
@@ -31,7 +33,7 @@ def get_key_to_organise_list(seed_path: str) -> str:
     """
     seed_name = os.path.basename(seed_path).lower()
     file_split = re.split(r"[.-]", seed_name)
-    return next(
+    full_name = next(
         (
             side
             for keys, side in {
@@ -44,33 +46,96 @@ def get_key_to_organise_list(seed_path: str) -> str:
         ),
         seed_name,
     )
+    abbreviation = next(
+        (
+            side
+            for keys, side in {
+                ("l", "l"),
+                ("left", "l"),
+                ("r", "r"),
+                ("right", "r"),
+            }
+            if keys in file_split
+        ),
+        seed_name,
+    )
+    return [full_name, abbreviation]
 
 
-def sort_grey_matter_order(grey_matter_list: list, keyword: str) -> list:
+def keyword_sort_key(pattern: object, sk: str) -> tuple:
     """
-    Function to organise grey matter
-    Function to organise grey matter
-    seed by a keyword. Does so on
-    a partial match.
+    Function to sort key word
+    by regex pattern.
 
     Parameters
     ----------
-    grey_matter_list: list
-        list of grey matter
-        list of grey matter
-    keyword: str
-        str of key to organise
-        grey matter by
+    pattern: object
+        regex pattern
+    sk: str
+        str pattern
+        to match
 
+    Returns
+    --------
+    tuple: tuple
+        tuple of 0 or 1
+        depending on success
+        with lower string
+    """
+    if pattern.search(sk):
+        return (0, sk.lower())
+    else:
+        return (1, sk.lower())
+
+
+def reorder_lists_order(list_to_organise: list, keywords: list) -> list:
+    """
+    Function to reorder
+    a list based on a list
+    of keywords
+
+    Parameters
+    ----------
+    list_to_organise: list
+        list to organise
+    keywords: list
+        list of keys to match on
 
     Returns
     -------
     list: list object
-        sorted grey_matter_list
-        by keyword
-        by keyword
+        sorted list by given
+        keywords
+
     """
-    return sorted(grey_matter_list, key=lambda sk: (keyword not in sk, sk))
+    pattern = re.compile(
+        r"(?<![a-zA-Z0-9])("
+        + "|".join(re.escape(k) for k in keywords)
+        + r")(?![a-zA-Z0-9])",
+        re.IGNORECASE,
+    )
+    return sorted(list_to_organise, key=lambda sk: keyword_sort_key(pattern, sk))
+
+
+def reorder_file_inputs(organise_list: list, list_to_organise: list) -> list:
+    """
+    Function to reorder a list
+    by a set of keywords
+
+    Parameters
+    ----------
+    organise_list: list
+        list to extract keywords from
+    list_to_organise: list
+        list to organise
+
+    Returns
+    -------
+    list: list object
+        list or reorganised files
+    """
+    key_word = get_key_to_organise_list(organise_list)
+    return reorder_lists_order(list_to_organise, key_word)
 
 
 def vol2mat(matvol: np.ndarray, lut_vol: np.ndarray) -> np.ndarray:
@@ -104,79 +169,6 @@ def vol2mat(matvol: np.ndarray, lut_vol: np.ndarray) -> np.ndarray:
     return matrix
 
 
-def save_dual_regression_images(
-    components: dict,
-    nfact_path: str,
-    seeds: list,
-    algo: str,
-    dim: int,
-    sub: str,
-    ptx_directory: str,
-    roi: list,
-) -> None:
-    """
-    Function to save regression images
-
-    Parameters
-    ----------
-    components: dict
-        dictionary of components
-    nfact_path: str
-        str to nfact directory
-    seeds: list
-        list of seeds
-    algo: str
-        str of algo
-    dim: int
-        number of dimensions
-        used for naming output
-    sub: str
-        Subject id in string format
-    ptx_dir: str
-        needed to obtain coords/lookup
-        tractspace
-    roi: list
-        list of roi. Needed
-        for surfaces.
-
-    Returns
-    -------
-    None
-    """
-
-    col = colours()
-    for comp, _ in components.items():
-        algo_path = algo
-        w_file_name = f"W_{sub}_dim{dim}"
-        grey_prefix = f"G_{sub}"
-
-        if "normalised" in comp:
-            algo_path = os.path.join(algo, "normalised")
-            w_file_name = f"W_{sub}_norm_dim{dim}"
-            grey_prefix = f"G_{sub}_norm"
-
-        if "grey" in comp:
-            nprint(f"{col['pink']}Image:{col['reset']} {comp}")
-            save_grey_matter_components(
-                components[comp],
-                nfact_path,
-                seeds,
-                algo_path,
-                dim,
-                os.path.join(ptx_directory, "coords_for_fdt_matrix2"),
-                roi,
-                grey_prefix,
-            )
-        if "white" in comp:
-            nprint(f"{col['pink']}Image:{col['reset']} {comp}")
-            save_white_matter(
-                components[comp],
-                os.path.join(ptx_directory, "lookup_tractspace_fdt_matrix2.nii.gz"),
-                os.path.join(ptx_directory, "tract_space_coords_for_fdt_matrix2"),
-                os.path.join(nfact_path, algo_path, w_file_name),
-            )
-
-
 def white_component(component_dir: str, group_averages_dir: str) -> np.ndarray:
     """
     Function to get the group level
@@ -205,7 +197,35 @@ def white_component(component_dir: str, group_averages_dir: str) -> np.ndarray:
     )
 
 
-def load_grey_matter_volume(nifti_file: str, x_y_z_coordinates: np.array) -> np.array:
+def convert_volume_to_component_matrix(
+    img_data: np.ndarray, x_y_z_coordinates: np.ndarray
+) -> np.ndarray:
+    """
+    Function to convert volume to
+    a component matrix
+
+    Parameters
+    ----------
+    img_data: np.ndarray
+        imaging data as an array
+    x_y_z_coordinates: np.ndarray
+        coords as an array
+
+    Returns
+    --------
+    np.ndarray np.array
+        flattened numpy array
+        in the same of components
+    """
+    xyz_idx = np.ravel_multi_index(x_y_z_coordinates.T, img_data.shape[:3])
+    ncols = img_data.shape[3] if len(img_data.shape) > 3 else 1
+    flattened_data = img_data.reshape(-1, ncols)
+    return flattened_data[xyz_idx, :]
+
+
+def load_grey_matter_volume(
+    nifti_file: str, x_y_z_coordinates: np.ndarray
+) -> np.ndarray:
     """
     Function to load a grey matter NIfTI file and convert it
     back into a grey matter component matrix.
@@ -219,16 +239,33 @@ def load_grey_matter_volume(nifti_file: str, x_y_z_coordinates: np.array) -> np.
 
     Returns
     -------
-    np.array
+    np.ndarray
         Grey matter component matrix
     """
-    img = nb.load(nifti_file)
-    data = img.get_fdata()
-    vol_shape = data.shape[:3]
-    xyz_idx = np.ravel_multi_index(x_y_z_coordinates.T, vol_shape)
-    ncols = data.shape[3] if len(data.shape) > 3 else 1
-    flattened_data = data.reshape(-1, ncols)
-    return flattened_data[xyz_idx, :]
+    img_data = nb.load(nifti_file).get_fdata()
+    return convert_volume_to_component_matrix(img_data, x_y_z_coordinates)
+
+
+def remove_medial_wall(grey_component: np.ndarray, roi: str) -> np.ndarray:
+    """
+    Function to remove medial wall
+    from grey component
+
+    Parameters
+    ----------
+    grey_component: np.ndarray
+        grey matter component
+    roi: str
+        str of roi path
+
+    Returns
+    --------
+    grey_component: np.ndarray
+        grey matter component with
+        removed medial wall
+    """
+    m_wall = nb.load(roi).darrays[0].data != 0
+    return grey_component[m_wall == 1, :]
 
 
 def load_grey_matter_gifti_seed(file_name: str, roi: str) -> np.array:
@@ -248,11 +285,102 @@ def load_grey_matter_gifti_seed(file_name: str, roi: str) -> np.array:
         Reconstructed grey matter component.
     """
 
-    m_wall = nb.load(roi).darrays[0].data != 0
     gifti_img = nb.load(file_name)
     grey_component = np.column_stack([darray.data for darray in gifti_img.darrays])
-    grey_component = grey_component[m_wall == 1, :]
-    return grey_component
+    return remove_medial_wall(grey_component, roi)
+
+
+def load_grey_cifit(
+    cifti_file: str, roi: list, x_y_z_coordinates: np.ndarray
+) -> np.ndarray:
+    """
+    Function to load grey cifti file
+
+    Parameters
+    ----------
+    cifti_file: str
+        string path of cifti file
+    roi: list
+        list of rois
+    x_y_z_coordinates: np.ndarray
+        np.ndarry of coords for
+        subcortical seeds. Can
+        be None
+
+    Returns
+    -------
+    grey_comp: np.ndarray
+        grey matter component
+    """
+    grey_cifti = get_cifti_data(cifti_file)
+    left_surface = remove_medial_wall(grey_cifti["L_surf"], roi[0])
+    right_surface = remove_medial_wall(grey_cifti["R_surf"], roi[1])
+    grey_comp = np.vstack([left_surface, right_surface])
+
+    if "vol" in grey_cifti.keys():
+        # Remove left and righ seeds coords
+        cifit_coords = np.vstack(list(x_y_z_coordinates.values())[2:])
+        subcortical = convert_volume_to_component_matrix(
+            grey_cifti["vol"].get_fdata(), cifit_coords
+        )
+        grey_comp = np.vstack([grey_comp, subcortical])
+
+    return grey_comp
+
+
+def load_type(coords_by_idx: dict, mw: list) -> dict:
+    """
+    Functions to either nifti or giti
+    load function
+
+    Parameters
+    ----------
+    coords_by_idx: dict
+        dictionary of coordinates
+        by seed
+    mw: list
+        list of rois
+
+    Returns
+    -------
+    loaders: dict
+        dict of load functions
+    """
+    loaders = {
+        "nifti": lambda seed, idx: load_grey_matter_volume(seed, coords_by_idx[idx])
+    }
+
+    if mw:
+        loaders["gifti"] = lambda seed, idx: load_grey_matter_gifti_seed(seed, mw[idx])
+
+    return loaders
+
+
+def sort_coord_file(group_averages: str) -> dict:
+    """
+    Function to sort out coords
+    file by seed.
+
+    Parameters
+    ----------
+    group_averages: str
+        path to group averages file
+        containing coords_for_fdt_matrix2
+
+    Returns
+    -------
+    dict: dictionary
+        dict of coords
+        organised seeds
+    """
+    coord_file = np.loadtxt(
+        os.path.join(group_averages, "coords_for_fdt_matrix2"),
+        dtype=int,
+    )
+    return {
+        idx: coord_file[coord_file[:, 3] == idx][:, :3]
+        for idx in range(coord_file[:, 3].max() + 1)
+    }
 
 
 def grey_components(
@@ -278,30 +406,24 @@ def grey_components(
         grey matter components array
     """
     grey_matter = glob(os.path.join(decomp_dir, "G_*dim*"))
-    seed_key_word = get_key_to_organise_list(seeds[0])
-    sorted_components = sort_grey_matter_order(grey_matter, seed_key_word)
-    save_type = "gii" if "gii" in sorted_components[0] else "nii"
+    sorted_components = reorder_file_inputs(seeds[0], grey_matter)
+    # Needed if mw are not given
+    try:
+        mw = reorder_file_inputs(seeds[0], mw)
+    except TypeError:
+        pass
+    coords_by_idx = sort_coord_file(group_averages)
 
-    if save_type == "nii":
-        coord_file = np.loadtxt(
-            os.path.join(group_averages, "coords_for_fdt_matrix2"),
-            dtype=int,
-        )
-        return np.vstack(
-            [
-                load_grey_matter_volume(
-                    seed, coord_file[coord_file[:, 3] == idx][:, :3]
-                )
-                for idx, seed in enumerate(sorted_components)
-            ]
-        )
-    if save_type == "gii":
-        return np.vstack(
-            [
-                load_grey_matter_gifti_seed(seed, mw[idx])
-                for idx, seed in enumerate(sorted_components)
-            ]
-        )
+    if imaging_type(sorted_components[0]) == "cifti":
+        return load_grey_cifit(sorted_components[0], mw, coords_by_idx)
+
+    loaders = load_type(coords_by_idx, mw)
+    grey_component = []
+    for idx, seed in enumerate(sorted_components):
+        grey_comp = loaders[imaging_type(seed)](seed, idx)
+        grey_component.append(grey_comp)
+
+    return np.vstack(grey_component)
 
 
 def get_group_level_components(
@@ -347,7 +469,8 @@ def get_paths(args: dict) -> dict:
 
     Returns
     -------
-    str: string of component path.
+    str: string
+        string of component path.
     """
     if args["nfact_decomp_dir"]:
         return {
@@ -398,3 +521,81 @@ def get_subject_id(path: str, number: int) -> str:
             except IndexError:
                 pass
         return f"sub-{number}"
+
+
+def save_dual_regression_images(
+    components: dict,
+    nfact_path: str,
+    seeds: list,
+    algo: str,
+    dim: int,
+    sub: str,
+    ptx_directory: str,
+    roi: list,
+    cifti_save: bool = False,
+) -> None:
+    """
+    Wrapper function to save regression images
+
+    Parameters
+    ----------
+    components: dict
+        dictionary of components
+    nfact_path: str
+        str to nfact directory
+    seeds: list
+        list of seeds
+    algo: str
+        str of algo
+    dim: int
+        number of dimensions
+        used for naming output
+    sub: str
+        Subject id in string format
+    ptx_dir: str
+        needed to obtain coords/lookup
+        tractspace
+    roi: list
+        list of roi. Needed
+        for surfaces.
+    cifti_save: bool
+        save gm as dscalar.
+        Default is False
+
+    Returns
+    -------
+    None
+    """
+
+    col = colours()
+    for comp, _ in components.items():
+        algo_path = algo
+        w_file_name = f"W_{sub}_dim{dim}"
+        grey_prefix = f"G_{sub}"
+
+        if "normalised" in comp:
+            algo_path = os.path.join(algo, "normalised")
+            w_file_name = f"W_{sub}_norm_dim{dim}"
+            grey_prefix = f"G_{sub}_norm"
+
+        if "grey" in comp:
+            nprint(f"{col['pink']}Image:{col['reset']} {comp}")
+            save_grey_matter_components(
+                components[comp],
+                nfact_path,
+                seeds,
+                algo_path,
+                dim,
+                os.path.join(ptx_directory, "coords_for_fdt_matrix2"),
+                roi,
+                grey_prefix,
+                cifti_save,
+            )
+        if "white" in comp:
+            nprint(f"{col['pink']}Image:{col['reset']} {comp}")
+            save_white_matter(
+                components[comp],
+                os.path.join(ptx_directory, "lookup_tractspace_fdt_matrix2.nii.gz"),
+                os.path.join(ptx_directory, "tract_space_coords_for_fdt_matrix2"),
+                os.path.join(nfact_path, algo_path, w_file_name),
+            )
