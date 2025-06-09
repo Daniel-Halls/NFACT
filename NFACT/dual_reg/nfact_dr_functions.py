@@ -33,7 +33,7 @@ def get_key_to_organise_list(seed_path: str) -> str:
     """
     seed_name = os.path.basename(seed_path).lower()
     file_split = re.split(r"[.-]", seed_name)
-    return next(
+    full_name = next(
         (
             side
             for keys, side in {
@@ -46,9 +46,30 @@ def get_key_to_organise_list(seed_path: str) -> str:
         ),
         seed_name,
     )
+    abbreviation = next(
+        (
+            side
+            for keys, side in {
+                ("l", "l"),
+                ("left", "l"),
+                ("r", "r"),
+                ("right", "r"),
+            }
+            if keys in file_split
+        ),
+        seed_name,
+    )
+    return [full_name, abbreviation]
 
 
-def sort_grey_matter_order(grey_matter_list: list, keyword: str) -> list:
+def keyword_sort_key(patten, sk):
+    if patten.search(sk):
+        return (0, sk.lower())
+    else:
+        return (1, sk.lower())
+
+
+def reorder_lists_order(list_to_organise: list, keyword: str) -> list:
     """
     Function to organise grey matter
     Function to organise grey matter
@@ -72,7 +93,13 @@ def sort_grey_matter_order(grey_matter_list: list, keyword: str) -> list:
         by keyword
         by keyword
     """
-    return sorted(grey_matter_list, key=lambda sk: (keyword not in sk, sk))
+    pattern = re.compile(
+        r"(?<![a-zA-Z0-9])("
+        + "|".join(re.escape(k) for k in keyword)
+        + r")(?![a-zA-Z0-9])",
+        re.IGNORECASE,
+    )
+    return sorted(list_to_organise, key=lambda sk: keyword_sort_key(pattern, sk))
 
 
 def vol2mat(matvol: np.ndarray, lut_vol: np.ndarray) -> np.ndarray:
@@ -207,6 +234,13 @@ def white_component(component_dir: str, group_averages_dir: str) -> np.ndarray:
     )
 
 
+def convert_volume_to_component_matrix(img_data, x_y_z_coordinates):
+    xyz_idx = np.ravel_multi_index(x_y_z_coordinates.T, img_data.shape[:3])
+    ncols = img_data.shape[3] if len(img_data.shape) > 3 else 1
+    flattened_data = img_data.reshape(-1, ncols)
+    return flattened_data[xyz_idx, :]
+
+
 def load_grey_matter_volume(nifti_file: str, x_y_z_coordinates: np.array) -> np.array:
     """
     Function to load a grey matter NIfTI file and convert it
@@ -225,10 +259,7 @@ def load_grey_matter_volume(nifti_file: str, x_y_z_coordinates: np.array) -> np.
         Grey matter component matrix
     """
     img_data = nb.load(nifti_file).get_fdata()
-    xyz_idx = np.ravel_multi_index(x_y_z_coordinates.T, img_data.shape[:3])
-    ncols = img_data.shape[3] if len(img_data.shape) > 3 else 1
-    flattened_data = img_data.reshape(-1, ncols)
-    return flattened_data[xyz_idx, :]
+    return convert_volume_to_component_matrix(img_data, x_y_z_coordinates.T)
 
 
 def remove_medial_wall(grey_component, roi):
@@ -261,25 +292,43 @@ def load_grey_matter_gifti_seed(file_name: str, roi: str) -> np.array:
 def load_grey_cifit(cifti_file, roi, x_y_z_coordinates):
     grey_cifti = get_cifti_data(cifti_file)
     left_surface = remove_medial_wall(grey_cifti["L_surf"], roi[0])
-    right_surface = remove_medial_wall(grey_cifti["R_surf"], roi[0])
+    right_surface = remove_medial_wall(grey_cifti["R_surf"], roi[1])
     grey_comp = np.vstack([left_surface, right_surface])
 
     if "vol" in grey_cifti.keys():
-        subcortical = load_grey_matter_volume(grey_cifti["vol"], x_y_z_coordinates)
+        subcortical = convert_volume_to_component_matrix(
+            grey_cifti["vol"].get_fdata(), x_y_z_coordinates
+        )
         grey_comp = np.vstack([grey_comp, subcortical])
 
     return grey_comp
 
 
-# THis may not work as medial wall is not always given
-def load_type(seed, idx, coords_by_idx, mw):
+def load_type(coords_by_idx, mw):
     loaders = {
-        "nii": lambda: load_grey_matter_volume(seed, coords_by_idx[idx]),
-        "gii": lambda: load_grey_matter_gifti_seed(seed, mw[idx]),
-        "cifti": lambda: load_grey_cifit(seed),
+        "nifti": lambda seed, idx: load_grey_matter_volume(seed, coords_by_idx[idx])
     }
-    loader = loaders.get(imaging_type(seed))
-    return loader() if loader else None
+
+    if mw:
+        loaders["gifti"] = lambda seed, idx: load_grey_matter_gifti_seed(seed, mw[idx])
+
+    return loaders
+
+
+def reorder_file_inputs(organise_list, list_to_organise):
+    key_word = get_key_to_organise_list(organise_list)
+    return reorder_lists_order(list_to_organise, key_word)
+
+
+def sort_coord_file(group_averages):
+    coord_file = np.loadtxt(
+        os.path.join(group_averages, "coords_for_fdt_matrix2"),
+        dtype=int,
+    )
+    return {
+        idx: coord_file[coord_file[:, 3] == idx][:, :3]
+        for idx in range(coord_file[:, 3].max() + 1)
+    }
 
 
 def grey_components(
@@ -306,32 +355,25 @@ def grey_components(
     """
 
     grey_matter = glob(os.path.join(decomp_dir, "G_*dim*"))
-    seed_key_word = get_key_to_organise_list(seeds[0])
-    sorted_components = sort_grey_matter_order(grey_matter, seed_key_word)
-    coord_file = np.loadtxt(
-        os.path.join(group_averages, "coords_for_fdt_matrix2"),
-        dtype=int,
-    )
-    coords_by_idx = {
-        idx: coord_file[coord_file[:, 3] == idx][:, :3]
-        for idx in range(coord_file[:, 3].max() + 1)
-    }
-    grey_component = []
-    for idx, seed in sorted_components:
-        save_type = imaging_type(seed)
+    sorted_components = reorder_file_inputs(seeds[0], grey_matter)
+    # Needed if mw are not given
+    try:
+        mw = reorder_file_inputs(seeds[0], mw)
+    except TypeError:
+        pass
+    coords_by_idx = sort_coord_file(group_averages)
+    if imaging_type(sorted_components[0]) == "cifti":
+        cifit_coords = np.vstack(list(coords_by_idx.values())[2:])
 
-        if save_type == "nii":
-            grey_comp = load_grey_matter_volume(
-                seed, coord_file[coord_file[:, 3] == idx][:, :3]
-            )
+        return load_grey_cifit(sorted_components[0], mw, cifit_coords)
 
-        if save_type == "gii":
-            grey_comp = load_grey_matter_gifti_seed(seed, mw[idx])
+    loaders = load_type(coords_by_idx, mw)
+    grey_component = [
+        loaders[imaging_type(seed)](seed, idx)
+        for idx, seed in enumerate(sorted_components)
+    ]
 
-        if save_type == "cifti":
-            grey_comp = load_grey_cifit(seed)
-
-        grey_component.append(grey_comp)
+    return np.vstack(grey_component)
 
 
 def get_group_level_components(
