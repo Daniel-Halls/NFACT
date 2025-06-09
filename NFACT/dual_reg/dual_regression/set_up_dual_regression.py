@@ -130,6 +130,7 @@ def submit_to_cluster(args: dict, paths: dict) -> list:
     for idx, sub in enumerate(args["ptxdir"]):
         sub_id = get_subject_id(sub, idx)
         nprint(f"Submittng {sub_id}")
+        breakpoint()
         cluster_command = build_cluster_command(
             sub,
             os.path.join(args["outdir"], "nfact_dr"),
@@ -213,8 +214,8 @@ def run_locally(args: dict, paths: dict) -> None:
             args["seeds"],
             args["roi"],
         )
-    except Exception:
-        error_and_exit(False, "Unable to find components")
+    except Exception as e:
+        error_and_exit(False, f"Unable to find components due to {e}")
 
     for idx, subject in enumerate(args["ptxdir"]):
         subject_id = get_subject_id(subject, idx)

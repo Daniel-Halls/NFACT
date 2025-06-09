@@ -123,8 +123,8 @@ def dual_regression_pipeline(
                 seeds,
                 roi,
             )
-        except Exception:
-            error_and_exit(False, "Unable to find components")
+        except Exception as e:
+            error_and_exit(False, f"Unable to find components due to {e}")
 
     nprint(f"{col['pink']}Subject ID{col['reset']}: {sub_id}", to_flush=True)
     nprint(f"{col['pink']}Obtaining{col['reset']}: FDT Matrix")
