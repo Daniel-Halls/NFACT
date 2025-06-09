@@ -130,7 +130,6 @@ def submit_to_cluster(args: dict, paths: dict) -> list:
     for idx, sub in enumerate(args["ptxdir"]):
         sub_id = get_subject_id(sub, idx)
         nprint(f"Submittng {sub_id}")
-        breakpoint()
         cluster_command = build_cluster_command(
             sub,
             os.path.join(args["outdir"], "nfact_dr"),
