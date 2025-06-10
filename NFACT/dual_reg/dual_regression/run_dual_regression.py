@@ -50,6 +50,15 @@ def cluster_mode_args() -> dict:
     parser.add_argument(
         "--dscalar", default=False, action="store_true", help="Save as dscalar"
     )
+    parser.add_argument(
+        "--threshold", default=3, type=int, help="threshold the components"
+    )
+    parser.add_argument(
+        "--normalise",
+        default=False,
+        action="store_true",
+        help="Save a normalised version of the components",
+    )
     return vars(parser.parse_args())
 
 
@@ -65,6 +74,8 @@ def dual_regression_pipeline(
     parallel: int = 1,
     components: np.ndarray = False,
     dscalar: bool = False,
+    threshold: int = 3,
+    normalise: bool = False,
 ) -> None:
     """
     The dual regression pipeline function.
@@ -102,6 +113,12 @@ def dual_regression_pipeline(
     dscalar: bool
         save gm as dscalar.
         Default is False
+    threshold: int = 3
+        value to threshold components
+        at.
+    normalise: bool = False
+        save a normalised version
+        of the components
 
     Returns
     -------
@@ -174,4 +191,6 @@ if __name__ == "__main__":
         roi=args["roi"],
         parallel=args["parallel"],
         dscalar=args["dscalar"],
+        threshold=args["threshold"],
+        normalise=args["normalise"],
     )
