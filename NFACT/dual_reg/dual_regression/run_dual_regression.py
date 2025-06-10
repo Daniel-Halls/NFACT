@@ -157,6 +157,7 @@ def dual_regression_pipeline(
         dr_results = run_decomp(method, components, matrix, parallel)
     except Exception as e:
         error_and_exit(False, f"Dual regression failed due to {e}")
+
     dr_results = thresholding_components(
         int(threshold),
         os.path.join(fdt_path, "coords_for_fdt_matrix2"),
