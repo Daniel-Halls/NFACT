@@ -165,7 +165,9 @@ def dual_regression_pipeline(
         dr_results,
     )
     if normalise:
-        normalised = normalise_components()
+        normalised = normalise_components(
+            dr_results["grey_components"], dr_results["white_components"]
+        )
         dr_results["normalised_white"] = normalised["white_matter"]
         dr_results["normalised_grey"] = normalised["grey_matter"]
 
