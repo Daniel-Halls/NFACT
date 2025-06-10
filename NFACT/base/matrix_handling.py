@@ -212,3 +212,48 @@ def thresholding(component: np.ndarray, zscore_val: int) -> np.ndarray:
         threshold = tract.mean() + (zscore_val * tract.std())
         tract[tract < threshold] = 0.0
     return component
+
+
+def thresholding_components(
+    threshold_val: int, output_dir: str, seeds: list, components: dict
+) -> dict:
+    """
+    Function wrapper around thresholding components.
+
+    Parameters
+    ----------
+    threshold_val: int
+        threshold value
+    output_dir: str
+        output directory
+        needed for coords
+    seeds: list
+        list of seeds
+    components: dict
+        dict of grey and white
+        matter components
+
+    Returns
+    -------
+    components: dict
+        thresholded components
+    """
+    col = colours()
+    thresholding_str = threshold_val if threshold_val != 0 else "Not thresholding"
+    nprint(f"{col['pink']}Thresholding value:{col['reset']} {thresholding_str}\n")
+    if threshold_val != 0:
+        components["white_components"] = thresholding(
+            components["white_components"], threshold_val
+        )
+        components["grey_components"] = threshold_grey_components(
+            components["grey_components"],
+            os.path.join(
+                output_dir,
+                "nfact_decomp",
+                "group_averages",
+                "coords_for_fdt_matrix2",
+            ),
+            seeds,
+            threshold_val,
+        )
+    return components
