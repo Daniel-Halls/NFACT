@@ -163,7 +163,12 @@ def nfact_decomp_main(args: dict = None) -> None:
     )
 
     components = thresholding_components(
-        int(args["threshold"]), args["outdir"], args["seeds"], components
+        int(args["threshold"]),
+        os.path.join(
+            args["outdir"], "nfact_decomp", "group_averages", "coords_for_fdt_matrix2"
+        ),
+        args["seeds"],
+        components,
     )
 
     if args["disk"]:

@@ -215,7 +215,7 @@ def thresholding(component: np.ndarray, zscore_val: int) -> np.ndarray:
 
 
 def thresholding_components(
-    threshold_val: int, output_dir: str, seeds: list, components: dict
+    threshold_val: int, path_to_coords: str, seeds: list, components: dict
 ) -> dict:
     """
     Function wrapper around thresholding components.
@@ -224,9 +224,8 @@ def thresholding_components(
     ----------
     threshold_val: int
         threshold value
-    output_dir: str
-        output directory
-        needed for coords
+    path_to_coords: str
+        path to coords file
     seeds: list
         list of seeds
     components: dict
@@ -247,12 +246,7 @@ def thresholding_components(
         )
         components["grey_components"] = threshold_grey_components(
             components["grey_components"],
-            os.path.join(
-                output_dir,
-                "nfact_decomp",
-                "group_averages",
-                "coords_for_fdt_matrix2",
-            ),
+            path_to_coords,
             seeds,
             threshold_val,
         )

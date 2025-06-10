@@ -7,6 +7,7 @@ from NFACT.dual_reg.dual_regression.dual_regression_methods import (
 )
 from NFACT.dual_reg.nfact_dr_functions import save_dual_regression_images
 from NFACT.base.utils import colours, error_and_exit, nprint
+from NFACT.base.matrix_handling import thresholding_components, normalise_components
 import argparse
 import os
 import numpy as np
@@ -156,6 +157,16 @@ def dual_regression_pipeline(
         dr_results = run_decomp(method, components, matrix, parallel)
     except Exception as e:
         error_and_exit(False, f"Dual regression failed due to {e}")
+    dr_results = thresholding_components(
+        int(threshold),
+        os.path.join(fdt_path, "coords_for_fdt_matrix2"),
+        seeds,
+        dr_results,
+    )
+    if normalise:
+        normalised = normalise_components()
+        dr_results["normalised_white"] = normalised["white_matter"]
+        dr_results["normalised_grey"] = normalised["grey_matter"]
 
     nprint(f"{col['pink']}Saving{col['reset']}: Components", to_flush=True)
 
