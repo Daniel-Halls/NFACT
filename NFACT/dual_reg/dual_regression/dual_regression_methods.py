@@ -212,7 +212,7 @@ class NNLS:
         self.n_jobs = n_jobs
         self.batch_size = batch_size
         self.data_type = data_type
-        if self.batch_size == None:
+        if self.batch_size is None:
             self.batch_size = self.get_batch_size(conn_matrix.shape[0])
 
     def get_batch_size(self, n_cols, min_size=10, max_size=500, fraction=0.02):
