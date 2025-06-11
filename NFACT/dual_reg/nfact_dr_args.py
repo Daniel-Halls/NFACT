@@ -67,6 +67,16 @@ def nfactdr_args() -> dict:
         Save GM as cifti dscalar. 
         Seeds must be left and right surfaces with an optional nifti for subcortical structures""",
     )
+    dr_args.add_argument(
+        "-t",
+        "--threshold",
+        dest="threshold",
+        default=3,
+        help="""
+        Value at which to threshold Components
+        at. Set to 0 to do no thresholding.
+        """,
+    )
 
     parallel_args(base_args, col, "To parallelize dual regression")
     cluster_args(base_args, col)

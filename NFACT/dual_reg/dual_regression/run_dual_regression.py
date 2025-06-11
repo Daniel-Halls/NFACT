@@ -7,6 +7,7 @@ from NFACT.dual_reg.dual_regression.dual_regression_methods import (
 )
 from NFACT.dual_reg.nfact_dr_functions import save_dual_regression_images
 from NFACT.base.utils import colours, error_and_exit, nprint
+from NFACT.base.matrix_handling import thresholding_components, normalise_components
 import argparse
 import os
 import numpy as np
@@ -50,6 +51,15 @@ def cluster_mode_args() -> dict:
     parser.add_argument(
         "--dscalar", default=False, action="store_true", help="Save as dscalar"
     )
+    parser.add_argument(
+        "--threshold", default=3, type=int, help="threshold the components"
+    )
+    parser.add_argument(
+        "--normalise",
+        default=False,
+        action="store_true",
+        help="Save a normalised version of the components",
+    )
     return vars(parser.parse_args())
 
 
@@ -65,6 +75,8 @@ def dual_regression_pipeline(
     parallel: int = 1,
     components: np.ndarray = False,
     dscalar: bool = False,
+    threshold: int = 3,
+    normalise: bool = False,
 ) -> None:
     """
     The dual regression pipeline function.
@@ -102,6 +114,12 @@ def dual_regression_pipeline(
     dscalar: bool
         save gm as dscalar.
         Default is False
+    threshold: int = 3
+        value to threshold components
+        at.
+    normalise: bool = False
+        save a normalised version
+        of the components
 
     Returns
     -------
@@ -140,6 +158,19 @@ def dual_regression_pipeline(
     except Exception as e:
         error_and_exit(False, f"Dual regression failed due to {e}")
 
+    dr_results = thresholding_components(
+        int(threshold),
+        os.path.join(fdt_path, "coords_for_fdt_matrix2"),
+        seeds,
+        dr_results,
+    )
+    if normalise:
+        normalised = normalise_components(
+            dr_results["grey_components"], dr_results["white_components"]
+        )
+        dr_results["normalised_white"] = normalised["white_matter"]
+        dr_results["normalised_grey"] = normalised["grey_matter"]
+
     nprint(f"{col['pink']}Saving{col['reset']}: Components", to_flush=True)
 
     try:
@@ -174,4 +205,6 @@ if __name__ == "__main__":
         roi=args["roi"],
         parallel=args["parallel"],
         dscalar=args["dscalar"],
+        threshold=args["threshold"],
+        normalise=args["normalise"],
     )
