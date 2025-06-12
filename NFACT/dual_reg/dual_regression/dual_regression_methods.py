@@ -90,7 +90,7 @@ def ica_dual_regression(
 
 
 def nmf_dual_regression(
-    components: dict, connectivity_matrix: np.ndarray, n_jobs: int = -1
+    components: dict, connectivity_matrix: np.ndarray, n_jobs: int = 1
 ) -> dict:
     """
     Dual regression function for NMF.
@@ -103,7 +103,7 @@ def nmf_dual_regression(
         Subjects' loaded connectivity matrix.
     n_jobs: int
         Number of parallel jobs for computation.
-        Default is -1 (all available CPUs).
+        Default is 1 (all available CPUs).
 
     Returns
     -------
@@ -139,21 +139,23 @@ def nnls_non_parallel(components: dict, connectivity_matrix: np.ndarray):
             nnls(components["grey_components"], connectivity_matrix[:, col])[0]
             for col in tqdm(
                 range(connectivity_matrix.shape[1]),
+                desc="WM",
                 colour="magenta",
-                unit=" voxel",
+                unit=" WM seed unit",
                 position=0,
                 dynamic_ncols=True,
             )
         ]
-    ).T
+    )
     nprint(f"{col['pink']}Regression:{col['reset']} Grey Matter")
     gm_component_grey_map = np.array(
         [
-            nnls(wm_component_white_map.T, connectivity_matrix.T[:, col])[0]
+            nnls(wm_component_white_map, connectivity_matrix.T[:, col])[0]
             for col in tqdm(
                 range(connectivity_matrix.shape[0]),
+                desc="GM",
                 colour="magenta",
-                unit=" vertex",
+                unit=" GM seed unit",
                 position=0,
                 dynamic_ncols=True,
             )
@@ -161,35 +163,147 @@ def nnls_non_parallel(components: dict, connectivity_matrix: np.ndarray):
     )
     return {
         "grey_components": gm_component_grey_map,
-        "white_components": wm_component_white_map,
+        "white_components": wm_component_white_map.T,
     }
 
 
-def nnls_for_parallel(
-    col: int, component: np.ndarray, connectivity_matrix: np.ndarray
-) -> np.ndarray:
+class NNLS:
     """
-    nnls function wrapper around the nnls function.
-    Needed for parallelization
+    Class to perform NNLS
+    for batch parallelization
 
-    Parameters
-    ----------
-    col: int
-        column index
-    component: np.ndarray
-        components to run nnls on
-    connectivity_matrix: np.ndarray
-        connectivity matrix
-
-    Returns
-    -------
-    np.ndarray: np.ndarray
-        output of nnls function
+    Usage
+    -----
+    gm = NNLS(comp, conn, 10, "gm")
+    gm_component = gm.run()
     """
-    return nnls(component, connectivity_matrix[:, col])[0]
+
+    def __init__(
+        self,
+        components: np.ndarray,
+        conn_matrix: np.ndarray,
+        n_jobs: int,
+        data_type: str,
+        batch_size: int = None,
+    ) -> None:
+        """
+        Method to init class.
+
+        Parameters
+        ----------
+        components: np.ndarray
+            array of components
+        conn_matrix: np.ndarray
+            connectivity matrix
+        n_jobs: int
+            number of jobs to parallelize
+        data_type: str
+            str of what type of data is being
+            modelled
+        batch_size: int=None
 
 
-def nnls_parallel(components: dict, connectivity_matrix: np.ndarray, n_jobs: int = -1):
+        Returns
+        -------
+        None
+        """
+        self.components = components
+        self.conn_matrix = conn_matrix
+        self.n_jobs = n_jobs
+        self.batch_size = batch_size
+        self.data_type = data_type
+        if self.batch_size is None:
+            self.batch_size = self.get_batch_size(conn_matrix.shape[0])
+
+    def get_batch_size(
+        self, n_cols: int, min_size: int = 10, max_size: int = 500, fraction: int = 0.02
+    ) -> int:
+        """
+        Method to determine optimal batch size given
+        a number of columns. Has a min and max size
+
+        Parameters
+        ----------
+        n_cols: int
+            number of colums
+            the matrix has
+        min_size: int=10
+            the minimum the
+            batch size can be
+        max_size: int=500
+            the maximum the batch size
+            can be
+        fraction: int=0.02
+            fraction to
+            calculate minimum
+            size
+
+        Returns
+        --------
+        int: int
+            batch size
+        """
+        size = max(min_size, int(n_cols * fraction))
+        return min(size, max_size)
+
+    def run_nnls_batch(self, cols: np.ndarray) -> list:
+        """
+        Method to run nnls
+
+        Parameters
+        ----------
+        cols: np.ndarray
+            number of columns
+
+        Returns
+        -------
+        list: list object
+            list of nnls
+            output
+        """
+        return [nnls(self.components, self.conn_matrix[:, col])[0] for col in cols]
+
+    def run(self) -> np.ndarray:
+        """
+        Run method for class.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        np.ndarray
+            nnls output
+        """
+        n_cols = self.conn_matrix.shape[1]
+        col_batches = [
+            range(batch, min(batch + self.batch_size, n_cols))
+            for batch in range(0, n_cols, self.batch_size)
+        ]
+
+        results = Parallel(n_jobs=self.n_jobs)(
+            delayed(self.run_nnls_batch)(batch)
+            for batch in tqdm(
+                col_batches,
+                desc=self.data_type,
+                colour="magenta",
+                unit=" batches",
+                position=0,
+                dynamic_ncols=True,
+            )
+        )
+
+        flat_results = [item for sublist in results for item in sublist]
+        return np.array(flat_results)
+
+
+def nnls_parallel(
+    components: dict,
+    connectivity_matrix: np.ndarray,
+    n_jobs: int,
+    n_batches: int = None,
+):
     """
     Dual regression function for NMF with parallelization
 
@@ -201,7 +315,6 @@ def nnls_parallel(components: dict, connectivity_matrix: np.ndarray, n_jobs: int
         Subjects' loaded connectivity matrix.
     n_jobs: int
         Number of parallel jobs for computation.
-        Default is -1 (all available CPUs).
 
     Returns
     -------
@@ -210,31 +323,18 @@ def nnls_parallel(components: dict, connectivity_matrix: np.ndarray, n_jobs: int
     """
     time = Timer()
     time.tic()
-
-    grey_components = components["grey_components"]
     col = colours()
     nprint(f"{col['pink']}Regression:{col['reset']} White Matter")
-    wm_component_white_map = np.array(
-        Parallel(n_jobs=n_jobs)(
-            delayed(nnls_for_parallel)(col, grey_components, connectivity_matrix)
-            for col in range(connectivity_matrix.shape[1])
-        )
-    ).T
-
-    nprint(f"{col['pink']}Regression:{col['reset']} Grey Matter")
-    time.tic()
-    wm_component_white_map_T = wm_component_white_map.T
-    gm_component_grey_map = np.array(
-        Parallel(n_jobs=n_jobs)(
-            delayed(nnls_for_parallel)(
-                col, wm_component_white_map_T, connectivity_matrix.T
-            )
-            for col in range(connectivity_matrix.shape[0])
-        )
+    wm_parallel = NNLS(
+        components["grey_components"], connectivity_matrix, n_jobs, n_batches
     )
+    wm_component_white_map = wm_parallel.run()
+    nprint(f"{col['pink']}Regression:{col['reset']} Grey Matter")
+    gm_parallel = NNLS(wm_component_white_map, connectivity_matrix.T, n_jobs, n_batches)
+    gm_component_grey_map = gm_parallel.run()
     nprint(f"Dual regression took {time.how_long()}")
 
     return {
         "grey_components": gm_component_grey_map,
-        "white_components": wm_component_white_map,
+        "white_components": wm_component_white_map.T,
     }
