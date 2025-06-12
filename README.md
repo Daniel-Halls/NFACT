@@ -685,19 +685,24 @@ This is the config file for the nfact pipeline. Please check the individual modu
     "nfact_dr": {
         "normalise": false,
         "cifti": false,
+        "threshold": "3",
         "n_cores": false
     },
     "nfact_qc": {
         "threshold": "2"
-    }
+      }
 }
-
 
 ```
 
 Everything that has says is required must be given. rois, warps and seed must be given in python list format like this
 ```
 "seed": ["l_seed.nii.gz", "r_seed.nii.gz"]
+```
+
+Example call
+```
+nfact_config -C
 ```
 
 ### nfact_config_decomp.config 
@@ -733,6 +738,11 @@ NFACT does its decomposition using sckit-learn's FastICA (https://scikit-learn.o
         "shuffle": false
     }
 }
+```
+
+Example call
+```
+nfact_config -D
 ```
 
 ### nfact_config_sublist
