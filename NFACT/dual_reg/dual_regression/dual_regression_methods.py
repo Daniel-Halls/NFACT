@@ -215,14 +215,67 @@ class NNLS:
         if self.batch_size is None:
             self.batch_size = self.get_batch_size(conn_matrix.shape[0])
 
-    def get_batch_size(self, n_cols, min_size=10, max_size=500, fraction=0.02):
+    def get_batch_size(
+        self, n_cols: int, min_size: int = 10, max_size: int = 500, fraction: int = 0.02
+    ) -> int:
+        """
+        Method to determine optimal batch size given
+        a number of columns. Has a min and max size
+
+        Parameters
+        ----------
+        n_cols: int
+            number of colums
+            the matrix has
+        min_size: int=10
+            the minimum the
+            batch size can be
+        max_size: int=500
+            the maximum the batch size
+            can be
+        fraction: int=0.02
+            fraction to
+            calculate minimum
+            size
+
+        Returns
+        --------
+        int: int
+            batch size
+        """
         size = max(min_size, int(n_cols * fraction))
         return min(size, max_size)
 
-    def run_nnls_batch(self, cols):
+    def run_nnls_batch(self, cols: np.ndarray) -> list:
+        """
+        Method to run nnls
+
+        Parameters
+        ----------
+        cols: np.ndarray
+            number of columns
+
+        Returns
+        -------
+        list: list object
+            list of nnls
+            output
+        """
         return [nnls(self.components, self.conn_matrix[:, col])[0] for col in cols]
 
-    def run(self):
+    def run(self) -> np.ndarray:
+        """
+        Run method for class.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        np.ndarray
+            nnls output
+        """
         n_cols = self.conn_matrix.shape[1]
         col_batches = [
             range(batch, min(batch + self.batch_size, n_cols))
@@ -262,7 +315,6 @@ def nnls_parallel(
         Subjects' loaded connectivity matrix.
     n_jobs: int
         Number of parallel jobs for computation.
-        Default is -1 (all available CPUs).
 
     Returns
     -------
