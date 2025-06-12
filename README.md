@@ -739,6 +739,11 @@ NFACT does its decomposition using sckit-learn's FastICA (https://scikit-learn.o
 
 NFACT config will attempt to given a directory work out and write to a file all the subjects in that file. Though nfact will try and filter out 
 folders that aren't subjects, it isn't perfect so please check the subject list. 
+
+Example call 
+```
+nfact_config -s /path/to/subs/dir
+```
 -----------------------------------------------------------------------------------------------------------------------------------------------
 ## Example calls
 
