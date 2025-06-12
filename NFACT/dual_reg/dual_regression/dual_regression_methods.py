@@ -90,7 +90,7 @@ def ica_dual_regression(
 
 
 def nmf_dual_regression(
-    components: dict, connectivity_matrix: np.ndarray, n_jobs: int = -1
+    components: dict, connectivity_matrix: np.ndarray, n_jobs: int = 1
 ) -> dict:
     """
     Dual regression function for NMF.
@@ -103,7 +103,7 @@ def nmf_dual_regression(
         Subjects' loaded connectivity matrix.
     n_jobs: int
         Number of parallel jobs for computation.
-        Default is -1 (all available CPUs).
+        Default is 1 (all available CPUs).
 
     Returns
     -------

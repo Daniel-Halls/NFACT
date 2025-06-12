@@ -121,7 +121,7 @@ def test_nnls_non_parrallel(test_nmf, individual_matrix):
 
 
 def test_nnls_parrallel(test_nmf, individual_matrix):
-    sub_specific = nmf_dual_regression(test_nmf, individual_matrix, n_jobs=2)
+    sub_specific = nmf_dual_regression(test_nmf, individual_matrix, n_jobs=4)
     assert isinstance(sub_specific["white_components"], np.ndarray)
 
 
