@@ -161,7 +161,21 @@ def nfact_decomp_main(args: dict = None) -> None:
     nprint(
         f"{col['pink']}Decomposition time:{col['reset']} {decomposition_timer.how_long()}\n"
     )
-
+    if args["wta"]:
+        # Save winner-takes-all maps
+        nprint("Saving winner-take-all maps\n")
+        winner_takes_all(
+            components,
+            args["wta_zthr"],
+            args["algo"].upper(),
+            os.path.join(
+                args["outdir"],
+                "nfact_decomp",
+            ),
+            args["seeds"],
+            args["dim"],
+            args["roi"],
+        )
     components = thresholding_components(
         int(args["threshold"]),
         os.path.join(
@@ -193,21 +207,6 @@ def nfact_decomp_main(args: dict = None) -> None:
             args["cifti"],
         )
 
-        if args["wta"]:
-            # Save winner-takes-all maps
-            nprint("Saving winner-take-all maps\n")
-            winner_takes_all(
-                components,
-                args["wta_zthr"],
-                args["algo"].upper(),
-                os.path.join(
-                    args["outdir"],
-                    "nfact_decomp",
-                ),
-                args["seeds"],
-                args["dim"],
-                args["roi"],
-            )
     nprint(f"{col['darker_pink']}NFACT decomp has finished{col['reset']}")
 
     log.clear_logging()
