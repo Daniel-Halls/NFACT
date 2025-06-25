@@ -39,7 +39,7 @@ def save_images(
         rois. Needed
         for surface
     cifti_save: bool
-        should save type be
+        should save type be cifti
 
     Returns
     -------
@@ -156,6 +156,7 @@ def winner_takes_all(
     seeds: list,
     dim: str,
     roi: str,
+    cifti_save: bool,
 ) -> None:
     """
     Wrapper function around creating WTA and saving
@@ -177,6 +178,8 @@ def winner_takes_all(
         list of seeds
     dim: str
         number of dimensions (for saving files)
+    cifti_save: bool
+        should save type be cifti
 
     Returns
     -------
@@ -206,6 +209,7 @@ def winner_takes_all(
         os.path.join(nfact_path, "group_averages", "coords_for_fdt_matrix2"),
         roi,
         f"G_{algo.upper()}_WTA",
+        cifti_save,
     )
 
 
