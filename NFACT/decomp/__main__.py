@@ -175,6 +175,7 @@ def nfact_decomp_main(args: dict = None) -> None:
             args["seeds"],
             args["dim"],
             args["roi"],
+            args["cifti"],
         )
     components = thresholding_components(
         int(args["threshold"]),

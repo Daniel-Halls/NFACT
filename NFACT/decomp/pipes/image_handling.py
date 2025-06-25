@@ -156,6 +156,7 @@ def winner_takes_all(
     seeds: list,
     dim: str,
     roi: str,
+    cifti_save: bool,
 ) -> None:
     """
     Wrapper function around creating WTA and saving
@@ -206,6 +207,7 @@ def winner_takes_all(
         os.path.join(nfact_path, "group_averages", "coords_for_fdt_matrix2"),
         roi,
         f"G_{algo.upper()}_WTA",
+        cifti_save,
     )
 
 
