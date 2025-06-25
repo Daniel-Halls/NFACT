@@ -39,7 +39,7 @@ def save_images(
         rois. Needed
         for surface
     cifti_save: bool
-        should save type be
+        should save type be cifti
 
     Returns
     -------
@@ -178,6 +178,8 @@ def winner_takes_all(
         list of seeds
     dim: str
         number of dimensions (for saving files)
+    cifti_save: bool
+        should save type be cifti
 
     Returns
     -------
