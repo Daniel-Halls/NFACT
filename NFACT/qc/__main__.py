@@ -46,7 +46,14 @@ def nfactQc_main(args: dict = None) -> None:
     args["dim"] = process_dim(args["dim"])
     nfactQc_directory = os.path.join(args["nfact_folder"], "nfactQc")
     images = get_images(args["nfact_folder"], args["dim"], args["algo"])
-    white_name = get_img_name(os.path.basename(images["white_image"][0]))
+
+    try:
+        white_name = get_img_name(os.path.basename(images["white_image"][0]))
+    except IndexError:
+        error_and_exit(
+            False,
+            "Unable to find files. Please check nfact_decomp directory"
+        )
 
     print(f"{col['plum']}nfactQC directory:{col['reset']} {nfactQc_directory}\n")
     nfactQc_dir(nfactQc_directory, args["overwrite"])
