@@ -230,4 +230,6 @@ def run_locally(args: dict, paths: dict) -> None:
             parallel=args["n_cores"],
             components=components,
             dscalar=args["cifti"],
+            threshold=args["threshold"],
+            normalise=args["normalise"],
         )
