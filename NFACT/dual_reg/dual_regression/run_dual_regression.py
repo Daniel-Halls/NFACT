@@ -127,7 +127,6 @@ def dual_regression_pipeline(
     """
     col = colours()
     nprint("-" * 100)
-
     if not components:
         nprint(
             f"{col['pink']}Obtaining{col['reset']}: Group Level Components",
