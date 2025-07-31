@@ -1,10 +1,9 @@
 import numpy as np
 
+
 def get_component_data(
-        component_map: np.ndarray, 
-        component_number: np.ndarray, 
-        surface: bool=False
-        ) -> np.ndarray:
+    component_map: np.ndarray, component_number: np.ndarray, surface: bool = False
+) -> np.ndarray:
     """
     Function to get component
     values from component map
@@ -12,7 +11,7 @@ def get_component_data(
     Parameters
     ----------
     component_map: np.ndarray
-        component volume or 
+        component volume or
         surface map
     component_number: np.ndarray
         which component to obtain
@@ -25,28 +24,30 @@ def get_component_data(
          flattened 1D array of
          component data
     """
+
     if surface:
         return component_map[..., component_number].flatten()
     return component_map[:, component_number].flatten()
 
+
 def component_correlation(
-        group_map: np.ndarray, 
-        subject_map: np.ndarray, 
-        component_number: int, 
-        surface: bool=False
-        ) -> float:
+    group_map: np.ndarray,
+    subject_map: np.ndarray,
+    component_number: int,
+    surface: bool = False,
+) -> float:
     """
     Function to calculate
-    the correlation between 
-    subject and group component maps 
+    the correlation between
+    subject and group component maps
 
     Parameters
     ----------
     group_map: np.ndarray
-        group level component volume 
+        group level component volume
         or surface map
     subject_map: np.ndarray
-        subject level component volume 
+        subject level component volume
         or surface map
     component_number: np.ndarray
         which component to obtain
@@ -56,30 +57,30 @@ def component_correlation(
     Returns
     -------
     float: correlation value
-        correlation value between group 
+        correlation value between group
         and subject map
     """
+
     group_component = get_component_data(group_map, component_number, surface)
     subject_component = get_component_data(subject_map, component_number, surface)
     return np.corrcoef(group_component, subject_component)[0, 1]
 
+
 def calculate_component_loading(
-        group_map: np.ndarray, 
-        subject_map: np.ndarray, 
-        surface: bool=False
-        ) -> np.ndarray:
+    group_map: np.ndarray, subject_map: np.ndarray, surface: bool = False
+) -> np.ndarray:
     """
     Function to calculate
-    component loading between 
-    subject and group components 
+    component loading between
+    subject and group components
 
     Parameters
     ----------
     group_map: np.ndarray
-        group level component volume 
+        group level component volume
         or surface map
     subject_map: np.ndarray
-        subject level component volume 
+        subject level component volume
         or surface map
     surface: bool
         is component data a surface
@@ -87,10 +88,24 @@ def calculate_component_loading(
     Returns
     -------
     np.ndarray: np.array
-        array of component loadings 
+        array of component loadings
     """
 
-    return np.array([
-            component_correlation(group_map, subject_map, comp, surface) 
+    return np.array(
+        [
+            component_correlation(group_map, subject_map, comp, surface)
             for comp in range(group_map.shape[-1])
-        ])
+        ]
+    )
+
+
+def get_group_components():
+    return None
+
+
+def get_subject_loadings():
+    return
+
+
+def get_loadings(subjects: list):
+    return np.vstack([get_subject_loadings() for sub in subjects])
