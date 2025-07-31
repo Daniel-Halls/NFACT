@@ -1,6 +1,7 @@
 import argparse
 from NFACT.base.utils import colours, no_args
-from NFACT.base.base_args import algo_arg,
+from NFACT.base.base_args import algo_arg
+
 
 def nfact_dr_args() -> dict:
     """
@@ -34,7 +35,6 @@ def nfact_dr_args() -> dict:
     algo_arg(args)
     no_args(args)
     return vars(args.parse_args())
-
 
 
 def nfact_pd_splash() -> str:
