@@ -49,9 +49,11 @@ def nfact_config_args() -> dict:
         default=False,
         help="""
         Creates a subject list from a given directory
-        Needs path to subjects directory. If ran inside
+        Needs path to subjects directory. Depending on file path
+        will dictate the subject list. If ran inside
         an nfact_pp directory will make a subject list 
-        for decompoisition (adds on omatrix2 to file paths)
+        for decompoisition (adds on omatrix2 to file paths). If ran
+        in nfact_dr it will get the G then W files for subjects
         """,
     )
     args.add_argument(
@@ -480,14 +482,43 @@ def filter_sublist(sub_list: str) -> list:
     ]
 
 
-def nfact_study_list(study_folder_path):
+def nfact_study_list(study_folder_path: str) -> list:
+    """
+    Function to create a list of
+    subject directories for nfact
+
+    Parameters
+    ----------
+    study_folder_path: str
+        path to study folder
+
+    Returns
+    -------
+    sub_list: list
+        list of subject filepaths
+    """
     sub_list = list_of_subjects_from_directory(study_folder_path)
     if "nfact_pp" in study_folder_path:
         sub_list = [sub.rstrip("\n") + "/omatrix2\n" for sub in sub_list]
     return filter_sublist(sub_list)
 
 
-def nfact_dr_study_list(study_folder_path):
+def nfact_dr_study_list(study_folder_path: str) -> list:
+    """
+    Function to create a list of
+    subject files for nfact_dr
+    organises them into G and W
+
+    Parameters
+    ----------
+    study_folder_path: str
+        path to study folder
+
+    Returns
+    -------
+    sub_list: list
+        list of subject filepaths
+    """
     sub_list = list_of_subjects_from_directory(study_folder_path, is_dr=True)
     filtered_list = [
         f"{subs}\n"
