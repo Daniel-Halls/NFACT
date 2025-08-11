@@ -1,3 +1,6 @@
+from NFACT.base.utils import colours
+
+
 def cluster_args(base_args: object, col: dict) -> None:
     """
     Function to add in cluster arguments to
@@ -224,3 +227,29 @@ def algo_arg(arg) -> None:
         """,
     )
 
+
+def nfact_decomp_folder(args) -> None:
+    """
+    Function to return nfact_decomp
+    arguments
+
+    Parameters
+    ----------
+    args: argparse.ArgumentParser
+        ArgumentParser to add group to
+
+    Returns
+    -------
+    None
+    """
+    col = colours()
+    args.add_argument(
+        "-n",
+        "--nfact_folder",
+        dest="nfact_folder",
+        help=f"""{col["red"]}REQUIRED:{col["reset"]}
+        Absolute path to nfact_decomp output folder.
+        nfact_Qc folder is also saved within this
+        folder.
+        """,
+    )

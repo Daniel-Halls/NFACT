@@ -1,6 +1,6 @@
 import argparse
 from NFACT.base.utils import colours, no_args
-from NFACT.base.base_args import algo_arg
+from NFACT.base.base_args import algo_arg, nfact_decomp_folder
 
 
 def nfact_stats_args() -> dict:
@@ -17,21 +17,12 @@ def nfact_stats_args() -> dict:
         dictionary of cmd arguments
     """
     args = argparse.ArgumentParser(
-        prog="nfact_PD",
+        prog="nfact_stats",
         description=print(nfact_stats_splash()),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    col = colours()
-    args.add_argument(
-        "-n",
-        "--nfact_folder",
-        dest="nfact_folder",
-        help=f"""{col["red"]}REQUIRED:{col["reset"]} 
-        Absolute path to nfact_decomp output folder.
-        nfact_Qc folder is also saved within this
-        folder.
-        """,
-    )
+    # col = colours()
+    nfact_decomp_folder(args)
     algo_arg(args)
     no_args(args)
     return vars(args.parse_args())
