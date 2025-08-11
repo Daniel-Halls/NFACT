@@ -1,9 +1,5 @@
 from NFACT.dual_reg.nfact_dr_args import nfactdr_args, nfact_dr_splash
-from NFACT.dual_reg.nfact_dr_set_up import (
-    check_nfact_decomp_directory,
-    create_nfact_dr_folder_set_up,
-)
-from NFACT.dual_reg.nfact_dr_functions import get_paths
+from NFACT.dual_reg.nfact_dr_set_up import create_nfact_dr_folder_set_up
 from NFACT.dual_reg.dual_regression.set_up_dual_regression import (
     run_on_cluster,
     run_locally,
@@ -16,6 +12,8 @@ from NFACT.base.setup import (
     process_input_imgs,
     check_seeds_surfaces,
     check_rois,
+    get_paths,
+    check_nfact_decomp_directory,
 )
 from NFACT.base.filesystem import delete_folder
 from NFACT.base.cluster_support import processing_cluster

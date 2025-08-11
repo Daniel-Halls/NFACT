@@ -4,7 +4,7 @@ from NFACT.base.imagehandling import (
     imaging_type,
     get_cifti_data,
 )
-from NFACT.base.utils import colours, nprint, error_and_exit
+from NFACT.base.utils import colours, nprint
 import numpy as np
 import os
 import nibabel as nb
@@ -454,43 +454,6 @@ def get_group_level_components(
             seeds, component_dir, group_averages_dir, mw
         ),
     }
-
-
-def get_paths(args: dict) -> dict:
-    """
-    Function to return components
-    path.
-
-    Parameters
-    ----------
-    args: dict
-        dictionary of command line
-        arguments
-
-    Returns
-    -------
-    str: string
-        string of component path.
-    """
-    if args["nfact_decomp_dir"]:
-        return {
-            "component_path": os.path.join(
-                args["nfact_decomp_dir"], "components", args["algo"].upper(), "decomp"
-            ),
-            "group_average_path": os.path.join(
-                args["nfact_decomp_dir"], "group_averages"
-            ),
-        }
-    if args["decomp_dir"]:
-        return {
-            "component_path": args["decomp_dir"],
-            "group_average_path": args["decomp_dir"],
-        }
-
-    error_and_exit(
-        False,
-        "Directory to components not given. Please specify with --nfact_decomp_dir or --decomp_dir",
-    )
 
 
 def get_subject_id(path: str, number: int) -> str:

@@ -1,4 +1,16 @@
 import numpy as np
+import os
+
+
+def split_component_type(dr_output):
+    return {
+        "dr_white": [
+            w_file for w_file in dr_output if os.path.basename(w_file).startswith("W")
+        ],
+        "dr_grey": [
+            w_file for w_file in dr_output if os.path.basename(w_file).startswith("G")
+        ],
+    }
 
 
 def get_component_data(
