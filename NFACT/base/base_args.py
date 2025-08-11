@@ -249,7 +249,5 @@ def nfact_decomp_folder(args) -> None:
         dest="nfact_folder",
         help=f"""{col["red"]}REQUIRED:{col["reset"]}
         Absolute path to nfact_decomp output folder.
-        nfact_Qc folder is also saved within this
-        folder.
         """,
     )
