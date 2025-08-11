@@ -1,6 +1,6 @@
 import argparse
 from NFACT.base.utils import colours, no_args
-from NFACT.base.base_args import algo_arg, nfact_decomp_folder
+from NFACT.base.base_args import algo_arg, nfact_decomp_folder, set_up_args
 
 
 def nfact_stats_args() -> dict:
@@ -21,9 +21,13 @@ def nfact_stats_args() -> dict:
         description=print(nfact_stats_splash()),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    # col = colours()
-    nfact_decomp_folder(args)
-    algo_arg(args)
+    col = colours()
+    set_up_args(args, col)
+    stats_args = args.add_argument_group(
+        f"{col['darker_pink']}Stats args{col['reset']}"
+    )
+    nfact_decomp_folder(stats_args)
+    algo_arg(stats_args)
     no_args(args)
     return vars(args.parse_args())
 

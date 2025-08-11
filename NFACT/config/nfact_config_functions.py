@@ -421,7 +421,9 @@ def check_study_folder(study_folder_path: str) -> None:
     )
 
 
-def list_of_subjects_from_directory(study_folder_path: str) -> list:
+def list_of_subjects_from_directory(
+    study_folder_path: str, is_dr: bool = False
+) -> list:
     """
     Function to get list of subjects from a directory
     if a list of subjects is not given
@@ -438,6 +440,8 @@ def list_of_subjects_from_directory(study_folder_path: str) -> list:
     """
 
     list_of_subject = glob.glob(os.path.join(study_folder_path, "*"))
+    if is_dr:
+        return list_of_subject
     return [f"{direct}\n" for direct in list_of_subject if os.path.isdir(direct)]
 
 
@@ -463,16 +467,40 @@ def filter_sublist(sub_list: str) -> list:
         "code",
         "sourcedata",
         "derivatives",
-        ".",
         "nfact_dr",
+        ".",
         "nfact_pp",
         "nfact\n",
+        "normalised",
     ]
     return [
         dirs
         for dirs in sub_list
         if not any(rem in os.path.basename(dirs).lower() for rem in remove_dir)
     ]
+
+
+def nfact_study_list(study_folder_path):
+    sub_list = list_of_subjects_from_directory(study_folder_path)
+    if "nfact_pp" in study_folder_path:
+        sub_list = [sub.rstrip("\n") + "/omatrix2\n" for sub in sub_list]
+    return filter_sublist(sub_list)
+
+
+def nfact_dr_study_list(study_folder_path):
+    sub_list = list_of_subjects_from_directory(study_folder_path, is_dr=True)
+    filtered_list = [
+        f"{subs}\n"
+        for subs in sub_list
+        if os.path.basename(subs)[0].upper() in ["G", "W"]
+    ]
+    return sorted(
+        filtered_list,
+        key=lambda ordering: (
+            os.path.basename(ordering)[0] != "G",
+            os.path.basename(ordering),
+        ),
+    )
 
 
 def create_subject_list(study_folder_path: str, ouput_dir: str, filename: str) -> None:
@@ -496,8 +524,8 @@ def create_subject_list(study_folder_path: str, ouput_dir: str, filename: str) -
     if study_folder_path == ".":
         study_folder_path = os.getcwd()
     check_study_folder(study_folder_path)
-    sub_list = list_of_subjects_from_directory(study_folder_path)
-    if "nfact_pp" in study_folder_path:
-        sub_list = [sub.rstrip("\n") + "/omatrix2\n" for sub in sub_list]
-    sub_list = filter_sublist(sub_list)
+    if "nfact_dr" in study_folder_path:
+        sub_list = nfact_dr_study_list(study_folder_path)
+    else:
+        sub_list = nfact_study_list(study_folder_path)
     write_to_file(ouput_dir, f"{filename}.sublist", sub_list, text_is_list=True)
