@@ -61,14 +61,14 @@ def nfactstats_main(args: dict = None) -> None:
     nprint(f"\n{col['pink']}Saving:{col['reset']} Component loadings")
     nprint("-" * 100)
     save_components(
-        component_loadings["W_correlations"],
+        component_loadings["white_correlations"],
         "W_component_loadings",
         stats_dir,
         args["dr_output"],
         args["no_csv"],
     )
     save_components(
-        component_loadings["G_correlations"],
+        component_loadings["grey_correlations"],
         "G_component_loadings",
         stats_dir,
         args["dr_output"],

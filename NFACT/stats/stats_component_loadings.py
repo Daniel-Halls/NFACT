@@ -56,6 +56,10 @@ class Component_loading:
            loadings
         """
         self.__load_group_components()
+        self.group_white_mean = self.group_white.mean(axis=0)
+        self.group_white_std = self.group_white.std(axis=0)
+        self.group_grey_mean = self.group_grey.mean(axis=0)
+        self.group_grey_std = self.group_grey.std(axis=0)
         w_corr = []
         g_corr = []
         for subject in tqdm(
@@ -192,8 +196,12 @@ class Component_loading:
         }
 
     def __correlating(
-        self, subject_data: np.ndarray, group_data: np.ndarray
-    ) -> list[float]:
+        self,
+        subject_data: np.ndarray,
+        group_data: np.ndarray,
+        group_mean: np.ndarray,
+        group_std: np.ndarray,
+    ) -> np.ndarray:
         """
         Method to run correaltion between group and subject
         by components
@@ -204,16 +212,23 @@ class Component_loading:
             subject data
         group_data: np.ndarray
             group data
+        group_mean: np.ndarray
+            group mean
+        group_std: np.ndarray
+            group std
 
         Returns
         -------
-        list: list[float]
-            list of component loadings
+        np.ndarray: np.ndarray
+            array of component loadings
         """
-        return [
-            float(np.corrcoef(group_data[:, comp], subject_data[:, comp])[0, 1])
-            for comp in range(subject_data.shape[1])
-        ]
+
+        subj_mean = subject_data.mean(axis=0)
+        subj_std = subject_data.std(axis=0)
+        cov = ((subject_data - subj_mean) * (group_data - group_mean)).sum(axis=0) / (
+            subject_data.shape[0] - 1
+        )
+        return cov / (subj_std * group_std)
 
     def _subject_correlations(self, subject_path: str) -> dict[np.ndarray]:
         """
@@ -233,10 +248,14 @@ class Component_loading:
         """
         subject_images = self.__get_subject_img(subject_path)
         w_subject = self.__volume(subject_images["white_component"][0])
-        w_subject_correlations = self.__correlating(w_subject, self.group_white)
+        w_subject_correlations = self.__correlating(
+            w_subject, self.group_white, self.group_white_mean, self.group_white_std
+        )
         del w_subject
         g_subject = self.__process_grey(subject_images["grey_components"])
-        g_subject_correlations = self.__correlating(g_subject, self.group_grey)
+        g_subject_correlations = self.__correlating(
+            g_subject, self.group_grey, self.group_grey_mean, self.group_grey_std
+        )
         del g_subject
         return {"w": w_subject_correlations, "g": g_subject_correlations}
 

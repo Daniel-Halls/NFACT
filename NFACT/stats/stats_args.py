@@ -39,6 +39,7 @@ def nfact_stats_args() -> dict:
         "--no_csv",
         dest="no_csv",
         action="store_true",
+        default=False,
         help="""
         Save Component Loadings as a npy file
         rather than as a csv file
