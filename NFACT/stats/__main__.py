@@ -15,6 +15,19 @@ import glob
 
 
 def nfactstats_main(args: dict = None) -> None:
+    """
+    Main function for nfact stats
+
+    Parameters
+    ----------
+    arg: dict
+        Set of command line arguments
+        Default is None
+
+    Returns
+    -------
+    None
+    """
     Signit_handler()
     to_exit = False
     if not args:
