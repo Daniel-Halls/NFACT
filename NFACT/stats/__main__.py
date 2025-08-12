@@ -1,11 +1,10 @@
 from NFACT.stats.stats_args import nfact_stats_args
-from NFACT.stats.stats_functions import split_component_type
+from NFACT.stats.stats_component_loadings import Component_loading
 from NFACT.base.signithandler import Signit_handler
 from NFACT.base.utils import colours, nprint
 from NFACT.base.setup import (
     check_algo,
     get_subjects,
-    check_subject_exist,
     check_arguments,
     get_paths,
     check_nfact_decomp_directory,
@@ -30,24 +29,22 @@ def nfactstats_main(args: dict = None):
     if args["overwrite"]:
         delete_folder(stats_dir)
 
-    # check subjects exist
     args = get_subjects(args, key_name="dr_output")
-    check_subject_exist(args["dr_output"])
     check_nfact_decomp_directory(paths["component_path"], paths["group_average_path"])
-    component_files = split_component_type(args["dr_output"])
-    component_files["group_white"] = os.path.join(
+    args["group_white"] = os.path.join(
         paths["component_path"], f"W_{args['algo']}_dim{args['dim']}.nii.gz"
     )
-    component_files["group_grey"] = glob.glob(
+    args["group_grey"] = glob.glob(
         os.path.join(paths["component_path"], f"G_{args['algo']}_dim{args['dim']}*")
     )
-    del (args["dr_output"], paths)
-    nprint(
-        f"{col['plum']}Number of subject:{col['reset']} {len(component_files['dr_grey'])}"
-    )
+    del paths
+    nprint(f"{col['plum']}Number of subject:{col['reset']} {len(args['dr_output'])}")
     nprint(f"{col['plum']}Stats Directory:{col['reset']} {stats_dir}")
     make_directory(stats_dir)
-
+    nprint(f"\n{col['pink']}Running:{col['reset']} Component loadings")
+    nprint("-" * 100)
+    loadings = Component_loading(args["group_white"], args["group_grey"], args["dim"])
+    component_loadings = loadings.run(args["dr_output"])
     if to_exit:
         exit(0)
 
