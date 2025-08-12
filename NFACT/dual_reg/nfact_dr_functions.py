@@ -5,11 +5,36 @@ from NFACT.base.imagehandling import (
     get_cifti_data,
 )
 from NFACT.base.utils import colours, nprint
+from NFACT.base.setup import creat_subfolder_setup
+from NFACT.base.utils import error_and_exit
 import numpy as np
 import os
 import nibabel as nb
 from glob import glob
 import re
+
+
+def create_nfact_dr_folder_set_up(nfact_path: str) -> None:
+    """
+    Function to create nfact dr folder set up
+
+    Parameters
+    ----------
+    nfact_pat: str
+        string to nfact directory
+
+    Returns
+    -------
+    None
+    """
+    error_string = "Please provide a directory with --outdir"
+    error_and_exit(nfact_path, f"No output directory given. {error_string}")
+    error_and_exit(
+        os.path.exists(nfact_path), f"Output directory does not exist. {error_string}"
+    )
+    subfolders = ["logs", "ICA", "NMF", "ICA/normalised", "NMF/normalised"]
+    nfactdr_directory = os.path.join(nfact_path, "nfact_dr")
+    creat_subfolder_setup(nfactdr_directory, subfolders)
 
 
 def get_key_to_organise_list(seed_path: str) -> str:

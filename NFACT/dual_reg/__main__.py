@@ -1,8 +1,8 @@
 from NFACT.dual_reg.nfact_dr_args import nfactdr_args, nfact_dr_splash
-from NFACT.dual_reg.nfact_dr_set_up import create_nfact_dr_folder_set_up
 from NFACT.dual_reg.dual_regression.set_up_dual_regression import (
     run_on_cluster,
     run_locally,
+    create_nfact_dr_folder_set_up,
 )
 from NFACT.base.setup import (
     check_algo,

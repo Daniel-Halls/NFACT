@@ -35,12 +35,12 @@ def nfactstats_main(args: dict = None):
     check_subject_exist(args["dr_output"])
     check_nfact_decomp_directory(paths["component_path"], paths["group_average_path"])
     component_files = split_component_type(args["dr_output"])
-    component_files["group_white"] = glob.glob(
-        os.path.join(paths["component_path"], "W_*_dim*")
-    )[0]
+    component_files["group_white"] = os.path.join(
+        paths["component_path"], f"W_{args['algo']}_dim{args['dim']}.nii.gz"
+    )
     component_files["group_grey"] = glob.glob(
-        os.path.join(paths["component_path"], "G_*dim*")
-    )[0]
+        os.path.join(paths["component_path"], f"G_{args['algo']}_dim{args['dim']}*")
+    )
     del (args["dr_output"], paths)
     nprint(
         f"{col['plum']}Number of subject:{col['reset']} {len(component_files['dr_grey'])}"

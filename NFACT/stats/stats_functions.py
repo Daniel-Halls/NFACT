@@ -1,8 +1,24 @@
 import numpy as np
+import nibabel as nb
 import os
 
 
-def split_component_type(dr_output):
+def split_component_type(dr_output: list) -> dict:
+    """
+    Function to split the dual regression output
+    into white matter and grey matter components
+
+    Parameters
+    -----------
+    dr_output: list
+        list of dr output
+
+    Returns
+    -------
+    dict: dictionary
+        dict of grey and white matter
+        components
+    """
     return {
         "dr_white": [
             w_file for w_file in dr_output if os.path.basename(w_file).startswith("W")
@@ -11,6 +27,33 @@ def split_component_type(dr_output):
             w_file for w_file in dr_output if os.path.basename(w_file).startswith("G")
         ],
     }
+
+
+class Component_loading:
+    def __init__(
+        self,
+        white_group_component_path,
+        grey_group_component_path,
+        white_dr_paths,
+        grey_dr_paths,
+    ):
+        self.white_group_component_path = white_group_component_path
+        self.grey_group_component_path = grey_group_component_path
+        self.white_dr_paths = white_dr_paths
+        self.grey_dr_paths = grey_dr_paths
+        self.grey_type = self.__grey_type()
+
+    def __load_group_components(self):
+        self.group_white = nb.load(self.white_group_component_path).get_fdata()
+        self.group_grey
+
+    def __grey_type(self):
+        if "dscalar" in self.grey_group_component_path:
+            return "cifti"
+        if "gii" in self.grey_group_component_path:
+            return "gifti"
+        if "nii" in self.grey_group_component_path:
+            return "nifti"
 
 
 def get_component_data(
@@ -111,13 +154,10 @@ def calculate_component_loading(
     )
 
 
-def get_group_components():
-    return None
-
-
-def get_subject_loadings():
-    return
-
-
 def get_loadings(subjects: list):
     return np.vstack([get_subject_loadings() for sub in subjects])
+
+
+def get_subject_loadings(component_list, group_component_path):
+    group_comp = get_component_data(group_component_path)
+    return None

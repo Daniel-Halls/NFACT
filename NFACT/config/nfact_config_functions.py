@@ -7,6 +7,7 @@ import json
 import os
 import argparse
 import glob
+import re
 
 
 def nfact_config_args() -> dict:
@@ -521,16 +522,18 @@ def nfact_dr_study_list(study_folder_path: str) -> list:
     """
     sub_list = list_of_subjects_from_directory(study_folder_path, is_dr=True)
     filtered_list = [
-        f"{subs}\n"
-        for subs in sub_list
-        if os.path.basename(subs)[0].upper() in ["G", "W"]
+        f"{subs}" for subs in sub_list if os.path.basename(subs)[0].upper() in ["W"]
     ]
+
     return sorted(
-        filtered_list,
-        key=lambda ordering: (
-            os.path.basename(ordering)[0] != "G",
-            os.path.basename(ordering),
-        ),
+        [
+            os.path.join(
+                os.path.dirname(sub),
+                re.search(r"^[W]_(.*?)_dim\d+", os.path.basename(sub)).group(1) + "\n",
+            )
+            for sub in filtered_list
+        ],
+        key=lambda p: re.search(r"^(.*?)\d+", os.path.basename(p)).group(1),
     )
 
 

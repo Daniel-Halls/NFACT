@@ -244,6 +244,15 @@ def nfact_decomp_folder(args) -> None:
     """
     col = colours()
     args.add_argument(
+        "-d",
+        "--dim",
+        dest="dim",
+        help="""
+        Number of dimensions/components that 
+        was used to generate nfact_decomp image
+        """,
+    )
+    args.add_argument(
         "-n",
         "--nfact_folder",
         dest="nfact_folder",

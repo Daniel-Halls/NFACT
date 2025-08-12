@@ -21,17 +21,7 @@ def nfact_qc_args() -> dict:
         description=print(nfact_Qc_splash()),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    col = colours()
     nfact_decomp_folder(args)
-    args.add_argument(
-        "-d",
-        "--dim",
-        dest="dim",
-        help=f"""{col["red"]}REQUIRED:{col["reset"]} 
-        Number of dimensions/components that 
-        was used to generate nfact_decomp image
-        """,
-    )
     algo_arg(args)
 
     args.add_argument(
