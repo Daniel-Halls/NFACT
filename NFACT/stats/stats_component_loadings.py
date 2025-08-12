@@ -22,7 +22,7 @@ class Component_loading:
             component_loadings = self._subject_correlations(subject)
             w_corr.append(component_loadings["w"])
             g_corr.append(component_loadings["g"])
-            breakpoint()
+
         return {
             "w_correlations": np.vstack(w_corr),
             "g_correlations": np.vstack(g_corr),
