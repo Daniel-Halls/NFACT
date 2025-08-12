@@ -1,5 +1,5 @@
 from NFACT.stats.stats_args import nfact_stats_args
-from NFACT.stats.stats_component_loadings import Component_loading
+from NFACT.stats.stats_component_loadings import Component_loading, save_components
 from NFACT.base.signithandler import Signit_handler
 from NFACT.base.utils import colours, nprint
 from NFACT.base.setup import (
@@ -14,7 +14,7 @@ import os
 import glob
 
 
-def nfactstats_main(args: dict = None):
+def nfactstats_main(args: dict = None) -> None:
     Signit_handler()
     to_exit = False
     if not args:
@@ -45,6 +45,24 @@ def nfactstats_main(args: dict = None):
     nprint("-" * 100)
     loadings = Component_loading(args["group_white"], args["group_grey"], args["dim"])
     component_loadings = loadings.run(args["dr_output"])
+    nprint(f"\n{col['pink']}Saving:{col['reset']} Component loadings")
+    nprint("-" * 100)
+    save_components(
+        component_loadings["W_correlations"],
+        "W_component_loadings",
+        stats_dir,
+        args["dr_output"],
+        args["no_csv"],
+    )
+    save_components(
+        component_loadings["G_correlations"],
+        "G_component_loadings",
+        stats_dir,
+        args["dr_output"],
+        args["no_csv"],
+    )
+    nprint("-" * 100)
+    nprint(f"\n{col['plum']}Finished:{col['reset']}")
     if to_exit:
         exit(0)
 

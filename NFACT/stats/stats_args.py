@@ -34,6 +34,16 @@ def nfact_stats_args() -> dict:
     )
     nfact_decomp_folder(stats_args)
     algo_arg(stats_args)
+    stats_args.add_argument(
+        "-C",
+        "--no_csv",
+        dest="no_csv",
+        action="store_true",
+        help="""
+        Save Component Loadings as a npy file
+        rather than as a csv file
+        """,
+    )
     no_args(args)
     options = args.parse_args()
     if options.verbose_help:
