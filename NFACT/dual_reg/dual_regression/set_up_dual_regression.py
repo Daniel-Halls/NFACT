@@ -127,8 +127,8 @@ def submit_to_cluster(args: dict, paths: dict) -> list:
         list of job ids
     """
     job_ids = []
-    for idx, sub in enumerate(args["ptxdir"]):
-        sub_id = get_subject_id(sub, idx)
+    for sub in args["ptxdir"]:
+        sub_id = get_subject_id(sub)
         nprint(f"Submittng {sub_id}")
         cluster_command = build_cluster_command(
             sub,
