@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - nfact_v2
 jobs:
   linting_checks:
     runs-on: ubuntu-latest
