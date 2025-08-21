@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - nfact_v2
 
 jobs:
   nfact_test:
@@ -15,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5

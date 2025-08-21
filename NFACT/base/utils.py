@@ -19,7 +19,7 @@ class Timer:
         self._t = time.time()
 
     def toc(self):
-        return f"{time.time()-self._t:.2f}"
+        return f"{time.time() - self._t:.2f}"
 
     def format_time(self, seconds: float):
         seconds = int(round(seconds))

@@ -134,7 +134,7 @@ def check_algo(algo: str) -> str:
     return algo.lower()
 
 
-def get_subjects(args: dict) -> dict:
+def get_subjects(args: dict, key_name: str = "ptxdir") -> dict:
     """
     Function to get subjects directly from
     ptx list or from list of subjects.
@@ -144,6 +144,9 @@ def get_subjects(args: dict) -> dict:
     args: dict
        dictionary of command line
        arguments
+    key_name: str
+        name of args key.
+        Default is "ptxdir"
 
     Returns
     -------
@@ -155,7 +158,7 @@ def get_subjects(args: dict) -> dict:
         does_list_of_subjects_exist(args["list_of_subjects"]),
         "List of subjects doesn't exist",
     )
-    args["ptxdir"] = return_list_of_subjects_from_file(args["list_of_subjects"])
+    args[key_name] = return_list_of_subjects_from_file(args["list_of_subjects"])
     return args
 
 
@@ -332,4 +335,77 @@ def check_fsl_is_installed():
     error_and_exit(
         fsl_loaded,
         "FSLDIR not in path. Check FSL is installed or has been loaded correctly",
+    )
+
+
+def get_paths(args: dict) -> dict:
+    """
+    Function to return components
+    path.
+
+    Parameters
+    ----------
+    args: dict
+        dictionary of command line
+        arguments
+
+    Returns
+    -------
+    str: string
+        string of component path.
+    """
+    if args["nfact_decomp_dir"]:
+        return {
+            "component_path": os.path.join(
+                args["nfact_decomp_dir"], "components", args["algo"].upper(), "decomp"
+            ),
+            "group_average_path": os.path.join(
+                args["nfact_decomp_dir"], "group_averages"
+            ),
+        }
+    if args["decomp_dir"]:
+        return {
+            "component_path": args["decomp_dir"],
+            "group_average_path": args["decomp_dir"],
+        }
+
+    error_and_exit(
+        False,
+        "Directory to components not given. Please specify with --nfact_decomp_dir or --decomp_dir",
+    )
+
+
+def check_nfact_decomp_directory(comp_directory: str, group_average_dir: str) -> None:
+    """
+    Function to check the NFACT directory has the
+    components and group averages needed.
+
+    Parameters
+    ----------
+    nfact_directory: str
+        string of path to nfact directory
+    algo: str
+        string of algo to perform regression on.
+
+    Returns
+    -------
+    None
+    """
+    error_and_exit(
+        (
+            False
+            if not os.path.exists(comp_directory) or not os.listdir(comp_directory)
+            else True
+        ),
+        f"No components found in {comp_directory}. Please check that components exist",
+    )
+
+    error_and_exit(
+        (
+            False
+            if not os.path.exists(group_average_dir)
+            or not os.listdir(group_average_dir)
+            else True
+        ),
+        f"No group averages found. Please make sure that coords and lookup tractspace are in {group_average_dir}",
     )

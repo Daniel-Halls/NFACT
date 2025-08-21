@@ -21,7 +21,7 @@ def delete_folder(outdir: str) -> None:
     col = colours()
     if os.path.exists(outdir):
         print(
-            f'{col["red"]}Overwrite flag given. {outdir} directory being overwritten{col["reset"]}\n'
+            f"{col['red']}Overwrite flag given. {outdir} directory being overwritten{col['reset']}\n"
         )
         shutil.rmtree(outdir, ignore_errors=True)
 
