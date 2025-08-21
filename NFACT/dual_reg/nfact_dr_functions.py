@@ -481,7 +481,7 @@ def get_group_level_components(
     }
 
 
-def get_subject_id(path: str, number: int) -> str:
+def get_subject_id(path: str) -> str:
     """
     Function to assign a subjects Id
 
@@ -489,8 +489,6 @@ def get_subject_id(path: str, number: int) -> str:
     ----------
     path: str
         string of path to subjects
-    number: int
-        subject number
 
     Returns
     ------
@@ -508,7 +506,7 @@ def get_subject_id(path: str, number: int) -> str:
                 return sub_name.split("_")[0]
             except IndexError:
                 pass
-        return f"sub-{number}"
+        return sub_name
 
 
 def save_dual_regression_images(
