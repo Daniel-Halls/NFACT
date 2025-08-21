@@ -508,7 +508,7 @@ def get_subject_id(path: str, number: int) -> str:
                 return sub_name.split("_")[0]
             except IndexError:
                 pass
-        return f"sub-{number}"
+        return sub_name
 
 
 def save_dual_regression_images(
