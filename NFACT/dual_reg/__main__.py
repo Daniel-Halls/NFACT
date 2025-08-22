@@ -64,7 +64,7 @@ def nfact_dr_main(args: dict = None) -> None:
 
     if args["cluster"]:
         check_fsl_is_installed()
-        # Needed for cluster checks. Hcky work around
+        # Needed for cluster checks. Hacky work around
         args["gpu"] = False
         args = processing_cluster(args)
 
