@@ -11,7 +11,7 @@ from NFACT.base.matrix_handling import thresholding_components, normalise_compon
 import argparse
 import os
 import numpy as np
-
+import os
 
 def cluster_mode_args() -> dict:
     """
@@ -192,6 +192,10 @@ def dual_regression_pipeline(
 
 
 if __name__ == "__main__":
+    # env needed for the cluster or its 24 hours+
+    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["OPENBLAS_NUM_THREADS"] = "1"
     args = cluster_mode_args()
     dual_regression_pipeline(
         fdt_path=args["fdt_path"],
