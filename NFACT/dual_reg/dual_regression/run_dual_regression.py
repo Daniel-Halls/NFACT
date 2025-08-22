@@ -11,7 +11,7 @@ from NFACT.base.matrix_handling import thresholding_components, normalise_compon
 import argparse
 import os
 import numpy as np
-import os
+
 
 def cluster_mode_args() -> dict:
     """
