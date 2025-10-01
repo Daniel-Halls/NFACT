@@ -183,6 +183,7 @@ def process_subject(sub: str, arg: dict, col: dict) -> list:
 
     seed = get_file(arg["seed"], sub, arg["absolute"])
     seed_text = "\n".join(seed)
+    breakpoint()
     # using this function not to return a file but check it is an imaging file
     get_file(arg["warps"], sub)
     nfactpp_diretory = os.path.join(arg["outdir"], "nfact_pp", sub_id)

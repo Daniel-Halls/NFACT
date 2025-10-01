@@ -186,10 +186,12 @@ def get_additional_seeds(files_tree: object, subject: str) -> list:
         list of paths for additional
         seeds
     """
+    add_seed_keys = sorted(
+        (key for key in files_tree.template_keys() if key.startswith("add_seed")),
+        key=lambda x: int(x.replace("add_seed", "")),
+    )
     return [
-        filetree_get_files(files_tree, subject, "L", file)
-        for file in files_tree.template_keys()
-        if "add_seed" in file
+        filetree_get_files(files_tree, subject, "L", file) for file in add_seed_keys
     ]
 
 
