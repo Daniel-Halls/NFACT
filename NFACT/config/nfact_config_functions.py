@@ -9,6 +9,10 @@ import argparse
 import glob
 import re
 
+import lz4.frame
+import shutil
+from pathlib import Path
+
 
 def nfact_config_args() -> dict:
     """
@@ -53,8 +57,17 @@ def nfact_config_args() -> dict:
         Needs path to subjects directory. Depending on file path
         will dictate the subject list. If ran inside
         an nfact_pp directory will make a subject list 
-        for decompoisition (adds on omatrix2 to file paths). If ran
-        in nfact_dr it will get the G then W files for subjects
+        for decompoisition (adds on omatrix2 to file paths)
+        """,
+    )
+    args.add_argument(
+        "-z",
+        "--zip",
+        dest="zip",
+        default=False,
+        help="""
+        Zip fdt matrices from nfact_pp to
+        save space. Needs a path to a nfact_pp directory
         """,
     )
     args.add_argument(
@@ -563,3 +576,33 @@ def create_subject_list(study_folder_path: str, ouput_dir: str, filename: str) -
     else:
         sub_list = nfact_study_list(study_folder_path)
     write_to_file(ouput_dir, f"{filename}.sublist", sub_list, text_is_list=True)
+
+
+def zip_nfact_pp_dir(nfact_pp_dir: str) -> None:
+    """
+    Function to zip an fdt_matrix
+    to save space. Loops through
+    nfact pp directory
+
+    Parameters
+    ----------
+    nfact_pp_dir: str
+        path to nfact_pp directory
+
+    Returns
+    -------
+    None
+    """
+
+    nfactpp_subs = Path(nfact_pp_dir).rglob("*/omatrix2/fdt_matrix2.dot")
+    for fdt_mat in nfactpp_subs:
+        if fdt_mat.is_file():
+            print("Working on subject:", Path(fdt_mat).parents[1].name)
+            try:
+                with open(fdt_mat, "rb") as f_in, lz4.frame.open(
+                    str(fdt_mat) + ".lz4", "wb"
+                ) as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+                    fdt_mat.unlink()
+            except Exception as e:
+                print("Unable to zip due to: ", e)
