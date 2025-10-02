@@ -24,7 +24,7 @@ dependencies = [
     'scikit-learn',
     'tqdm',
     'file-tree',
-    'lz4,
+    'lz4',
     'pandas'
 ]
 requires-python = ">=3.9"
