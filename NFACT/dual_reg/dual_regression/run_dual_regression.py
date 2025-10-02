@@ -147,7 +147,15 @@ def dual_regression_pipeline(
     nprint(f"{col['pink']}Obtaining{col['reset']}: FDT Matrix")
 
     try:
-        matrix = load_fdt_matrix(os.path.join(fdt_path, "fdt_matrix2.dot"))
+        matrix_file = next(
+            (
+                os.path.join(fdt_path, fname)
+                for fname in ("fdt_matrix2.dot.lz4", "fdt_matrix2.dot")
+                if os.path.exists(os.path.join(fdt_path, fname))
+            ),
+            None,
+        )
+        matrix = load_fdt_matrix(matrix_file)
     except Exception:
         error_and_exit(False, f"Unable to load {sub_id} fdt matrix")
 
