@@ -613,7 +613,7 @@ Additionally NFACT config can zip the fdt_matrix.dot files in the nfact_pp direc
 usage: nfact_config [-h] [-C] [-D] [-s SUBJECT_LIST] [-z ZIP] [-o OUTPUT_DIR] [-f FILE_NAME]
 
 options:
-  -h, --help            show this help message and exit
+  -h, --help            Shows help message and exit
   -C, --config          Creates a config file for NFACT pipeline
   -D, --decomp_only     Creates a config file for hyperparameters for the NMF/ICA
   -s SUBJECT_LIST, --subject_list SUBJECT_LIST
