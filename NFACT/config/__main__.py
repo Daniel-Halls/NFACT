@@ -5,6 +5,7 @@ from NFACT.config.nfact_config_functions import (
     create_subject_list,
     check_arguments,
     create_config,
+    zip_nfact_pp_dir,
 )
 from NFACT.base.utils import error_and_exit
 
@@ -26,6 +27,10 @@ def nfact_config_main() -> None:
     if args["subject_list"]:
         print(f'Saving subject list to {args["output_dir"]}\n')
         create_subject_list(args["subject_list"], args["output_dir"], args["file_name"])
+        exit(0)
+
+    if args["zip"]:
+        zip_nfact_pp_dir(args["zip"])
         exit(0)
 
     if args["decomp_only"]:
