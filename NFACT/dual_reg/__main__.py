@@ -1,13 +1,9 @@
 from NFACT.dual_reg.nfact_dr_args import nfactdr_args, nfact_dr_splash
-from NFACT.dual_reg.nfact_dr_set_up import (
-    check_nfact_decomp_directory,
-    create_nfact_dr_folder_set_up,
-)
-from NFACT.dual_reg.nfact_dr_functions import get_paths
 from NFACT.dual_reg.dual_regression.set_up_dual_regression import (
     run_on_cluster,
     run_locally,
 )
+from NFACT.dual_reg.nfact_dr_functions import create_nfact_dr_folder_set_up
 from NFACT.base.setup import (
     check_algo,
     get_subjects,
@@ -16,6 +12,8 @@ from NFACT.base.setup import (
     process_input_imgs,
     check_seeds_surfaces,
     check_rois,
+    get_paths,
+    check_nfact_decomp_directory,
 )
 from NFACT.base.filesystem import delete_folder
 from NFACT.base.cluster_support import processing_cluster
@@ -66,11 +64,9 @@ def nfact_dr_main(args: dict = None) -> None:
 
     if args["cluster"]:
         check_fsl_is_installed()
+        # Needed for cluster checks. Hacky work around
         args["gpu"] = False
         args = processing_cluster(args)
-        # Needed for high res data. Takes a long time
-        if args["cluster_time"] == "600":
-            args["cluster_time"] = "4320"
 
     # Set up directory
     create_nfact_dr_folder_set_up(args["outdir"])
