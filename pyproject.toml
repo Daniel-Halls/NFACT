@@ -23,7 +23,8 @@ dependencies = [
     'nibabel',
     'scikit-learn',
     'tqdm',
-    'file-tree'
+    'file-tree',
+    'lz4
 ]
 requires-python = ">=3.9"
 [project.optional-dependencies]
