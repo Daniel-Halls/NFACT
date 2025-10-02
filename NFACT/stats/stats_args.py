@@ -1,10 +1,9 @@
 import argparse
-from NFACT.base.utils import colours, no_args, verbose_help_message
+from NFACT.base.utils import colours
 from NFACT.base.base_args import (
     algo_arg,
     nfact_decomp_folder,
     set_up_args,
-    base_arguments,
 )
 
 
@@ -32,13 +31,13 @@ def nfact_stats_modules() -> dict:
         description=print(nfact_stats_splash()),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    
+
     subparsers = args.add_subparsers(dest="command")
     comp_loading_args(subparsers)
     stat_map_args(subparsers)
     return args
-    
-    
+
+
 def comp_loading_args(args: object):
     col = colours()
     comp_args = args.add_parser("loadings", help="Calculate component loadings")
@@ -67,6 +66,7 @@ def comp_loading_args(args: object):
         rather than as a csv file
         """,
     )
+
 
 def stat_map_args(args) -> dict:
     """
@@ -107,10 +107,7 @@ def stat_map_args(args) -> dict:
         """,
     )
 
-def nfact_stats_base_args(args):
-
-
-    #stats_args.add_argument(
+    # stats_args.add_argument(
     #    "-o",
     #    "--save_path",
     #    dest="save_path",
@@ -118,19 +115,19 @@ def nfact_stats_base_args(args):
     #    help="""
     #    Path to save output as
     #    """,
-    #)
-    #stats_args.add_argument(
+    # )
+    # stats_args.add_argument(
     #    "-l",
     #    "--list_of_subjects",
     #    dest="list_of_subjects",
     #    required=True,
     #    help="""
-    #    List of Subjects to give order to 
+    #    List of Subjects to give order to
     #    """,
+
+
 #
-    #)
-
-
+# )
 
 
 def nfact_stats_splash() -> str:
