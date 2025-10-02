@@ -25,8 +25,12 @@ def process_fdt_matrix2(list_of_ptx_folds: list, group_mode: bool) -> np.ndarray
        across subjects or single subjects
     """
     list_of_fdt = [
-        os.path.join(sub_folder, "fdt_matrix2.dot") for sub_folder in list_of_ptx_folds
+        os.path.join(sub_folder, fname)
+        for sub_folder in list_of_ptx_folds
+        for fname in ("fdt_matrix2.dot", "fdt_matrix2.dot.lz4")
+        if os.path.exists(os.path.join(sub_folder, fname))
     ]
+
     if group_mode:
         try:
             fdt_matrix2 = avg_fdt(list_of_fdt)
