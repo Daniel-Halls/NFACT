@@ -122,10 +122,8 @@ def save_cifit_component(subjects, outdir, gm_data, prefix):
         os.path.join(outdir, f"{prefix}_subcortical_stat_map.nii.gz"),
         cifti=True,
     )
-    save_gm_surf(ldarray, os.path.join(os.path.join(outdir, f"{prefix}_left_stat_map")))
-    save_gm_surf(
-        rdarray, os.path.join(os.path.join(outdir, f"{prefix}_right_stat_map"))
-    )
+    save_gm_surf(ldarray, os.path.join(os.path.join(outdir, f"{prefix}_L")))
+    save_gm_surf(rdarray, os.path.join(os.path.join(outdir, f"{prefix}_R")))
 
 
 def extract_id(path):
@@ -160,6 +158,11 @@ def sort_paths_by_subject_order(file_paths, subject_order):
 
 def statsmap_main(args):
     col = colours()
+    if ".gz" in args["group_grey"] or ".nii.gz" in args["group_grey"]:
+        print(
+            f"{col['red']} Currently only cifits are accepted for component merging{col['reset']}"
+        )
+        return
     print(f"{col['darker_pink']}Merging components:{col['reset']}", *args["components"])
     group_mode = args.get("group-only", False)
     if group_mode:
@@ -168,6 +171,9 @@ def statsmap_main(args):
         )
     else:
         folder_path = os.path.dirname(args["dr_output"][0])
+
+    if args["map_name"] == "":
+        args["map_name"] = "stat_map"
 
     print(f"\n{col['plum']}Working on White matter{col['reset']}")
     print("-" * 100)
@@ -179,7 +185,7 @@ def statsmap_main(args):
     save_volume_wrapper(
         subjects_w[0],
         subject_W_maps,
-        os.path.join(args["stats_dir"], "R_W_stat_map.nii.gz"),
+        os.path.join(args["stats_dir"], f"W_{args['map_name']}.nii.gz"),
     )
 
     print(f"\n{col['plum']}Working on Grey matter files{col['reset']}")
@@ -190,16 +196,13 @@ def statsmap_main(args):
         subjects_g = sort_paths_by_subject_order(subjects_g, args["dr_output"])
 
     gm_data = create_gm_maps(subjects_g, args["components"])
-    save_cifit_component(subjects_g, args["stats_dir"], gm_data, "R")
+    save_cifit_component(
+        subjects_g, args["stats_dir"], gm_data, f"G_{args['map_name']}"
+    )
 
     if group_mode:
         return
     print(f"\n{col['plum']}Calculating variance maps{col['reset']}")
-    if ".gz" in args["group_grey"] or ".nii.gz" in args["group_grey"]:
-        print(
-            f"{col['red']} Currently only cifits are accepted for calculating variance maps{col['reset']}"
-        )
-        return
 
     group_maps = get_group_maps(
         args["group_white"],
@@ -208,11 +211,15 @@ def statsmap_main(args):
     )
     wm = get_variance_maps(group_maps["wm"], subject_W_maps)
     save_volume_wrapper(
-        subjects_w[0], wm, os.path.join(args["stats_dir"], "V_W_stat_map.nii.gz")
+        subjects_w[0],
+        wm,
+        os.path.join(args["stats_dir"], f"variance_W_{args['map_name']}.nii.gz"),
     )
     cifit_var = {
         "r_surf": get_variance_maps(group_maps["r_surf"], gm_data["r_surf"], vol=False),
         "l_surf": get_variance_maps(group_maps["l_surf"], gm_data["l_surf"], vol=False),
         "vol": get_variance_maps(group_maps["vol"], gm_data["vol"]),
     }
-    save_cifit_component(subjects_g, args["stats_dir"], cifit_var, "V")
+    save_cifit_component(
+        subjects_g, args["stats_dir"], cifit_var, f"variance_G_{args['map_name']}"
+    )

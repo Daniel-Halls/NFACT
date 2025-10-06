@@ -190,6 +190,15 @@ def stat_map_args(args) -> dict:
         """,
     )
     map_args.add_argument(
+        "-m",
+        "--map_name",
+        dest="map_name",
+        default="",
+        help="""
+        Name to call the maps (i.e if merging components asscoiated with a network call it networkx)
+        """,
+    )
+    map_args.add_argument(
         "-G",
         "--group-only",
         dest="group-only",
