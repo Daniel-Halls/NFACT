@@ -35,7 +35,9 @@ class NFACTStats:
         component_loadings_main(kwargs)
 
     def statsmap(self, **kwargs):
-        pass
+        from NFACT.stats.statsmap import statsmap_main
+
+        statsmap_main(kwargs)
 
     def nfactstats_module(self, command: str, args: dict):
         """

@@ -30,12 +30,10 @@ def merge_volumes(subjects, comp):
     return np.stack(subject_maps, axis=3)
 
 
-def get_group_maps(group_path, comp):
-    group = nib.load(os.path.join(group_path, "W_NMF_dim100.nii.gz")).get_fdata()
+def get_group_maps(group_w, group_g, comp):
+    group = nib.load(group_w).get_fdata()
     group_comp = merge_components(group, comp)
-    cifit_data = process_cifti(
-        os.path.join(group_path, "G_NMF_dim100.dscalar.nii"), comp
-    )
+    cifit_data = process_cifti(group_g, comp)
     cifit_data["wm"] = group_comp
     return cifit_data
 
@@ -76,10 +74,6 @@ def get_variance_maps(group_data, subject_data, vol=True):
         ],
         axis=1,
     )
-
-
-def create_4d_vol(subjects, comp):
-    return merge_volumes(subjects, comp)
 
 
 def save_volume_wrapper(meta_data_nifit_path, vol_to_save, outdir, cifti=False):
@@ -134,10 +128,6 @@ def save_cifit_component(subjects, outdir, gm_data, prefix):
     )
 
 
-def process_gm(subjects, comp):
-    return create_gm_maps(subjects, comp)
-
-
 def extract_id(path):
     """Extract the subject ID (e.g., 'BANDA123') from the file path."""
     filename = path.split("/")[-1]
@@ -168,46 +158,61 @@ def sort_paths_by_subject_order(file_paths, subject_order):
     return sorted(file_paths, key=lambda path: get_sort_index(path, order_dict))
 
 
-def main(args):
+def statsmap_main(args):
     col = colours()
     print(f"{col['darker_pink']}Merging components:{col['reset']}", *args["components"])
-    folder_path = os.path.join(args["folder_path"], "nfact_dr", "NMF")
+    group_mode = args.get("group-only", False)
+    if group_mode:
+        folder_path = os.path.join(
+            args["nfact_decomp_dir"], "components", args["algo"], "decomp"
+        )
+    else:
+        folder_path = os.path.dirname(args["dr_output"][0])
 
     print(f"\n{col['plum']}Working on White matter{col['reset']}")
     print("-" * 100)
-    subjects_w = sort_paths_by_subject_order(
-        get_subjects(folder_path, "W"), args["dr_output"]
-    )
+    subjects_w = get_subjects(folder_path, "W")
 
-    subject_W_maps = create_4d_vol(subjects_w, args["components"])
+    if not group_mode:
+        subjects_w = sort_paths_by_subject_order(subjects_w, args["dr_output"])
+    subject_W_maps = merge_volumes(subjects_w, args["components"])
     save_volume_wrapper(
         subjects_w[0],
         subject_W_maps,
-        os.path.join(args["outdir"], "R_W_stat_map.nii.gz"),
+        os.path.join(args["stats_dir"], "R_W_stat_map.nii.gz"),
     )
 
     print(f"\n{col['plum']}Working on Grey matter files{col['reset']}")
     print("-" * 100)
-    subjects_g = sort_paths_by_subject_order(
-        get_subjects(folder_path, "G"), args["dr_output"]
-    )
-    gm_data = process_gm(subjects_g, args["components"])
-    save_cifit_component(subjects_g, args["outdir"], gm_data, "R")
+    subjects_g = get_subjects(folder_path, "G")
 
+    if not group_mode:
+        subjects_g = sort_paths_by_subject_order(subjects_g, args["dr_output"])
+
+    gm_data = create_gm_maps(subjects_g, args["components"])
+    save_cifit_component(subjects_g, args["stats_dir"], gm_data, "R")
+
+    if group_mode:
+        return
     print(f"\n{col['plum']}Calculating variance maps{col['reset']}")
+    if ".gz" in args["group_grey"] or ".nii.gz" in args["group_grey"]:
+        print(
+            f"{col['red']} Currently only cifits are accepted for calculating variance maps{col['reset']}"
+        )
+        return
+
     group_maps = get_group_maps(
-        os.path.join(
-            args["folder_path"], "nfact_decomp", "components", args["algo"], "decomp"
-        ),
+        args["group_white"],
+        args["group_grey"][0],
         args["components"],
     )
     wm = get_variance_maps(group_maps["wm"], subject_W_maps)
     save_volume_wrapper(
-        subjects_w[0], wm, os.path.join(args["outdir"], "V_W_stat_map.nii.gz")
+        subjects_w[0], wm, os.path.join(args["stats_dir"], "V_W_stat_map.nii.gz")
     )
     cifit_var = {
         "r_surf": get_variance_maps(group_maps["r_surf"], gm_data["r_surf"], vol=False),
         "l_surf": get_variance_maps(group_maps["l_surf"], gm_data["l_surf"], vol=False),
         "vol": get_variance_maps(group_maps["vol"], gm_data["vol"]),
     }
-    save_cifit_component(subjects_g, args["outdir"], cifit_var, "V")
+    save_cifit_component(subjects_g, args["stats_dir"], cifit_var, "V")
