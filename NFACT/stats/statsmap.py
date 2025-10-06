@@ -5,7 +5,6 @@ import nibabel as nib
 from glob import glob
 import numpy as np
 import os
-import argparse
 
 
 def splash():
@@ -21,67 +20,6 @@ def splash():
                                             -
 {col['reset']}
 """
-
-
-def stat_map_args() -> dict:
-    """
-    Function to get arguements
-    to run NFACT pre-processing
-
-    Parameters
-    -----------
-    None
-
-    Returns
-    -------
-    dict: dictionary object
-        dict of arguments
-    """
-    base_args = argparse.ArgumentParser(
-        prog="Stats map",
-        description=print(splash()),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    base_args.add_argument(
-        "-f",
-        "--folder_path",
-        dest="folder_path",
-        required=True,
-        help="""
-        Path to nfact directory
-        """,
-    )
-    base_args.add_argument(
-        "-c",
-        "--components",
-        dest="components",
-        required=True,
-        type=int,
-        nargs="+",
-        help="""
-        Components to merge
-        """,
-    )
-    base_args.add_argument(
-        "-o",
-        "--save_path",
-        dest="save_path",
-        required=True,
-        help="""
-        Path to save output as
-        """,
-    )
-    base_args.add_argument(
-        "-l",
-        "--list_of_subjects",
-        dest="list_of_subjects",
-        required=True,
-        help="""
-        List of Subjects to give order to 
-        """,
-    )
-    base_args.parse_args()
-    return vars(base_args.parse_args())
 
 
 def subject_variability_map(group_comp, sub_data):
@@ -160,12 +98,12 @@ def create_4d_vol(subjects, comp):
     return merge_volumes(subjects, comp)
 
 
-def save_volume_wrapper(meta_data_nifit_path, vol_to_save, save_path, cifti=False):
+def save_volume_wrapper(meta_data_nifit_path, vol_to_save, outdir, cifti=False):
     if cifti:
         vol_info = get_cifti_data(meta_data_nifit_path)["vol"]
     else:
         vol_info = nib.load(meta_data_nifit_path)
-    save_volume(vol_info, vol_to_save, save_path)
+    save_volume(vol_info, vol_to_save, outdir)
 
 
 def save_gm_surf(darrays, file_name):
@@ -197,20 +135,18 @@ def create_gm_maps(subjects, comp):
     }
 
 
-def save_cifit_component(subjects, save_path, gm_data, prefix):
+def save_cifit_component(subjects, outdir, gm_data, prefix):
     ldarray = create_darray(gm_data["l_surf"])
     rdarray = create_darray(gm_data["r_surf"])
     save_volume_wrapper(
         subjects[0],
         gm_data["vol"],
-        os.path.join(save_path, f"{prefix}_subcortical_stat_map.nii.gz"),
+        os.path.join(outdir, f"{prefix}_subcortical_stat_map.nii.gz"),
         cifti=True,
     )
+    save_gm_surf(ldarray, os.path.join(os.path.join(outdir, f"{prefix}_left_stat_map")))
     save_gm_surf(
-        ldarray, os.path.join(os.path.join(save_path, f"{prefix}_left_stat_map"))
-    )
-    save_gm_surf(
-        rdarray, os.path.join(os.path.join(save_path, f"{prefix}_right_stat_map"))
+        rdarray, os.path.join(os.path.join(outdir, f"{prefix}_right_stat_map"))
     )
 
 
@@ -239,7 +175,7 @@ def sort_paths_by_subject_order(file_paths, subject_order):
 
     Parameters:
     - file_paths: list of str, full file paths
-    - subject_order: list of str, subject IDs like 'BANDA105'
+    - subject_order: list of str, subject IDs like
 
     Returns:
     - list of str, sorted file paths
@@ -265,14 +201,14 @@ def main():
     save_volume_wrapper(
         subjects_w[0],
         subject_W_maps,
-        os.path.join(args["save_path"], "R_W_stat_map.nii.gz"),
+        os.path.join(args["outdir"], "R_W_stat_map.nii.gz"),
     )
 
     print(f"\n{col['plum']}Creating Grey matter files{col['reset']}")
     print("-" * 100)
     subjects_g = sort_paths_by_subject_order(get_subjects(folder_path, "G"), subjects)
     gm_data = process_gm(subjects_g, args["components"])
-    save_cifit_component(subjects_g, args["save_path"], gm_data, "R")
+    save_cifit_component(subjects_g, args["outdir"], gm_data, "R")
 
     print(f"\n{col['plum']}Calculating variance maps{col['reset']}")
     group_maps = get_group_maps(
@@ -283,14 +219,14 @@ def main():
     )
     wm = get_variance_maps(group_maps["wm"], subject_W_maps)
     save_volume_wrapper(
-        subjects_w[0], wm, os.path.join(args["save_path"], "V_W_stat_map.nii.gz")
+        subjects_w[0], wm, os.path.join(args["outdir"], "V_W_stat_map.nii.gz")
     )
     cifit_var = {
         "r_surf": get_variance_maps(group_maps["r_surf"], gm_data["r_surf"], vol=False),
         "l_surf": get_variance_maps(group_maps["l_surf"], gm_data["l_surf"], vol=False),
         "vol": get_variance_maps(group_maps["vol"], gm_data["vol"]),
     }
-    save_cifit_component(subjects_g, args["save_path"], cifit_var, "V")
+    save_cifit_component(subjects_g, args["outdir"], cifit_var, "V")
     print(f"\n{col['plum']}Finished{col['reset']}")
     exit(0)
 

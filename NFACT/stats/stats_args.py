@@ -1,16 +1,102 @@
-import argparse
 from NFACT.base.utils import colours
 from NFACT.base.base_args import (
     algo_arg,
     nfact_decomp_folder,
     set_up_args,
 )
+import argparse
+import sys
 
 
-def nfact_stats_args() -> dict:
-    parser = nfact_stats_modules()
-    args = parser.parse_args()
-    return vars(args)
+def valid_options() -> list:
+    """
+    Function to get valid options
+
+    Parameters
+    -----------
+    None
+
+    Returns
+    -------
+    list: list[str]
+        list of valid options
+    """
+    return ["loadings", "statsmap"]
+
+
+def invalid_options(option: str, avaiable_options: list) -> None:
+    """
+    Function to print and exit
+    after an invalid option
+    was given
+
+    Parameters
+    ----------
+    option: str
+        str of option given
+    avaiable_options: list
+        list of avaiable options
+
+    Returns
+    -------
+    None
+    """
+    col = colours()
+    print(nfact_stats_splash())
+    print(f"{col['red']}{option}{col['reset']} is an invalid option")
+    print("Please specify from", *avaiable_options)
+    print("or run --help")
+    exit(1)
+
+
+def usage_message() -> None:
+    """
+    Function to print a basic
+    usage message and exit
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    str: string
+        string of usage message
+    """
+    print(f"""
+    {nfact_stats_splash()}
+NFACT Stats has two sub functions. 
+    - loadings. Calculates How similar the dual regression is to the group level
+    - statsmap. Creates from given component numbers a single map of those components
+
+RUN: 
+nfact_stats loadings --help 
+\tOR:
+nfact_stats statsmap --help
+for further info
+    """)
+    exit(0)
+
+
+def check_subcommand() -> None:
+    """
+    Function to check the subcommand
+    given to nfact stats.
+
+    Parameters
+    -----------
+    None
+
+    Returns
+    -------
+    None
+    """
+
+    avaiable_options = valid_options()
+    if len(sys.argv) <= 1 or sys.argv[1] in ["-h", "--help"]:
+        usage_message()
+    if sys.argv[1] not in avaiable_options:
+        invalid_options(sys.argv[1], avaiable_options)
 
 
 def nfact_stats_modules() -> dict:
@@ -38,7 +124,19 @@ def nfact_stats_modules() -> dict:
     return args
 
 
-def comp_loading_args(args: object):
+def comp_loading_args(args: object) -> None:
+    """
+    Component loading cmd arguments
+
+    Parameters
+    ----------
+    args:  object
+        Argparse object
+
+    Returns
+    -------
+    None
+    """
     col = colours()
     comp_args = args.add_parser("loadings", help="Calculate component loadings")
     comp_args.add_argument(
@@ -53,8 +151,8 @@ def comp_loading_args(args: object):
     stats_args = comp_args.add_argument_group(
         f"{col['darker_pink']}Stats args{col['reset']}"
     )
-    nfact_decomp_folder(set_up_args)
-    algo_arg(set_up_args)
+    nfact_decomp_folder(comp_args)
+    algo_arg(comp_args)
     stats_args.add_argument(
         "-C",
         "--no_csv",
@@ -71,7 +169,7 @@ def comp_loading_args(args: object):
 def stat_map_args(args) -> dict:
     """
     Function to get arguements
-    to run NFACT pre-processing
+    to run NFACT stat map args
 
     Parameters
     -----------
@@ -107,28 +205,6 @@ def stat_map_args(args) -> dict:
         """,
     )
 
-    # stats_args.add_argument(
-    #    "-o",
-    #    "--save_path",
-    #    dest="save_path",
-    #    required=True,
-    #    help="""
-    #    Path to save output as
-    #    """,
-    # )
-    # stats_args.add_argument(
-    #    "-l",
-    #    "--list_of_subjects",
-    #    dest="list_of_subjects",
-    #    required=True,
-    #    help="""
-    #    List of Subjects to give order to
-    #    """,
-
-
-#
-# )
-
 
 def nfact_stats_splash() -> str:
     """
@@ -153,3 +229,23 @@ def nfact_stats_splash() -> str:
 \_| \_/\_|    \_| |_/ \____/  \_/   \____/   \_/  \_| |_/  \_/  \____/ 
 {col["reset"]} 
 """
+
+
+def nfact_stats_args() -> dict:
+    """
+    Function that is entry point into
+    NFACT args.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    --------
+    dict: dictionary
+        cmd dict of arguments
+    """
+    check_subcommand()
+    parser = nfact_stats_modules()
+    args = parser.parse_args()
+    return vars(args)
