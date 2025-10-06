@@ -29,7 +29,11 @@ def nfactstats_main(args: dict = None) -> None:
         to_exit = True
     col = colours()
     args = process_nfactstats_args(args)
-    nprint(f"{col['plum']}Number of subject:{col['reset']} {len(args['dr_output'])}")
+    try:
+        num_subjects = len(args["dr_output"])
+    except KeyError:
+        num_subjects = 1
+    nprint(f"{col['plum']}Number of subject:{col['reset']} {num_subjects}")
     nprint(f"{col['plum']}Stats Directory:{col['reset']} {args['stats_dir']}")
     make_directory(args["stats_dir"], args["overwrite"], ignore_errors=True)
     nprint("-" * 100)

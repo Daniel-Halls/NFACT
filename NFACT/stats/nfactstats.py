@@ -74,16 +74,31 @@ def get_group_level_decomp(args: dict, paths: dict) -> dict:
     return args
 
 
-def process_nfactstats_args(args):
+def process_nfactstats_args(args: dict) -> dict:
     """
-    TODO: nfact statsmap may take only group level components
-    so subject list is redudant
+    Function to process nfact stats args
+
+    Parameters
+    ----------
+    args: dict
+        cmdline args dictionary
+
+    Returns
+    -------
+    args: dict
+        processed cmdline args
     """
-    check_arguments(args, ["list_of_subjects", "nfact_folder", "outdir"])
+    args_to_check = ["list_of_subjects", "nfact_folder", "outdir"]
+    if "group-only" in args:
+        if args["group-only"]:
+            args_to_check.remove("list_of_subjects")
+
+    check_arguments(args, args_to_check)
     check_algo(args["algo"])
     args["nfact_decomp_dir"] = args.pop("nfact_folder")
     args["stats_dir"] = os.path.join(args["outdir"], "nfact_stats")
     paths = get_paths(args)
-    args = get_subjects(args, key_name="dr_output")
+    if "list_of_subjects" in args_to_check:
+        args = get_subjects(args, key_name="dr_output")
     args = get_group_level_decomp(args, paths)
     return args

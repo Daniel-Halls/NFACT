@@ -163,15 +163,23 @@ def stat_map_args(args) -> dict:
     stats_args = args.add_parser("statsmap", help="Create a statsmap")
     set_up_args(stats_args, col)
     stats_args.add_argument(
-        "-f",
-        "--folder_path",
-        dest="folder_path",
-        help="""
-        Path to nfact directory. Statsmap only
-        works if there is one nfact directory 
-        """,
+        "-O",
+        "--overwrite",
+        dest="overwrite",
+        action="store_true",
+        default=False,
+        help="Overwrites previous file structure",
     )
-    stats_args.add_argument(
+    decomp_args = stats_args.add_argument_group(
+        f"{col['plum']}Decomp args{col['reset']}"
+    )
+
+    nfact_decomp_folder(decomp_args)
+    algo_arg(decomp_args)
+    map_args = stats_args.add_argument_group(
+        f"{col['pink']}Statsmap args{col['reset']}"
+    )
+    map_args.add_argument(
         "-c",
         "--components",
         dest="components",
@@ -179,6 +187,15 @@ def stat_map_args(args) -> dict:
         nargs="+",
         help="""
         Components to merge
+        """,
+    )
+    map_args.add_argument(
+        "-G",
+        "--group-only",
+        dest="group-only",
+        action="store_true",
+        help="""
+        Only do group level stats map. Doesn't need a subject list
         """,
     )
 

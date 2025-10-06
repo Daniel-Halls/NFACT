@@ -1,25 +1,9 @@
 from NFACT.base.imagehandling import get_cifti_data, save_volume
 from NFACT.base.utils import colours
-from NFACT.base.setup import return_list_of_subjects_from_file
 import nibabel as nib
 from glob import glob
 import numpy as np
 import os
-
-
-def splash():
-    col = colours()
-    return f"""{col['pink']}
- _____  _           _                               _____                     _                
-/  ___|| |         | |                             /  __ \                   | |               
-\ `--. | |_   __ _ | |_   _ __ ___    __ _  _ __   | /  \/ _ __   ___   __ _ | |_   ___   _ __ 
- `--. \| __| / _` || __| | '_ ` _ \  / _` || '_ \  | |    | '__| / _ \ / _` || __| / _ \ | '__|
-/\__/ /| |_ | (_| || |_  | | | | | || (_| || |_) | | \__/\| |   |  __/| (_| || |_ | (_) || |   
-\____/  \__| \__,_| \__| |_| |_| |_| \__,_|| .__/   \____/|_|    \___| \__,_| \__| \___/ |_|   
-                                           | |                                               
-                                            -
-{col['reset']}
-"""
 
 
 def subject_variability_map(group_comp, sub_data):
@@ -27,7 +11,7 @@ def subject_variability_map(group_comp, sub_data):
 
 
 def get_subjects(path, img_type):
-    return glob(os.path.join(path, f"{img_type}_*nii*"))
+    return glob(os.path.join(path, f"{img_type}_*"))
 
 
 def merge_components(data_to_merge, comp, vol: bool = True) -> np.ndarray:
@@ -184,18 +168,16 @@ def sort_paths_by_subject_order(file_paths, subject_order):
     return sorted(file_paths, key=lambda path: get_sort_index(path, order_dict))
 
 
-def main():
+def main(args):
     col = colours()
-    args = stat_map_args()
-    subjects = return_list_of_subjects_from_file(args["list_of_subjects"])
     print(f"{col['darker_pink']}Merging components:{col['reset']}", *args["components"])
     folder_path = os.path.join(args["folder_path"], "nfact_dr", "NMF")
-    print(f"{col['darker_pink']}Folder Path:{col['reset']} {folder_path}")
 
-    print(f"{col['darker_pink']}Number of Subjects:{col['reset']} {len(subjects)}")
-    print(f"\n{col['plum']}Creating and Saving 4D white matter volume{col['reset']}")
+    print(f"\n{col['plum']}Working on White matter{col['reset']}")
     print("-" * 100)
-    subjects_w = sort_paths_by_subject_order(get_subjects(folder_path, "W"), subjects)
+    subjects_w = sort_paths_by_subject_order(
+        get_subjects(folder_path, "W"), args["dr_output"]
+    )
 
     subject_W_maps = create_4d_vol(subjects_w, args["components"])
     save_volume_wrapper(
@@ -204,16 +186,18 @@ def main():
         os.path.join(args["outdir"], "R_W_stat_map.nii.gz"),
     )
 
-    print(f"\n{col['plum']}Creating Grey matter files{col['reset']}")
+    print(f"\n{col['plum']}Working on Grey matter files{col['reset']}")
     print("-" * 100)
-    subjects_g = sort_paths_by_subject_order(get_subjects(folder_path, "G"), subjects)
+    subjects_g = sort_paths_by_subject_order(
+        get_subjects(folder_path, "G"), args["dr_output"]
+    )
     gm_data = process_gm(subjects_g, args["components"])
     save_cifit_component(subjects_g, args["outdir"], gm_data, "R")
 
     print(f"\n{col['plum']}Calculating variance maps{col['reset']}")
     group_maps = get_group_maps(
         os.path.join(
-            args["folder_path"], "nfact_decomp", "components", "NMF", "decomp"
+            args["folder_path"], "nfact_decomp", "components", args["algo"], "decomp"
         ),
         args["components"],
     )
@@ -227,9 +211,3 @@ def main():
         "vol": get_variance_maps(group_maps["vol"], gm_data["vol"]),
     }
     save_cifit_component(subjects_g, args["outdir"], cifit_var, "V")
-    print(f"\n{col['plum']}Finished{col['reset']}")
-    exit(0)
-
-
-if __name__ == "__main__":
-    main()
