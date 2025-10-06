@@ -1,4 +1,5 @@
 from NFACT.base.imagehandling import imaging_type, get_cifti_data
+from NFACT.base.utils import nprint, colours, error_and_exit
 import numpy as np
 import nibabel as nb
 import os
@@ -298,3 +299,53 @@ def save_components(
     df = pd.DataFrame(matrix, columns=[f"comp_{idx}" for idx in range(matrix.shape[1])])
     df.insert(0, "subject", subject_ids)
     df.to_csv(f"{save_path}.csv", index=False)
+
+
+def component_loadings_main(args: dict, stats_dir: str) -> None:
+    """
+    Main component loading function
+
+    Parameters
+    ----------
+    args: dict
+        dictionary of command line
+    stats dir: str
+        path to stats directory
+
+    Returns
+    -------
+    None
+
+    """
+    col = colours()
+    nprint(f"\n{col['pink']}Running:{col['reset']} Component loadings")
+    nprint("-" * 100)
+
+    try:
+        loadings = Component_loading(
+            args["group_white"], args["group_grey"], args["dim"]
+        )
+        component_loadings = loadings.run(args["dr_output"])
+    except Exception as e:
+        error_and_exit(False, f"Unable to calculate component loadings due to {e}")
+
+    nprint(f"\n{col['pink']}Saving:{col['reset']} Component loadings")
+    nprint("-" * 100)
+
+    try:
+        save_components(
+            component_loadings["white_correlations"],
+            "W_component_loadings",
+            stats_dir,
+            args["dr_output"],
+            args["no_csv"],
+        )
+        save_components(
+            component_loadings["grey_correlations"],
+            "G_component_loadings",
+            stats_dir,
+            args["dr_output"],
+            args["no_csv"],
+        )
+    except Exception as e:
+        error_and_exit(False, f"Unable to Save component loadings due to {e}")

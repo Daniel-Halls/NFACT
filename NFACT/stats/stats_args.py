@@ -123,11 +123,15 @@ def comp_loading_args(args: object) -> None:
         help="Overwrites previous file structure",
     )
     set_up_args(comp_args, col)
+    decomp_args = comp_args.add_argument_group(
+        f"{col['plum']}Decomp args{col['reset']}"
+    )
+
+    nfact_decomp_folder(decomp_args)
+    algo_arg(decomp_args)
     stats_args = comp_args.add_argument_group(
         f"{col['darker_pink']}Stats args{col['reset']}"
     )
-    nfact_decomp_folder(comp_args)
-    algo_arg(comp_args)
     stats_args.add_argument(
         "-C",
         "--no_csv",
@@ -162,7 +166,6 @@ def stat_map_args(args) -> dict:
         "-f",
         "--folder_path",
         dest="folder_path",
-        required=True,
         help="""
         Path to nfact directory. Statsmap only
         works if there is one nfact directory 
@@ -172,7 +175,6 @@ def stat_map_args(args) -> dict:
         "-c",
         "--components",
         dest="components",
-        required=True,
         type=int,
         nargs="+",
         help="""
@@ -248,4 +250,6 @@ def nfact_stats_args() -> dict:
     check_subcommand()
     parser = nfact_stats_modules()
     args = parser.parse_args()
+    if len(sys.argv) <= 3:
+        parser.parse_args([args.command, "--help"])
     return vars(args)
