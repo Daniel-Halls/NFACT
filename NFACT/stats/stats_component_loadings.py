@@ -301,7 +301,7 @@ def save_components(
     df.to_csv(f"{save_path}.csv", index=False)
 
 
-def component_loadings_main(args: dict, stats_dir: str) -> None:
+def component_loadings_main(args: dict) -> None:
     """
     Main component loading function
 
@@ -336,14 +336,14 @@ def component_loadings_main(args: dict, stats_dir: str) -> None:
         save_components(
             component_loadings["white_correlations"],
             "W_component_loadings",
-            stats_dir,
+            args["stats_dir"],
             args["dr_output"],
             args["no_csv"],
         )
         save_components(
             component_loadings["grey_correlations"],
             "G_component_loadings",
-            stats_dir,
+            args["stats_dir"],
             args["dr_output"],
             args["no_csv"],
         )
