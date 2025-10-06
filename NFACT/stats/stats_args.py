@@ -99,31 +99,6 @@ def check_subcommand() -> None:
         invalid_options(sys.argv[1], avaiable_options)
 
 
-def nfact_stats_modules() -> dict:
-    """
-    Function to define cmd arguments
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    dict: dictionary
-        dictionary of cmd arguments
-    """
-    args = argparse.ArgumentParser(
-        prog="nfact_stats",
-        description=print(nfact_stats_splash()),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    subparsers = args.add_subparsers(dest="command")
-    comp_loading_args(subparsers)
-    stat_map_args(subparsers)
-    return args
-
-
 def comp_loading_args(args: object) -> None:
     """
     Component loading cmd arguments
@@ -229,6 +204,31 @@ def nfact_stats_splash() -> str:
 \_| \_/\_|    \_| |_/ \____/  \_/   \____/   \_/  \_| |_/  \_/  \____/ 
 {col["reset"]} 
 """
+
+
+def nfact_stats_modules() -> dict:
+    """
+    Function to define cmd arguments
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    dict: dictionary
+        dictionary of cmd arguments
+    """
+    args = argparse.ArgumentParser(
+        prog="nfact_stats",
+        description=print(nfact_stats_splash()),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    subparsers = args.add_subparsers(dest="command")
+    comp_loading_args(subparsers)
+    stat_map_args(subparsers)
+    return args
 
 
 def nfact_stats_args() -> dict:
