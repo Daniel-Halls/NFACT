@@ -6,31 +6,127 @@ import numpy as np
 import os
 
 
-def subject_variability_map(group_comp, sub_data):
+def subject_variability_map(group_comp: np.ndarray, sub_data: np.ndarray) -> np.ndarray:
+    """
+    Function to get calculate subject
+    variability maps
+
+    Parameters
+    ----------
+    group_comp: np.ndarray
+        group components
+    sub_data: np.ndarray
+        subject components
+
+    Returns
+    -------
+    np.ndarray: array
+        array of subject variance
+        from group
+    """
     return (sub_data - np.mean(group_comp)) / np.std(group_comp)
 
 
-def get_subjects(path, img_type):
+def get_subjects(path: str, img_type: str) -> list:
+    """
+    Function to get subjects data
+    of a given imaging type
+
+    Parameters
+    ----------
+    path: str
+        path of str
+    img_type: str
+        img type of
+
+    Returns
+    -------
+    list: list object
+        list of subjects
+        by a given imaging type
+    """
     return glob(os.path.join(path, f"{img_type}_*"))
 
 
-def merge_components(data_to_merge, comp, vol: bool = True) -> np.ndarray:
+def merge_components(
+    data_to_merge: np.ndarray, comp: int, vol: bool = True
+) -> np.ndarray:
+    """
+    Function to merge components
+
+    Parameters
+    ----------
+    data_to_merge: np.ndarray
+        components to merge
+    comp: int
+        component to merge
+    vol: bool = True
+        is data volume data
+    """
+
     if vol:
         return np.sum(data_to_merge[:, :, :, comp], axis=3)
     return np.sum(data_to_merge[:, comp], axis=1)
 
 
-def create_vol_map(vol_path, comp):
+def create_vol_map(vol_path: str, comp: int) -> np.ndarray:
+    """
+    Function to create a volume
+    stat map
+
+    Parameters
+    ----------
+    vol_path: str
+        path to volume image
+    comp: int
+        component to merge on
+
+    """
     vol_data = nib.load(vol_path).get_fdata()
     return merge_components(vol_data, comp)
 
 
-def merge_volumes(subjects, comp):
+def merge_volumes(subjects: list, comp: list) -> np.ndarray:
+    """
+    Function to merge subjects volumes
+    given component number(s)
+
+    Parameters
+    ----------
+    subjects: list
+        list of subjects
+    comp: list
+        list of components
+
+    Returns
+    -------
+    np.ndarray: array
+        array of merged volumes
+    """
     subject_maps = [create_vol_map(subj, comp) for subj in subjects]
     return np.stack(subject_maps, axis=3)
 
 
-def get_group_maps(group_w, group_g, comp):
+def get_group_maps(group_w: str, group_g: str, comp: int) -> np.ndarray:
+    """
+    Function to get group maps
+
+    Parameters
+    ----------
+    group_w: str
+        path to group white matter
+        volume
+    group_g: str
+        path to group matter grey data
+        (currently on ciftis supported)
+    comp: int
+        components to merge on
+
+    Returns
+    -------
+    cifti_data: np.ndarray
+        cifti_data
+    """
     group = nib.load(group_w).get_fdata()
     group_comp = merge_components(group, comp)
     cifit_data = process_cifti(group_g, comp)
@@ -38,12 +134,41 @@ def get_group_maps(group_w, group_g, comp):
     return cifit_data
 
 
-def sub_variance(group_map, subject_map):
+def sub_variance(group_map: np.ndarray, subject_map: np.ndarray) -> np.ndarray:
+    """
+    Function to calculate subject variance
+
+    Parameters
+    ----------
+    group_map: np.ndarray
+        group data
+    subject_map: np.ndarray
+        subject data
+
+    Returns
+    -------
+    cifti_data: np.ndarray
+        cifti_data
+    """
     val = (subject_map - group_map) * 2
     return normalization(val)
 
 
-def normalization(data):
+def normalization(data: np.ndarray) -> np.ndarray:
+    """
+    Function to normalise an array
+    (min max normalization)
+
+    Parameters
+    ----------
+    data: np.ndarray
+        data to normalise
+
+    Returns
+    -------
+    normalized: np.ndarray
+        np.ndarray that is min-max normalised
+    """
     normalized = np.zeros_like(data, dtype=np.float64)
     mask = data != 0
     nonzero_vals = data[mask]
@@ -58,7 +183,8 @@ def normalization(data):
     return normalized
 
 
-def get_variance_maps(group_data, subject_data, vol=True):
+def get_variance_maps(group_data, subject_data, vol=True) -> np.ndarray:
+    """ """
     if vol:
         return np.stack(
             [
@@ -113,7 +239,30 @@ def create_gm_maps(subjects, comp):
     }
 
 
-def save_cifit_component(subjects, outdir, gm_data, prefix):
+def save_cifit_component(
+    subjects: list, outdir: str, gm_data: np.ndarray, prefix: str
+) -> None:
+    """
+    Function to save cifti component
+
+    Parameters
+    ----------
+    subjects: list
+        list of subjects
+    outdir: str
+        filepath to output
+        dir
+    gm_data: np.ndarray
+        grey matter data
+    prefix: str
+        prefix to name the
+
+
+    Returns
+    -------
+    None
+    """
+
     ldarray = create_darray(gm_data["l_surf"])
     rdarray = create_darray(gm_data["r_surf"])
     save_volume_wrapper(
@@ -126,8 +275,21 @@ def save_cifit_component(subjects, outdir, gm_data, prefix):
     save_gm_surf(rdarray, os.path.join(os.path.join(outdir, f"{prefix}_R")))
 
 
-def extract_id(path):
-    """Extract the subject ID (e.g., 'BANDA123') from the file path."""
+def extract_id(path: str) -> str:
+    """
+    Extract subject ID from filepath
+
+    Parameters
+    ----------
+    path: str
+        file path
+
+    Returns
+    -------
+    str: string object
+        str of filepath
+    """
+
     filename = path.split("/")[-1]
     parts = filename.split("_")
     if len(parts) >= 2:
@@ -135,28 +297,68 @@ def extract_id(path):
     return None
 
 
-def get_sort_index(path, order_dict):
-    """Return the index of the subject ID from the order_dict, or inf if not found."""
+def get_sort_index(path: str, order_dict: dict) -> str:
+    """
+    Function to return the index of the subject ID
+    from a given dictionary, or inf if not found.
+
+    Parameters
+    ----------
+    path: str
+        str of file path
+    order_dict: dict
+        dictionary of ordered
+        subjects
+
+    Returns
+    -------
+    key: dictionary key
+        str of subject id
+    """
+
     sub_id = extract_id(path)
     return order_dict.get(sub_id, float("inf"))
 
 
-def sort_paths_by_subject_order(file_paths, subject_order):
+def sort_paths_by_subject_order(file_paths: list, subject_order: list) -> list:
     """
-    Sort a list of file paths according to a desired subject ID order.
+    Function to sort a list of file
+    paths according to subject ID
 
-    Parameters:
-    - file_paths: list of str, full file paths
-    - subject_order: list of str, subject IDs like
 
-    Returns:
-    - list of str, sorted file paths
+    Parameters
+    -----------
+    file_paths: list
+        list of str full file paths
+    subject_order: list
+        list of subject IDs (str)
+
+    Returns
+    --------
+    list: list object
+        list of sorted file paths
     """
+
     order_dict = {sub_id: idx for idx, sub_id in enumerate(subject_order)}
     return sorted(file_paths, key=lambda path: get_sort_index(path, order_dict))
 
 
-def statsmap_main(args):
+def statsmap_main(args: dict) -> None:
+    """
+    Main statsmap function.
+    Creates statsmap
+
+    Parameters
+    ----------
+    args: dict
+        cmdline dictionary
+        arguments
+
+    Returns
+    -------
+    None
+    """
+
     col = colours()
     if ".gz" in args["group_grey"] or ".nii.gz" in args["group_grey"]:
         print(
