@@ -13,11 +13,13 @@ It consists of three "main" decomposition modules:
     
     - nfact_dr (Dual regression on group matrix)
 
-as well as two axillary "modules":
+as well as three axillary "modules":
     
     - nfact_config (creates config files for the pipeline and changing any hyperparameters)
     
     - nfact_Qc (Creates hitmaps to check for bias in decomposition)
+
+    - nfact_stats
 
 and a pipeline wrapper
     
@@ -581,6 +583,85 @@ options:
   -t THRESHOLD, --threshold THRESHOLD
                         Threshold value for z scoring the number of times a component comes up in a voxel in the image. Values below this z score are treated as noise and discarded in the non raw image.
   -O, --overwrite       Overwite previous QC
+
+```
+------------------------------------------------------------------------------------------------------------------------------------------
+
+```
+ _   _ ______   ___   _____  _____   _____  _____   ___   _____  _____
+| \ | ||  ___| / _ \ /  __ \|_   _| /  ___||_   _| / _ \ |_   _|/  ___|
+|  \| || |_   / /_\ \| /  \/  | |   \ `--.   | |  / /_\ \  | |  \ `--.
+| . ` ||  _|  |  _  || |      | |    `--. \  | |  |  _  |  | |   `--. \
+| |\  || |    | | | || \__/\  | |   /\__/ /  | |  | | | |  | |  /\__/ /
+\_| \_/\_|    \_| |_/ \____/  \_/   \____/   \_/  \_| |_/  \_/  \____/
+
+```
+
+## NFACT stats
+
+This module creates either component loadings or statsmaps of merged components. Run AFTER doing dual regression
+
+## Loadings
+
+This calculates loadings between individual subjects dual regression output and the group level components. Each loading is a pearson R of how similar an individual component is to the group level.
+
+```
+usage: nfact_stats loadings [-h] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [-d DIM] [-n NFACT_FOLDER] [-a ALGO] [-C]
+
+options:
+  -h, --help            show this help message and exit
+  -O, --overwrite       Overwrites previous file structure
+
+Set Up Arguments:
+  -l LIST_OF_SUBJECTS, --list_of_subjects LIST_OF_SUBJECTS
+                        Filepath to a list of subjects
+  -o OUTDIR, --outdir OUTDIR
+                        Path to output directory
+
+Decomp args:
+  -d DIM, --dim DIM     Number of dimensions/components that was used to generate nfact_decomp image
+  -n NFACT_FOLDER, --nfact_folder NFACT_FOLDER
+                        REQUIRED: Absolute path to nfact_decomp output folder.
+  -a ALGO, --algo ALGO  Which decomposition algorithm. Options are: NMF (default), or ICA. This is case insensitive
+
+Stats args:
+  -C, --no_csv          Save Component Loadings as a npy file rather than as a csv file
+
+```
+
+## Statsmap
+
+This creates statistical maps to be used in palm or randomise. 
+
+The statistical maps are 3D niftis (white matter) and ciftis (grey matter) of combined combined components. This can be done on a group level or on a subject level. If it is done on a group level then images are 3D of just combined components. If it is done on a subject level then output is a 4D image with subject as the 4th dim (ready for palm/randomise)
+
+**please note** statsmap can currently only accept ciftis as the GM. At some point gii and niftis will be accepted
+
+```
+usage: nfact_stats statsmap [-h] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [-O] [-d DIM] [-n NFACT_FOLDER] [-a ALGO] [-c COMPONENTS [COMPONENTS ...]] [-m MAP_NAME] [-G]
+
+options:
+  -h, --help            show this help message and exit
+  -O, --overwrite       Overwrites previous file structure
+
+Set Up Arguments:
+  -l LIST_OF_SUBJECTS, --list_of_subjects LIST_OF_SUBJECTS
+                        Filepath to a list of subjects
+  -o OUTDIR, --outdir OUTDIR
+                        Path to output directory
+
+Decomp args:
+  -d DIM, --dim DIM     Number of dimensions/components that was used to generate nfact_decomp image
+  -n NFACT_FOLDER, --nfact_folder NFACT_FOLDER
+                        REQUIRED: Absolute path to nfact_decomp output folder.
+  -a ALGO, --algo ALGO  Which decomposition algorithm. Options are: NMF (default), or ICA. This is case insensitive
+
+Statsmap args:
+  -c COMPONENTS [COMPONENTS ...], --components COMPONENTS [COMPONENTS ...]
+                        Components to merge
+  -m MAP_NAME, --map_name MAP_NAME
+                        Name to call the maps (i.e if merging components asscoiated with a network call it networkx)
+  -G, --group-only      Only do group level stats map. Doesn't need a subject list
 
 ```
 
