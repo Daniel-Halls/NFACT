@@ -183,8 +183,27 @@ def normalization(data: np.ndarray) -> np.ndarray:
     return normalized
 
 
-def get_variance_maps(group_data, subject_data, vol=True) -> np.ndarray:
-    """ """
+def get_variance_maps(
+    group_data: np.ndarray, subject_data: np.ndarray, vol: bool = True
+) -> np.ndarray:
+    """
+    Function to get and stack variance maps
+
+    Parameters
+    ----------
+    group_data: np.ndarray
+        group level data
+    subject_data: np.ndarray
+        subject level data
+    vol: bool
+        is data volume data.
+        Default is True
+
+    Returns
+    -------
+    np.ndarray: array
+        array of stacked variance maps
+    """
     if vol:
         return np.stack(
             [
@@ -202,7 +221,28 @@ def get_variance_maps(group_data, subject_data, vol=True) -> np.ndarray:
     )
 
 
-def save_volume_wrapper(meta_data_nifit_path, vol_to_save, outdir, cifti=False):
+def save_volume_wrapper(
+    meta_data_nifit_path: str, vol_to_save: np.ndarray, outdir: str, cifti: bool = False
+) -> None:
+    """
+    Function to save volumes
+
+    Parameters
+    ----------
+    meta_data_nifit_path: str
+        path to nifit to get metadata
+    vol_to_save: np.ndarray
+        volume array to save
+    outdir: str
+        where to save the image
+    cifti: bool
+        is volume array part of
+        the cifti
+
+    Returns
+    -------
+    None
+    """
     if cifti:
         vol_info = get_cifti_data(meta_data_nifit_path)["vol"]
     else:
@@ -210,11 +250,38 @@ def save_volume_wrapper(meta_data_nifit_path, vol_to_save, outdir, cifti=False):
     save_volume(vol_info, vol_to_save, outdir)
 
 
-def save_gm_surf(darrays, file_name):
+def save_gm_surf(darrays: list, file_name: str) -> None:
+    """
+    Function to save surfaces
+
+    Parameters
+    ----------
+    darrays: list
+        list of darrays to
+        save
+    file_name: str
+        file name
+    """
     nib.GiftiImage(darrays=darrays).to_filename(f"{file_name}.func.gii")
 
 
-def process_cifti(cifti_path, comp) -> dict:
+def process_cifti(cifti_path: str, comp: int) -> dict:
+    """
+    Function to process cifti by merging components
+
+    Parameters
+    ----------
+    cifti_path: str
+        cifti path to load
+    comp: int
+        components to merge on
+
+    Returns
+    --------
+    dict: dictionary object
+        dictionary with left, right and volume
+        arrays
+    """
     cifit_data = get_cifti_data(cifti_path)
     l_surf = merge_components(cifit_data["L_surf"], comp, vol=False)
     r_surf = merge_components(cifit_data["R_surf"], comp, vol=False)
@@ -222,7 +289,21 @@ def process_cifti(cifti_path, comp) -> dict:
     return {"l_surf": l_surf, "r_surf": r_surf, "vol": vol_comp}
 
 
-def create_darray(gii_data):
+def create_darray(gii_data: np.ndarray) -> list:
+    """
+    Function to create darrays to
+    save gifti data
+
+    Parameters
+    ----------
+    gii_data: np.ndarray
+        surface data to save
+
+    Returns
+    -------
+    list: list object
+        list of darrays
+    """
     return [
         nib.gifti.GiftiDataArray(
             data=gii_data, datatype="NIFTI_TYPE_FLOAT32", intent=2001
@@ -230,7 +311,23 @@ def create_darray(gii_data):
     ]
 
 
-def create_gm_maps(subjects, comp):
+def create_gm_maps(subjects: list, comp: list) -> dict:
+    """
+    Function to create grey matter maps
+
+    Parameters
+    ----------
+    subjects: list
+        list of subjects
+    comp: list
+        component
+
+    Returns
+    -------
+    dict: dictionary object
+        dict of left, right and vol
+        data of np.ndarrays
+    """
     results = [process_cifti(sub, comp) for sub in subjects]
     return {
         "l_surf": np.stack([dat["l_surf"] for dat in results], axis=1),
