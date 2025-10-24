@@ -147,7 +147,15 @@ def dual_regression_pipeline(
     nprint(f"{col['pink']}Obtaining{col['reset']}: FDT Matrix")
 
     try:
-        matrix = load_fdt_matrix(os.path.join(fdt_path, "fdt_matrix2.dot"))
+        matrix_file = next(
+            (
+                os.path.join(fdt_path, fname)
+                for fname in ("fdt_matrix2.dot.lz4", "fdt_matrix2.dot")
+                if os.path.exists(os.path.join(fdt_path, fname))
+            ),
+            None,
+        )
+        matrix = load_fdt_matrix(matrix_file)
     except Exception:
         error_and_exit(False, f"Unable to load {sub_id} fdt matrix")
 
@@ -192,6 +200,10 @@ def dual_regression_pipeline(
 
 
 if __name__ == "__main__":
+    # env needed for the cluster or its 24 hours+
+    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["OPENBLAS_NUM_THREADS"] = "1"
     args = cluster_mode_args()
     dual_regression_pipeline(
         fdt_path=args["fdt_path"],

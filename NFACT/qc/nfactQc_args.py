@@ -1,5 +1,6 @@
 import argparse
 from NFACT.base.utils import colours, no_args
+from NFACT.base.base_args import algo_arg, nfact_decomp_folder
 
 
 def nfact_qc_args() -> dict:
@@ -20,36 +21,9 @@ def nfact_qc_args() -> dict:
         description=print(nfact_Qc_splash()),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    col = colours()
-    args.add_argument(
-        "-n",
-        "--nfact_folder",
-        dest="nfact_folder",
-        help=f"""{col['red']}REQUIRED:{col['reset']} 
-        Absolute path to nfact_decomp output folder.
-        nfact_Qc folder is also saved within this
-        folder.
-        """,
-    )
-    args.add_argument(
-        "-d",
-        "--dim",
-        dest="dim",
-        help=f"""{col['red']}REQUIRED:{col['reset']} 
-        Number of dimensions/components that 
-        was used to generate nfact_decomp image
-        """,
-    )
-    args.add_argument(
-        "-a",
-        "--algo",
-        dest="algo",
-        default="NMF",
-        help=f"""{col['red']}REQUIRED:{col['reset']}
-        Which algorithm to run qulatiy control on. 
-        Options are: NMF (default), or ICA.
-        """,
-    )
+    nfact_decomp_folder(args)
+    algo_arg(args)
+
     args.add_argument(
         "-t",
         "--threshold",

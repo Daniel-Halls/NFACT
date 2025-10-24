@@ -7,6 +7,11 @@ import json
 import os
 import argparse
 import glob
+import re
+
+import lz4.frame
+import shutil
+from pathlib import Path
 
 
 def nfact_config_args() -> dict:
@@ -49,9 +54,20 @@ def nfact_config_args() -> dict:
         default=False,
         help="""
         Creates a subject list from a given directory
-        Needs path to subjects directory. If ran inside
+        Needs path to subjects directory. Depending on file path
+        will dictate the subject list. If ran inside
         an nfact_pp directory will make a subject list 
         for decompoisition (adds on omatrix2 to file paths)
+        """,
+    )
+    args.add_argument(
+        "-z",
+        "--zip",
+        dest="zip",
+        default=False,
+        help="""
+        Zip fdt matrices from nfact_pp to
+        save space. Needs a path to a nfact_pp directory
         """,
     )
     args.add_argument(
@@ -421,7 +437,9 @@ def check_study_folder(study_folder_path: str) -> None:
     )
 
 
-def list_of_subjects_from_directory(study_folder_path: str) -> list:
+def list_of_subjects_from_directory(
+    study_folder_path: str, is_dr: bool = False
+) -> list:
     """
     Function to get list of subjects from a directory
     if a list of subjects is not given
@@ -438,6 +456,8 @@ def list_of_subjects_from_directory(study_folder_path: str) -> list:
     """
 
     list_of_subject = glob.glob(os.path.join(study_folder_path, "*"))
+    if is_dr:
+        return list_of_subject
     return [f"{direct}\n" for direct in list_of_subject if os.path.isdir(direct)]
 
 
@@ -463,16 +483,71 @@ def filter_sublist(sub_list: str) -> list:
         "code",
         "sourcedata",
         "derivatives",
-        ".",
         "nfact_dr",
+        ".",
         "nfact_pp",
         "nfact\n",
+        "normalised",
     ]
     return [
         dirs
         for dirs in sub_list
         if not any(rem in os.path.basename(dirs).lower() for rem in remove_dir)
     ]
+
+
+def nfact_study_list(study_folder_path: str) -> list:
+    """
+    Function to create a list of
+    subject directories for nfact
+
+    Parameters
+    ----------
+    study_folder_path: str
+        path to study folder
+
+    Returns
+    -------
+    sub_list: list
+        list of subject filepaths
+    """
+    sub_list = list_of_subjects_from_directory(study_folder_path)
+    if "nfact_pp" in study_folder_path:
+        sub_list = [sub.rstrip("\n") + "/omatrix2\n" for sub in sub_list]
+    return filter_sublist(sub_list)
+
+
+def nfact_dr_study_list(study_folder_path: str) -> list:
+    """
+    Function to create a list of
+    subject files for nfact_dr
+    organises them into G and W
+
+    Parameters
+    ----------
+    study_folder_path: str
+        path to study folder
+
+    Returns
+    -------
+    sub_list: list
+        list of subject filepaths
+    """
+    sub_list = list_of_subjects_from_directory(study_folder_path, is_dr=True)
+    filtered_list = [
+        f"{subs}" for subs in sub_list if os.path.basename(subs)[0].upper() in ["W"]
+    ]
+
+    return sorted(
+        [
+            os.path.join(
+                os.path.dirname(sub),
+                re.search(r"^[W]_(.*?)_dim\d+", os.path.basename(sub)).group(1) + "\n",
+            )
+            for sub in filtered_list
+        ],
+        key=lambda p: re.search(r"^(.*?)\d+", os.path.basename(p)).group(1),
+    )
 
 
 def create_subject_list(study_folder_path: str, ouput_dir: str, filename: str) -> None:
@@ -496,8 +571,38 @@ def create_subject_list(study_folder_path: str, ouput_dir: str, filename: str) -
     if study_folder_path == ".":
         study_folder_path = os.getcwd()
     check_study_folder(study_folder_path)
-    sub_list = list_of_subjects_from_directory(study_folder_path)
-    if "nfact_pp" in study_folder_path:
-        sub_list = [sub.rstrip("\n") + "/omatrix2\n" for sub in sub_list]
-    sub_list = filter_sublist(sub_list)
+    if "nfact_dr" in study_folder_path:
+        sub_list = nfact_dr_study_list(study_folder_path)
+    else:
+        sub_list = nfact_study_list(study_folder_path)
     write_to_file(ouput_dir, f"{filename}.sublist", sub_list, text_is_list=True)
+
+
+def zip_nfact_pp_dir(nfact_pp_dir: str) -> None:
+    """
+    Function to zip an fdt_matrix
+    to save space. Loops through
+    nfact pp directory
+
+    Parameters
+    ----------
+    nfact_pp_dir: str
+        path to nfact_pp directory
+
+    Returns
+    -------
+    None
+    """
+
+    nfactpp_subs = Path(nfact_pp_dir).rglob("*/omatrix2/fdt_matrix2.dot")
+    for fdt_mat in nfactpp_subs:
+        if fdt_mat.is_file():
+            print("Working on subject:", Path(fdt_mat).parents[1].name)
+            try:
+                with open(fdt_mat, "rb") as f_in, lz4.frame.open(
+                    str(fdt_mat) + ".lz4", "wb"
+                ) as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+                    fdt_mat.unlink()
+            except Exception as e:
+                print("Unable to zip due to: ", e)

@@ -3,6 +3,7 @@ from sklearn.preprocessing import StandardScaler
 import scipy.sparse as sps
 import numpy as np
 import os
+import lz4.frame
 
 
 def comp_disk_save(
@@ -89,6 +90,29 @@ def normalise_matrix(waytotal: str, matrix: object) -> np.ndarray:
     return matrix.multiply(1e8 / waytotal)
 
 
+def read_in_matrix(matfile: str):
+    """
+    Function to load a single fdt matrix
+    either from .dot or from a lz4.
+
+    Parameters
+    ----------
+    matfile: str
+       path to file
+
+    Returns
+    -------
+    mat: np.ndarray
+        np.ndarray
+    """
+    if matfile.endswith(".lz4"):
+        with lz4.frame.open(matfile, "rb") as fil:
+            mat = np.loadtxt(fil)
+    else:
+        mat = np.loadtxt(matfile)
+    return mat
+
+
 def load_single_matrix(matfile: str) -> object:
     """
     Function to load a single fdt matrix
@@ -104,7 +128,7 @@ def load_single_matrix(matfile: str) -> object:
     sparse_matrix: csc_matrix
        sparse matrix in csc_matrix
     """
-    mat = np.loadtxt(matfile)
+    mat = read_in_matrix(matfile)
     data = mat[:-1, -1]
     rows = np.array(mat[:-1, 0] - 1, dtype=int)
     cols = np.array(mat[:-1, 1] - 1, dtype=int)

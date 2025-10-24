@@ -81,11 +81,11 @@ def nfact_pp_main(arg: dict = None):
         arg = processing_cluster(arg)
 
     print(
-        f'{col["darker_pink"]}Filetree:{col["reset"]} {arg["file_tree"].lower()} '
+        f"{col['darker_pink']}Filetree:{col['reset']} {arg['file_tree'].lower()} "
     ) if arg["file_tree"] else None
 
     print(
-        f'{col["darker_pink"]}Inputs:{col["reset"]} Seeds and ROIS treated as absolute paths'
+        f"{col['darker_pink']}Inputs:{col['reset']} Seeds and ROIS treated as absolute paths"
     ) if arg["absolute"] else None
 
     if arg["stop"] == []:

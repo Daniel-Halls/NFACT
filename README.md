@@ -606,10 +606,11 @@ NFACT config can create:
 2) nfact_config.decomp. A config JSON file to control the hyper-parameters of the ICA and NMF functions.
 3) nfact_config.sublist. A list of subjects(text file) in a folder. 
 
+Additionally NFACT config can zip the fdt_matrix.dot files in the nfact_pp directory to save on space.
 
 ## Usage:
 ```
-usage: nfact_config [-h] [-C] [-D] [-s SUBJECT_LIST] [-o OUTPUT_DIR] [-f FILE_NAME]
+usage: nfact_config [-h] [-C] [-D] [-s SUBJECT_LIST] [-z ZIP] [-o OUTPUT_DIR] [-f FILE_NAME]
 
 options:
   -h, --help            Shows help message and exit
@@ -617,10 +618,12 @@ options:
   -D, --decomp_only     Creates a config file for hyperparameters for the NMF/ICA
   -s SUBJECT_LIST, --subject_list SUBJECT_LIST
                         Creates a subject list from a given directory Needs path to subjects directory. If ran inside an nfact_pp directory will make a subject list for decompoisition (adds on omatrix2 to file paths)
+  -z ZIP, --zip ZIP     Zip fdt matrices from nfact_pp to save space. Needs a path to a nfact_pp directory
   -o OUTPUT_DIR, --output_dir OUTPUT_DIR
                         File path of where to save config file
   -f FILE_NAME, --file_name FILE_NAME
                         Name of the nfact config filename. Defaults is nfact_config
+
 ```
 Altering a Boolean value in a JSON is done by giving then everything has to be lower case i.e true, false. It is advised that unless you are familiar with JSON 
 files to use a JSON linter to check they are valid. 

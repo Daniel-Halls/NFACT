@@ -127,8 +127,8 @@ def submit_to_cluster(args: dict, paths: dict) -> list:
         list of job ids
     """
     job_ids = []
-    for idx, sub in enumerate(args["ptxdir"]):
-        sub_id = get_subject_id(sub, idx)
+    for sub in args["ptxdir"]:
+        sub_id = get_subject_id(sub)
         nprint(f"Submittng {sub_id}")
         cluster_command = build_cluster_command(
             sub,
@@ -216,8 +216,8 @@ def run_locally(args: dict, paths: dict) -> None:
     except Exception as e:
         error_and_exit(False, f"Unable to find components due to {e}")
 
-    for idx, subject in enumerate(args["ptxdir"]):
-        subject_id = get_subject_id(subject, idx)
+    for subject in args["ptxdir"]:
+        subject_id = get_subject_id(subject)
         dual_regression_pipeline(
             fdt_path=subject,
             output_dir=os.path.join(args["outdir"], "nfact_dr"),

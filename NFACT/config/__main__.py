@@ -5,6 +5,7 @@ from NFACT.config.nfact_config_functions import (
     create_subject_list,
     check_arguments,
     create_config,
+    zip_nfact_pp_dir,
 )
 from NFACT.base.utils import error_and_exit
 
@@ -24,8 +25,12 @@ def nfact_config_main() -> None:
     args = nfact_config_args()
     check_arguments(args)
     if args["subject_list"]:
-        print(f'Saving subject list to {args["output_dir"]}\n')
+        print(f"Saving subject list to {args['output_dir']}\n")
         create_subject_list(args["subject_list"], args["output_dir"], args["file_name"])
+        exit(0)
+
+    if args["zip"]:
+        zip_nfact_pp_dir(args["zip"])
         exit(0)
 
     if args["decomp_only"]:
@@ -35,7 +40,7 @@ def nfact_config_main() -> None:
         arguments = create_config()
         file_name = f"{args['file_name']}.pipeline"
 
-    print(f'Saving {file_name}.config to {args["output_dir"]}\n')
+    print(f"Saving {file_name}.config to {args['output_dir']}\n")
     try:
         save_to_json(args["output_dir"], arguments, file_name)
     except Exception as e:

@@ -51,8 +51,7 @@ def nfactQc_main(args: dict = None) -> None:
         white_name = get_img_name(os.path.basename(images["white_image"][0]))
     except IndexError:
         error_and_exit(
-            False,
-            "Unable to find files. Please check nfact_decomp directory"
+            False, "Unable to find files. Please check nfact_decomp directory"
         )
 
     print(f"{col['plum']}nfactQC directory:{col['reset']} {nfactQc_directory}\n")
