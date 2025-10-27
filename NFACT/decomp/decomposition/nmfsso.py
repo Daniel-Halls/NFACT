@@ -1,7 +1,126 @@
 import numpy as np
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import squareform
+from multiprocessing import shared_memory
+from joblib import Parallel, delayed
 from NFACT.base.utils import error_and_exit
+from NFACT.decomp.decomposition.decomp import nmf_decomp
+
+
+class NMFsso:
+    """
+    Parallel NMF-sso estimator using shared memor.
+    """
+
+    def __init__(
+        self,
+        mode: str,
+        fdt_mat: np.ndarray,
+        num_int: int,
+        nmf_params: dict,
+        n_jobs: int,
+    ):
+        mode = mode.lower()
+        if mode not in {"randinit", "bootstrap", "both"}:
+            raise ValueError("mode must be 'randinit', 'bootstrap', or 'both'")
+
+        self.mode = mode
+        self.num_int = num_int
+        self.nmf_params = nmf_params.copy()
+        self.n_jobs = n_jobs
+        self.fdt_mat = fdt_mat
+        self.nmf_params["init"] = "random"
+        self.nmf_params["random_state"] = None
+
+    def _results(self):
+        return {"grey": [], "white": []}
+
+    def _run_single_shared(self, shm_name, shape, dtype, nmf_params):
+        """
+        Worker function: attach to shared memory and run one NMF decomposition.
+        """
+        shm = shared_memory.SharedMemory(name=shm_name)
+        fdt_mat = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+        nmf_state = nmf_decomp(nmf_params, fdt_mat)
+        shm.close()  # detach, do NOT unlink here
+        return nmf_state["grey_components"], nmf_state["white_components"]
+
+    def _parallel_run(self):
+        self.shared_shape = self.fdt_mat.shape
+        self.shared_dtype = self.fdt_mat.dtype
+        self.shm = shared_memory.SharedMemory(create=True, size=self.fdt_mat.nbytes)
+        np.ndarray(self.shared_shape, dtype=self.shared_dtype, buffer=self.shm.buf)[
+            :
+        ] = self.fdt_mat
+        self.shm_name = self.shm.name  # Only pass this to subprocesses
+
+        print(
+            f"Running {self.num_int} NMF decompositions in parallel (n_jobs={self.n_jobs})..."
+        )
+        results = Parallel(n_jobs=self.n_jobs)(
+            delayed(self._run_single_shared)(
+                iterat,
+                self.shm_name,
+                self.shared_shape,
+                self.shared_dtype,
+                self.nmf_params,
+            )
+            for iterat in range(self.num_int)
+        )
+
+        # Collect results
+        nmf_sso_results = self._results()
+        for grey, white in results:
+            nmf_sso_results["grey"].append(grey)
+            nmf_sso_results["white"].append(white)
+
+        # Clean up shared memory
+        self.shm.close()
+        self.shm.unlink()
+
+        return nmf_sso_results
+
+    def _single_run(self):
+        """
+        NMF-sso estimation with randomization and bootstrapping.
+        Based on the ICA sso from MATLAB
+
+        Parameters
+        ----------
+        mode : str
+            'randinit' | 'bootstrap' | 'both'
+        fdt_mat : ndarray (seed by target)
+            fdt matrix
+        num_int : int
+            Number of iterations.
+        nmf_params : dict
+            Parameters for NMF
+
+        Returns
+        -------
+        nmf_sso_results: NMFssoResult
+            NMFssoResult dataclass
+        """
+
+        nmf_sso_results = self._results()
+        for iterat in range(self.num_int):
+            print(f"NMF: run {iterat+1}/{self.num_int}")
+            nmf_state = nmf_decomp(self.nmf_params, self.fdt_mat)
+            nmf_sso_results["grey"].append(nmf_state["grey_components"])
+            nmf_sso_results["white"].append(nmf_state["white_components"])
+
+        return nmf_sso_results
+
+    def run(self):
+        """Run all NMF decompositions fully in parallel (no pickling huge arrays)."""
+
+        if self.n_jobs > 1:
+            nmf_sso_results = self.__parallel_run()
+
+        else:
+            nmf_sso_results = self._single_run()
+
+        return nmf_sso_results
 
 
 def rownorm(nmf_mat: np.ndarray):
