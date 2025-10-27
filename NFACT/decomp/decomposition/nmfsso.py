@@ -200,28 +200,77 @@ def between_cluster_stats(
     return stat_dict
 
 
+def calculate_internal_stats(sim_internal: np.ndarray, cluster: int, stat: dict) -> dict:
+    """
+    Function to calculate the internal statistics
+    of a given cluster
+
+    Parameters
+    ----------
+    sim_internal: np.ndarray
+        array of similarity measures within 
+        a cluster
+    cluster: int
+        cluster working on 
+    stat: dict
+        stats dictionary
+    
+    Returns
+    -------
+    stats: dictionary
+        stats dictionary 
+        with sum, min, max & avg
+        within cluster stats
+    """
+    sim_off_diag = np.copy(sim_internal)
+    np.fill_diagonal(sim_off_diag, np.nan)
+    sim_values = sim_off_diag.flatten()
+    sim_values_clean = sim_values[~np.isnan(sim_values)]
+
+    # Calculate and store internal statistics
+    if sim_values_clean.size > 0:
+        stat["internal"]["sum"][cluster] = np.sum(sim_values_clean)
+        stat["internal"]["min"][cluster] = np.min(sim_values_clean)
+        stat["internal"]["avg"][cluster] = np.mean(sim_values_clean)
+        stat["internal"]["max"][cluster] = np.max(sim_values_clean)
+    return stat
+
+
+def calculate_external_cluster_stats():
+
+
 def calculate_cluster_stats(
     sim: np.ndarray, partition: np.ndarray, between: bool = False
 ) -> dict:
     """
     Function to calculate cluster stats:
 
-    Internal (stats on all unique pairs of distinct nodes in a cluster)
+    Internal (stats on all unique pairs of distinct 
+              nodes in a cluster)
         - sum: sum of the total edge weight in cluster
         - min: minimium edge weight
         - avg: avergae edge weight
         - max: maximum edge weight
-    External
-        -
+    External (current cluster nad all nodes in all other clusters
+              combined)
+        - sum: total edge weight of cluster to rest of graph
+        - min: min edge weight of cluster to rest of graph
+        - avg: avg edge weight of cluster to rest of graph
+        - max: max edge weight of cluster to rest of graph
 
 
-    Args:
-        S: A square NumPy array (similarity/adjacency matrix).
-        partition: A 1D NumPy array where each element indicates the cluster ID (1-based)
-                   for the corresponding data point (must match rows/cols of S).
-        between: If True, calculates between-cluster statistics.
+    Parameters
+    ----------
+    sim: np.ndarray
+        similairty matrix
+    partition: np.ndarray
+        array of cluster labels for all partitions
+    between: bool 
+        Calculate between cluster stats.
+         Default is False 
 
-    Returns:
+    Returns
+    -------
         A dictionary containing the calculated statistics. NumPy arrays are used for
         all internal data structures.
     """
@@ -231,54 +280,29 @@ def calculate_cluster_stats(
 
     # Iterate over clusters (using 1-based indexing for matching the partition labels)
     for cluster in range(1, n_clusters + 1):
-        k = cluster - 1
+        working_cluster = cluster - 1
 
         # Boolean mask for current cluster members: (partition == cluster)
         this_partition_mask = partition == cluster
 
-        # --- 1. Internal Statistics (S(thisPartition,thisPartition)) ---
+        # Internal Statistics (S(thisPartition,thisPartition)) ---
         sim_internal = sim[this_partition_mask][:, this_partition_mask]
-        stat["N"][k] = sim_internal.shape[0]
-
-        N_k = stat["N"][k]
+        stat["N"][working_cluster] = sim_internal.shape[0]
 
         # Only calculate internal stats if cluster size is > 1 (required for off-diagonal values)
-        if N_k > 1:
-            # Create a copy to avoid modification warning/issue
-            S_off_diag = np.copy(sim_internal)
+        if stat["N"][working_cluster] > 1:
+            stat = calculate_internal_stats(sim_internal,working_cluster, stat)
 
-            # Remove diagonal elements (self-similarity) by setting them to NaN
-            # Equivalent to MATLAB's S_(eye(size(S_))==1)=[] on the flattened array
-            np.fill_diagonal(S_off_diag, np.nan)
-
-            # Flatten, then filter out the NaNs (the diagonal elements)
-            S_values = S_off_diag.flatten()
-            S_values_clean = S_values[~np.isnan(S_values)]
-
-            # Calculate and store internal statistics
-            if S_values_clean.size > 0:
-                stat["internal"]["sum"][k] = np.sum(S_values_clean)
-                stat["internal"]["min"][k] = np.min(S_values_clean)
-                stat["internal"]["avg"][k] = np.mean(S_values_clean)
-                stat["internal"]["max"][k] = np.max(S_values_clean)
-
-        # --- 2. External Statistics (S(thisPartition, ~thisPartition)) ---
-        if n_clusters > 1:
-            # Boolean mask for non-members
-            not_this_partition_mask = ~this_partition_mask
-
-            # External similarity matrix
-            sim_external = sim[this_partition_mask][:, not_this_partition_mask]
-
-            # Flatten the external matrix for calculation (S_(:))
-            S_external_flat = sim_external.flatten()
+        # External Statistics (S(thisPartition, ~thisPartition)) ---
+        not_this_partition_mask = ~this_partition_mask
+        sim_external = sim[this_partition_mask][:, not_this_partition_mask].flatten()
 
             # Calculate and store external statistics only if the resulting array is not empty
-            if S_external_flat.size > 0:
-                stat["external"]["sum"][k] = np.sum(S_external_flat)
-                stat["external"]["min"][k] = np.min(S_external_flat)
-                stat["external"]["avg"][k] = np.mean(S_external_flat)
-                stat["external"]["max"][k] = np.max(S_external_flat)
+        if S_external_flat.size > 0:
+                stat["external"]["sum"][working_cluster] = np.sum(S_external_flat)
+                stat["external"]["min"][working_cluster] = np.min(S_external_flat)
+                stat["external"]["avg"][working_cluster] = np.mean(S_external_flat)
+                stat["external"]["max"][working_cluster] = np.max(S_external_flat)
 
     if between and n_clusters > 1:
         stat = between_cluster_stats(stat, sim, partition)
@@ -308,22 +332,21 @@ def compute_r_index(dist, partitions):
     for part in partitions:
         part = np.array(part)
         clusters, counts = np.unique(part, return_counts=True)
-        Ncluster = len(clusters)
 
         # Skip partitions with singleton clusters or degenerate partition
-        if np.any(counts == 1) or Ncluster == 1:
+        if np.any(counts == 1) or len(clusters) == 1:
             ri.append(np.nan)
             continue
 
         # Compute cluster statistics
-        Stat = calculate_cluster_stats(dist, part, between=True)
+        stat = calculate_cluster_stats(dist, part, between=True)
 
         # Set diagonal of between.avg to Inf (ignore self-distances)
-        between_avg = Stat["between"]["avg"].copy()
+        between_avg = stat["between"]["avg"].copy()
         np.fill_diagonal(between_avg, np.inf)
 
         # Compute R-index: mean(internal.avg / min(between_avg))
-        r_index = np.mean(Stat["internal"]["avg"] / np.min(between_avg, axis=1))
+        r_index = np.mean(stat["internal"]["avg"] / np.min(between_avg, axis=1))
         ri.append(r_index)
 
     return np.array(ri)
