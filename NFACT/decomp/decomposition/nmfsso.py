@@ -238,8 +238,34 @@ def calculate_internal_stats(
     return stat
 
 
-def calculate_external_cluster_stats():
-    return None
+def calculate_external_cluster_stats(
+    stat: dict, cluster: int, sim_external: np.ndarray
+) -> dict:
+    """
+    Function to calculate external cluster
+    stats
+
+    Parameters
+    ----------
+    stat: dict
+        dictionary to store stats in
+    cluster: int
+        cluster number
+    sim_external: np.ndarray
+        external similairty matrix
+
+    Returns
+    -------
+    stats: dictionary
+        stats dictionary
+        with sum, min, max & avg
+        external cluster stats
+    """
+    stat["external"]["sum"][cluster] = np.sum(sim_external)
+    stat["external"]["min"][cluster] = np.min(sim_external)
+    stat["external"]["avg"][cluster] = np.mean(sim_external)
+    stat["external"]["max"][cluster] = np.max(sim_external)
+    return stat
 
 
 def calculate_cluster_stats(
@@ -301,11 +327,8 @@ def calculate_cluster_stats(
         sim_external = sim[this_partition_mask][:, not_this_partition_mask].flatten()
 
         # Calculate and store external statistics only if the resulting array is not empty
-        if S_external_flat.size > 0:
-            stat["external"]["sum"][working_cluster] = np.sum(S_external_flat)
-            stat["external"]["min"][working_cluster] = np.min(S_external_flat)
-            stat["external"]["avg"][working_cluster] = np.mean(S_external_flat)
-            stat["external"]["max"][working_cluster] = np.max(S_external_flat)
+        if sim_external.size > 0:
+            stat = calculate_external_cluster_stats(stat, working_cluster, sim_external)
 
     if between and n_clusters > 1:
         stat = between_cluster_stats(stat, sim, partition)
@@ -355,21 +378,96 @@ def compute_r_index(dist, partitions):
     return np.array(ri)
 
 
-def clustering_components(dis: np.ndarray):
+def clustering_components(dis: np.ndarray) -> np.ndarray:
     """
     Function to cluster components
 
     Parameters
     ----------
+    dis: np.ndarray
+       dis-similairty matrix
+
+    Returns
+    --------
+    np.ndarray: array
+       a partition array
     """
     dis_flatened = squareform(dis, checks=False)
     z_link = linkage(dis_flatened, method="average")
     return Z2partition(z_link)
 
 
-def check_clustering(n_clusters, partition, sim):
+def check_clustering(n_clusters: int, partition: np.ndarray, sim: np.ndarray) -> None:
+    """
+    Function wrapper to check that clustering
+    and similairty calculations worked
+
+    Parameters
+    -----------
+    n_clusters: int
+        how many clusters
+    partition: np.ndarray
+        paritition array
+    sim: np.ndarray
+        similairty matrix
+
+    Returns
+    -------
+    None
+    """
     error_and_exit(partition.size != 0, "Clustering Failed. Please check Num of dims")
     error_and_exit(
         sim.size != 0, "Failed to Calculate similairty matrix. Please check Num of dims"
     )
     error_and_exit(n_clusters > 0, "Clustering Failed. Please check Num of dims")
+
+
+def centrotype(sim: np.ndarray) -> np.ndarray:
+    """
+    Find the centrotype (most central element)
+    of a similarity matrix.
+
+    Parameters
+    ----------
+    sim : ndarray
+        Similarity matrix.
+
+    Returns
+    -------
+    idx : int
+        Index of the centrotype within
+        similairty matrix
+    """
+    col_sums = np.sum(sim, axis=0)
+    idx = np.argmax(col_sums)
+    return idx
+
+
+def idx2centrotype(sim: np.ndarray, partition: np.ndarray) -> np.ndarray:
+    """
+    Function to compute centrotype(s)
+    given a similarity matrix and partitions.
+
+    Parameters
+    ----------
+    sim : ndarray
+        Similarity matrix.
+    partition : ndarray
+        partition array
+
+    Returns
+    -------
+    index2centrotype : ndarray
+        Index/indices of the centriods of the cluster
+    """
+
+    n_cluster = partition.max()
+    index2centrotype = np.zeros(n_cluster, dtype=int)
+
+    for cluster in range(1, n_cluster + 1):
+        indices = np.where(partition == cluster)[0]
+        sim_cluster_sub = sim[np.ix_(indices, indices)]
+        centroid_idx = centrotype(sim_cluster_sub)
+        index2centrotype[cluster - 1] = indices[centroid_idx]
+
+    return index2centrotype
