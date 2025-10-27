@@ -200,7 +200,9 @@ def between_cluster_stats(
     return stat_dict
 
 
-def calculate_internal_stats(sim_internal: np.ndarray, cluster: int, stat: dict) -> dict:
+def calculate_internal_stats(
+    sim_internal: np.ndarray, cluster: int, stat: dict
+) -> dict:
     """
     Function to calculate the internal statistics
     of a given cluster
@@ -208,17 +210,17 @@ def calculate_internal_stats(sim_internal: np.ndarray, cluster: int, stat: dict)
     Parameters
     ----------
     sim_internal: np.ndarray
-        array of similarity measures within 
+        array of similarity measures within
         a cluster
     cluster: int
-        cluster working on 
+        cluster working on
     stat: dict
         stats dictionary
-    
+
     Returns
     -------
     stats: dictionary
-        stats dictionary 
+        stats dictionary
         with sum, min, max & avg
         within cluster stats
     """
@@ -237,6 +239,7 @@ def calculate_internal_stats(sim_internal: np.ndarray, cluster: int, stat: dict)
 
 
 def calculate_external_cluster_stats():
+    return None
 
 
 def calculate_cluster_stats(
@@ -245,7 +248,7 @@ def calculate_cluster_stats(
     """
     Function to calculate cluster stats:
 
-    Internal (stats on all unique pairs of distinct 
+    Internal (stats on all unique pairs of distinct
               nodes in a cluster)
         - sum: sum of the total edge weight in cluster
         - min: minimium edge weight
@@ -265,9 +268,9 @@ def calculate_cluster_stats(
         similairty matrix
     partition: np.ndarray
         array of cluster labels for all partitions
-    between: bool 
+    between: bool
         Calculate between cluster stats.
-         Default is False 
+         Default is False
 
     Returns
     -------
@@ -291,18 +294,18 @@ def calculate_cluster_stats(
 
         # Only calculate internal stats if cluster size is > 1 (required for off-diagonal values)
         if stat["N"][working_cluster] > 1:
-            stat = calculate_internal_stats(sim_internal,working_cluster, stat)
+            stat = calculate_internal_stats(sim_internal, working_cluster, stat)
 
         # External Statistics (S(thisPartition, ~thisPartition)) ---
         not_this_partition_mask = ~this_partition_mask
         sim_external = sim[this_partition_mask][:, not_this_partition_mask].flatten()
 
-            # Calculate and store external statistics only if the resulting array is not empty
+        # Calculate and store external statistics only if the resulting array is not empty
         if S_external_flat.size > 0:
-                stat["external"]["sum"][working_cluster] = np.sum(S_external_flat)
-                stat["external"]["min"][working_cluster] = np.min(S_external_flat)
-                stat["external"]["avg"][working_cluster] = np.mean(S_external_flat)
-                stat["external"]["max"][working_cluster] = np.max(S_external_flat)
+            stat["external"]["sum"][working_cluster] = np.sum(S_external_flat)
+            stat["external"]["min"][working_cluster] = np.min(S_external_flat)
+            stat["external"]["avg"][working_cluster] = np.mean(S_external_flat)
+            stat["external"]["max"][working_cluster] = np.max(S_external_flat)
 
     if between and n_clusters > 1:
         stat = between_cluster_stats(stat, sim, partition)
