@@ -2,6 +2,28 @@ import numpy as np
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import squareform
 from NFACT.base.utils import error_and_exit
+from sklearn.manifold import TSNE
+
+
+def projection(dis) -> np.ndarray:
+    """
+    Function to project disimilairty
+    matrix to 2d projects for plotting
+
+    Parameters
+    ----------
+    dis: np.ndarray
+        disimilairty matrix
+
+    Returns
+    -------
+    np.ndarray: array
+        array of projections
+    """
+    projection = TSNE(
+        n_components=2, metric="precomputed", init="random", random_state=42
+    )
+    return projection.fit_transform(dis)
 
 
 def rownorm(nmf_mat: np.ndarray):

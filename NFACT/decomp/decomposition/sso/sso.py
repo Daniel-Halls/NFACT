@@ -3,6 +3,13 @@ from multiprocessing import shared_memory
 from joblib import Parallel, delayed
 import os
 from NFACT.decomp.decomposition.decomp import nmf_decomp
+from NFACT.decomp.decomposition.sso.sso_functions import (
+    compute_similairty_matrix,
+    sim2dis,
+)
+from NFACT.decomp.decomposition.sso.sso_plotting import (
+    plot_matrix,
+)
 
 
 class NMFsso:
@@ -129,11 +136,21 @@ class NMFsso:
 
         if self.n_jobs > 1:
             nmf_sso_results = self._parallel_run()
-
         else:
             nmf_sso_results = self._single_run()
 
         return nmf_sso_results
 
 
-# def nmf_sso():
+def nmf_sso(fdt_matrix, parameters, args):
+    if args["no_sso"]:
+        return nmf_decomp(parameters, fdt_matrix)
+    nmfsso_est = NMFsso(fdt_matrix, args["iterations"], parameters, args["n_cores"])
+    results_of_comp = nmfsso_est.run()
+    w_components = np.vstack(results_of_comp["white"])
+    g_components = np.hstack(results_of_comp["grey"])
+
+    sim = compute_similairty_matrix(w_components)
+    dis = sim2dis(sim)
+    # plotting
+    plot_matrix()
