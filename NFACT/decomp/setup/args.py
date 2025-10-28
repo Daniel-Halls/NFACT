@@ -50,10 +50,12 @@ def nfact_decomp_args() -> dict:
         "--dim",
         dest="dim",
         default=200,
-        help="""
-        This is compulsory option. 
-        Number of dimensions/components to retain
-        after running NMF/ICA.  
+        help=""" 
+        Number of dimensions to retain
+        after running NMF/ICA. If using NMF-sso the dimensions of the 
+        final analysis won't be this. Default is 200 as this 
+        provides the best coverage for whole brain seeds.
+        May not work for all data
         """,
     )
     decomp_args.add_argument(
@@ -242,13 +244,19 @@ def nfact_decomp_usage():
 {col["darker_pink"]}Basic NMF with volume seeds usage:{col["reset"]}
     nfact_decomp --list_of_subjects /absolute path/sub_list \ 
                  --seeds /absolute path/seeds.txt \ 
-                 --dim 50
+    
 
 {col["darker_pink"]}Basic NMF usage with surface seeds:{col["reset"]}
     nfact_decomp --list_of_subjects /absolute path/sub_list \ 
                  --seeds /absolute path/seeds.txt \ 
                  --roi /absolute path/rois
+
+{col["darker_pink"]}NMF usage with surface seeds with different dims and reduced NMF-sso iterations:{col["reset"]}
+    nfact_decomp --list_of_subjects /absolute path/sub_list \ 
+                 --seeds /absolute path/seeds.txt \ 
+                 --roi /absolute path/rois
                  --dim 50
+                 --iterations 10
 
 {col["darker_pink"]}ICA with config file usage:{col["reset"]}
     nfact_decomp --list_of_subjects /absolute path/sub_list \ 

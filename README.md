@@ -350,25 +350,31 @@ Example Usage:
 ## NFACT decomp
 This is the main decompoisition module of NFACT. Runs either ICA or NMF and saves the components in the nfact_decomp directory. 
 
+### Overview
+
+NFACT uses an sso type approach where it iterates over a number of nmf runs and clusters the output, returning the "centroid" dimnesion of the cluster in the final image. This means that the final output will change depending on the data given to it. This can be turned off with -X, in this case a single NMF run is done and the number of dimensions is returned
+
 By default nfact_decomp will threshold components to remove noise. nfact_decomp will consider noise anything values less than a zscore value (default is 3). To turn this off do -t 0
 
 Components can also be normalised with the zscore maps saved, which is useful for visualization. Winner takes all maps can be created with the brain represented by which components are the "winner" in that region
-
-Components can also be saved directly as .npz files by giving the -D argument. 
-
-The Grey component can be saved as a cifti as long as files are named in a set way (see cifti support in the nfact_pp section). 
 
 
 Notes on saving files
 ----------------------
 
-Files are saved as W_ (white matter decomposition) G_ (grey matter or seed decompostion). Multiple W_ and G_ can be saved in the decomp folder assuming that the number of dimensions differs between what is already saved. i.e running nfact_decomp with --dim 100 will save a W_NMF_dim100.nii.gz. If nfact_decomp --dim 50 is ran then a W_NMF_dim50.nii.gz will also be saved. However, if nfact_decomp --dim 100 is run again it will overwrite the orginal file
+Files are saved as W_ (white matter decomposition) G_ (grey matter or seed decompostion). Multiple W_ and G_ can be saved in the decomp folder assuming that the number of dimensions differs between what is already saved. i.e running nfact_decomp with --dim 100 will save a W_NMF_dim100.nii.gz. If nfact_decomp --dim 50 is ran then a W_NMF_dim50.nii.gz will also be saved. However, if nfact_decomp --dim 100 is run again it will overwrite the orginal file.
 
 If nfact_decomp can't save files as ciftis (assuming the -C is given) then it will save files as corresponding gii/nii files depending on seed type. If nfact_decomp can't save white and grey components as nii/gii files it will save them as .npz files so that the decomposition isn't wasted. 
 
+Components can also be saved directly as .npz files by giving the -D argument. 
+
+The Grey component can be saved as a cifti as long as files are named in a set way (see cifti support in the nfact_pp section). 
+
 ### Usage
 ```
-usage: nfact_decomp [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [--seeds SEEDS] [--roi ROI] [-n CONFIG] [-d DIM] [-a ALGO] [-C] [-D] [-W] [-z WTA_ZTHR] [-N] [-t THRESHOLD] [-c COMPONENTS] [-p PCA_TYPE] [-S]
+usage: nfact_decomp [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [--seeds SEEDS] [--roi ROI] [-f CONFIG] [-a ALGO] [-d DIM]
+                    [-i ITERATIONS] [-n N_CORES] [-X NO_SSO] [-C] [-D] [-W] [-z WTA_ZTHR] [-N] [-t THRESHOLD] [-c COMPONENTS]
+                    [-p PCA_TYPE] [-S]
 
 options:
   -h, --help            show this help message and exit
@@ -383,19 +389,32 @@ Set Up Arguments:
 
 Decomposition inputs:
   --seeds SEEDS, -s SEEDS
-                        Absolute path to a text file of seed(s) used in nfact_pp/probtrackx. If used nfact_pp this is the seeds_for_decomp.txt in the nfact_pp directory.
-  --roi ROI, -r ROI     Absolute path to a text file containing the absolute path ROI(s) paths to restrict seeding to (e.g. medial wall masks). This is not needed if seeds are not surfaces. If used nfact_pp then this is the roi_for_decomp.txt file in the nfact_pp
-                        directory.
-  -n CONFIG, --nfact_config CONFIG
-                        Absolute path to a configuration file. Congifuration file provides available hyperparameters for ICA and NMF. Use nfact_config -D to create a config file. Please see sckit learn documentation for NMF and FASTICA for further details
+                        Absolute path to a text file of seed(s) used in nfact_pp/probtrackx. If used nfact_pp this is the
+                        seeds_for_decomp.txt in the nfact_pp directory.
+  --roi ROI, -r ROI     Absolute path to a text file containing the absolute path ROI(s) paths to restrict seeding to (e.g. medial
+                        wall masks). This is not needed if seeds are not surfaces. If used nfact_pp then this is the
+                        roi_for_decomp.txt file in the nfact_pp directory.
+  -f CONFIG, --config_file CONFIG
+                        Absolute path to a configuration file. Congifuration file provides available hyperparameters for ICA and NMF.
+                        Use nfact_config -D to create a config file. Please see sckit learn documentation for NMF and FASTICA for
+                        further details
 
 Decomposition options:
-  -d DIM, --dim DIM     This is compulsory option. Number of dimensions/components to retain after running NMF/ICA.
   -a ALGO, --algo ALGO  Which decomposition algorithm. Options are: NMF (default), or ICA. This is case insensitive
+  -d DIM, --dim DIM     Number of dimensions to retain after running NMF/ICA. If using NMF-sso the dimensions of the final analysis
+                        won't be this. Default is 200 as this provides the best coverage for whole brain seeds. May not work for all
+                        data
+  -i ITERATIONS, --iterations ITERATIONS
+                        Number of iterations of NMF for the NMF-sso. Default is 15
+  -n N_CORES, --n_cores N_CORES
+                        To parallelize NMF-sso. Default is not to.
+  -X NO_SSO, --exclude_sso NO_SSO
+                        Don't do NMF-sso. Just do a single NMF. Default is False
 
 Output options:
-  -C, --cifti           Option to save GM as a cifti dscalar. Seeds must be left and right surfaces with an optional nifti for subcortical structures.
-  -D, --disk            Save the decomposition matrices directly to disk rather than as nii/gii files.
+  -C, --cifti           Option to save GM as a cifti dscalar. Seeds must be left and right surfaces with an optional nifti for
+                        subcortical structures.
+  -D, --disk            Save the decomposition matrices directly to disk rather than as nii/gii files
   -W, --wta             Option to create and save winner-takes-all maps.
   -z WTA_ZTHR, --wta_zthr WTA_ZTHR
                         Winner-takes-all threshold. Default is 0
@@ -407,20 +426,29 @@ ICA options:
   -c COMPONENTS, --components COMPONENTS
                         Number of component to be retained following the PCA. Default is 1000
   -p PCA_TYPE, --pca_type PCA_TYPE
-                        Which type of PCA to do before ICA. Options are 'pca' which is sckit learns default PCA or 'migp' (MELODIC's Incremental Group-PCA dimensionality). Default is 'pca' as for most cases 'migp' is slow and not needed. Option is case insensitive.
-  -S, --sign_flip       nfact_decomp by default sign flips the ICA distribution to reduce the number of negative values. Use this option to stop the sign_flip
+                        Which type of PCA to do before ICA. Options are 'pca' which is sckit learns default PCA or 'migp' (MELODIC's
+                        Incremental Group-PCA dimensionality). Default is 'pca' as for most cases 'migp' is slow and not needed.
+                        Option is case insensitive.
+  -S, --sign_flip       nfact_decomp by default sign flips the ICA distribution to reduce the number of negative values. Use this
+                        option to stop the sign_flip
 
 
 Basic NMF with volume seeds usage:
     nfact_decomp --list_of_subjects /absolute path/sub_list \
                  --seeds /absolute path/seeds.txt \
-                 --dim 50
+
 
 Basic NMF usage with surface seeds:
     nfact_decomp --list_of_subjects /absolute path/sub_list \
                  --seeds /absolute path/seeds.txt \
                  --roi /absolute path/rois
+
+NMF usage with surface seeds with different dims and reduced NMF-sso iterations:
+    nfact_decomp --list_of_subjects /absolute path/sub_list \
+                 --seeds /absolute path/seeds.txt \
+                 --roi /absolute path/rois
                  --dim 50
+                 --iterations 10
 
 ICA with config file usage:
     nfact_decomp --list_of_subjects /absolute path/sub_list \
@@ -440,7 +468,6 @@ Advanced ICA Usage:
                  --normalise \
                  --wta \
                  --wta_zthr 0.5
-
 
 ```
 ------------------------------------------------------------------------------------------------------------------------------------------
