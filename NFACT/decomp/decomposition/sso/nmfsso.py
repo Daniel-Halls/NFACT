@@ -1,8 +1,3 @@
-import numpy as np
-from multiprocessing import shared_memory
-from joblib import Parallel, delayed
-import os
-from NFACT.decomp.decomposition.decomp import nmf_decomp
 from NFACT.decomp.decomposition.sso.sso_functions import (
     compute_similairty_matrix,
     sim2dis,
@@ -10,6 +5,44 @@ from NFACT.decomp.decomposition.sso.sso_functions import (
 from NFACT.decomp.decomposition.sso.sso_plotting import (
     plot_matrix,
 )
+from NFACT.base.utils import error_and_exit
+from sklearn.decomposition import NMF
+from sklearn.utils._testing import ignore_warnings
+from sklearn.exceptions import ConvergenceWarning
+import warnings
+import numpy as np
+from multiprocessing import shared_memory
+from joblib import Parallel, delayed
+import os
+
+warnings.filterwarnings("ignore")
+
+
+@ignore_warnings(category=ConvergenceWarning)
+def nmf_decomp(parameters: dict, fdt_matrix: np.ndarray) -> dict:
+    """
+    Function to perform NFM.
+
+    Parameters
+    ----------
+    parameters: dict
+        dictionary of hyperparameters
+    fdt_matrix: np.ndarray
+        matrix to perform decomposition
+        on
+
+    Returns
+    -------
+    dict: dictionary
+        dictionary of grey and white matter
+        components
+    """
+    decomp = NMF(**parameters)
+    try:
+        grey_matter = decomp.fit_transform(fdt_matrix)
+    except Exception as e:
+        error_and_exit(False, f"Unable to perform NMF due to {e}")
+    return {"grey_components": grey_matter, "white_components": decomp.components_}
 
 
 class NMFsso:
@@ -147,6 +180,7 @@ def nmf_sso(fdt_matrix, parameters, args):
         return nmf_decomp(parameters, fdt_matrix)
     nmfsso_est = NMFsso(fdt_matrix, args["iterations"], parameters, args["n_cores"])
     results_of_comp = nmfsso_est.run()
+    plotting_output = args["output"]
     w_components = np.vstack(results_of_comp["white"])
     g_components = np.hstack(results_of_comp["grey"])
 

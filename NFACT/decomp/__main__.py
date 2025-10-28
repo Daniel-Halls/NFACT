@@ -21,7 +21,10 @@ from NFACT.decomp.setup.configure_setup import (
     check_config_file,
     load_config_file,
 )
-from NFACT.decomp.decomposition.decomp import matrix_decomposition, get_parameters
+from NFACT.decomp.decomposition.matrix_decomposition import (
+    matrix_decomposition,
+    get_parameters,
+)
 from NFACT.decomp.decomposition.matrix_handling import (
     process_fdt_matrix2,
     load_previous_matrix,

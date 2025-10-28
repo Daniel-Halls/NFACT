@@ -1,5 +1,5 @@
 from NFACT.decomp.decomposition.matrix_handling import avg_fdt
-from NFACT.decomp.decomposition.decomp import (
+from NFACT.decomp.decomposition.matrix_decomposition import (
     melodic_incremental_group_pca,
     ica_decomp,
     get_parameters,

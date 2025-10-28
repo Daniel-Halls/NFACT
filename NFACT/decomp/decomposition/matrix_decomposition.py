@@ -4,8 +4,8 @@ from NFACT.decomp.decomposition.matrix_handling import (
 from NFACT.base.utils import error_and_exit, nprint, Timer
 from NFACT.base.matrix_handling import normalise_components
 from NFACT.config.nfact_config_functions import create_combined_algo_dict
-from NFACT.decomp.decomposition.sso.sso import nmf_sso
-from sklearn.decomposition import FastICA, NMF, PCA
+from NFACT.decomp.decomposition.sso.nmfsso import nmf_sso
+from sklearn.decomposition import FastICA, PCA
 import numpy as np
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -48,33 +48,6 @@ def ica_decomp(
         "grey_components": grey_matter,
         "white_components": np.linalg.pinv(grey_matter) @ fdt_matrix,
     }
-
-
-@ignore_warnings(category=ConvergenceWarning)
-def nmf_decomp(parameters: dict, fdt_matrix: np.ndarray) -> dict:
-    """
-    Function to perform NFM.
-
-    Parameters
-    ----------
-    parameters: dict
-        dictionary of hyperparameters
-    fdt_matrix: np.ndarray
-        matrix to perform decomposition
-        on
-
-    Returns
-    -------
-    dict: dictionary
-        dictionary of grey and white matter
-        components
-    """
-    decomp = NMF(**parameters)
-    try:
-        grey_matter = decomp.fit_transform(fdt_matrix)
-    except Exception as e:
-        error_and_exit(False, f"Unable to perform NMF due to {e}")
-    return {"grey_components": grey_matter, "white_components": decomp.components_}
 
 
 def pca_reduction(n_components: int, fdt_matrix: np.ndarray) -> np.ndarray:
