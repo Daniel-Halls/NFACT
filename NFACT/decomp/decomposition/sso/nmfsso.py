@@ -1,9 +1,16 @@
 from NFACT.decomp.decomposition.sso.sso_functions import (
     compute_similairty_matrix,
     sim2dis,
+    clustering_components,
+    compute_r_index,
+    idx2centrotype,
+    projection,
+    cluster_scores,
 )
 from NFACT.decomp.decomposition.sso.sso_plotting import (
     plot_matrix,
+    plot_rindex,
+    plot_cluster_stats,
 )
 from NFACT.base.utils import error_and_exit
 from sklearn.decomposition import NMF
@@ -175,16 +182,51 @@ class NMFsso:
         return nmf_sso_results
 
 
-def nmf_sso(fdt_matrix, parameters, args):
+def nmf_sso_plotting_wrapper(
+    output_dir: str, sim: np.ndarray, dis: np.ndarray, rindex: np.ndarray, partitions
+) -> None:
+    plotting_output = os.path.join(output_dir, "sso_output")
+    coords = projection(dis)
+    clust_score = cluster_scores()
+    plot_matrix(
+        os.path.join(plotting_output, "similarity_matrix.tiff"),
+        sim,
+        "Similarity Matrix",
+    )
+    plot_matrix(
+        os.path.join(plotting_output, "dissimilarity_matrix.tiff"),
+        dis,
+        "Dis-Similarity Matrix",
+    )
+    plot_rindex(rindex, os.path.join(plotting_output, "rindex.tiff"))
+    plot_cluster_stats(
+        cluster_stat_number=clust_score["N"],
+        clusternumber=clust_score["clusternumber"],
+        cluster_score=clust_score["score"],
+        estimate_order=clust_score["order"],
+        filepath=os.path.join(plotting_output, "rindex.tiff"),
+    )
+
+
+def nmf_sso(fdt_matrix, parameters, args) -> dict:
     if args["no_sso"]:
         return nmf_decomp(parameters, fdt_matrix)
+
     nmfsso_est = NMFsso(fdt_matrix, args["iterations"], parameters, args["n_cores"])
     results_of_comp = nmfsso_est.run()
-    plotting_output = args["output"]
     w_components = np.vstack(results_of_comp["white"])
     g_components = np.hstack(results_of_comp["grey"])
 
     sim = compute_similairty_matrix(w_components)
     dis = sim2dis(sim)
-    # plotting
-    plot_matrix()
+    partitions = clustering_components(dis)
+    rindex = compute_r_index(dis, partitions)
+    number_of_clusters = int(np.where(~np.isnan(rindex))[0].max())
+    centroids = idx2centrotype(sim, partitions[number_of_clusters])
+    nmf_sso_plotting_wrapper(
+        args["outdir"], sim, dis, rindex, partitions[number_of_clusters]
+    )
+    return {
+        "grey_components": g_components[:, centroids],
+        "white_components": w_components[centroids, :],
+    }

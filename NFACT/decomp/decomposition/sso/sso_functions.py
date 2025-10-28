@@ -493,3 +493,63 @@ def idx2centrotype(sim: np.ndarray, partition: np.ndarray) -> np.ndarray:
         index2centrotype[cluster - 1] = indices[centroid_idx]
 
     return index2centrotype
+
+
+def compute_cluster_score(stat: dict) -> dict:
+    """
+    Compute cluster quality score for a partition.
+
+    Parameters
+    ----------
+    stat: dict
+        stat dictionary
+
+    Returns
+    -------
+    dict: dictionary object
+        dictonary of cluster scores
+    """
+
+    mean_in_score = stat["internal"]["avg"]
+    mean_out_score = stat["external"]["avg"]
+    minmax_in_score = stat["internal"]["min"]
+    minmax_out_score = stat["external"]["max"]
+
+    return {
+        "mean_score": mean_in_score - mean_out_score,
+        "mean_in_score": mean_in_score,
+        "mean_out_score": mean_out_score,
+        "minmax_score": minmax_in_score - minmax_out_score,
+        "minmax_in_score": minmax_in_score,
+        "minmax_out_score": minmax_out_score,
+    }
+
+
+def cluster_scores(sim: np.ndarray, partitions: np.ndarray) -> dict:
+    """
+    Function to calculate cluster scores and order
+    clusters by stability
+
+    Parameters
+    ----------
+    sim: np.ndarray
+        similairty matrix
+    partitions: np.ndarray
+        array of cluster labels
+
+    Returns
+    -------
+    dict: dictionary object
+        dict of cluster statistics
+    """
+    cluster_stat = calculate_cluster_stats(sim, partitions)
+    cluster_scores = compute_cluster_score(cluster_stat)
+    clusternumber = np.arange(1, len(cluster_scores["mean_score"]) + 1)
+    order = np.argsort(-cluster_scores["mean_score"])
+
+    return {
+        "N": cluster_stat["N"],
+        "order": order,
+        "score": cluster_scores["mean_score"][order],
+        "clusternumber": clusternumber[order],
+    }
