@@ -63,6 +63,7 @@ def nfact_decomp_args() -> dict:
         "--iterations",
         dest="iterations",
         default=15,
+        type=int,
         help="""
         Number of iterations of NMF for the NMF-sso.
         Default is 15

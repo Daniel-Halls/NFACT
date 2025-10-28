@@ -79,7 +79,7 @@ def build_edges(n_points: int, similarity: np.ndarray, threshold: float) -> dict
         else:
             edges_below.append((node1, node2))
 
-    return {"edge_above": edges_above, "edges_below": edges_below}
+    return {"edges_above": edges_above, "edges_below": edges_below}
 
 
 def plot_network(
@@ -198,9 +198,7 @@ def plot_network(
     plt.axis("off")
     plt.gca().set_aspect("equal", adjustable="datalim")
     plt.tight_layout()
-    plt.savefig(
-        f"{filepath}/cluster_network.tiff", format="tiff", dpi=300, bbox_inches="tight"
-    )
+    plt.savefig(filepath, format="tiff", dpi=300, bbox_inches="tight")
     plt.close()
 
 

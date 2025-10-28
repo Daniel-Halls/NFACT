@@ -229,7 +229,7 @@ def matrix_decomposition(
         )
 
     if args["algo"] == "nmf":
-        components = nmf_sso(parameters, fdt_matrix)
+        components = nmf_sso(fdt_matrix, parameters, args)
 
     if args["normalise"]:
         normalised = normalise_components(

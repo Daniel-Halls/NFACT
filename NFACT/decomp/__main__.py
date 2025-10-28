@@ -152,15 +152,7 @@ def nfact_decomp_main(args: dict = None) -> None:
     nprint("-" * 100)
     nprint(f"{col['pink']}NFACT method:{col['reset']} {args['algo'].upper()}")
 
-    components = matrix_decomposition(
-        fdt_2_conn,
-        algo=args["algo"],
-        normalise=args["normalise"],
-        signflip=args["sign_flip"],
-        pca_dim=args["components"],
-        parameters=parameters,
-        pca_type=args["pca_type"],
-    )
+    components = matrix_decomposition(fdt_2_conn, parameters, args)
     nprint(
         f"{col['pink']}Decomposition time:{col['reset']} {decomposition_timer.how_long()}\n"
     )

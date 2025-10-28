@@ -13,7 +13,7 @@ from NFACT.decomp.decomposition.sso.sso_plotting import (
     plot_cluster_stats,
     plot_network,
 )
-from NFACT.base.utils import error_and_exit
+from NFACT.base.utils import error_and_exit, nprint
 from sklearn.decomposition import NMF
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -111,9 +111,7 @@ class NMFsso:
         os.environ["MKL_NUM_THREADS"] = "1"
         os.environ["OPENBLAS_NUM_THREADS"] = "1"
         os.environ["NUMEXPR_NUM_THREADS"] = "1"
-        print(
-            f"Running {self.num_int} NMF decompositions in parallel (n_jobs={self.n_jobs})..."
-        )
+        nprint(f"Running {self.num_int} in parallel (num jobs={self.n_jobs})...")
         results = Parallel(n_jobs=self.n_jobs)(
             delayed(self._run_single_shared)(
                 iterat,
@@ -153,7 +151,7 @@ class NMFsso:
 
         nmf_sso_results = self._results()
         for iterat in range(self.num_int):
-            print(f"NMF: run {iterat+1}/{self.num_int}")
+            nprint(f"Run: {iterat+1}/{self.num_int}")
             nmf_state = nmf_decomp(self.nmf_params, self.fdt_mat)
             nmf_sso_results["grey"].append(nmf_state["grey_components"])
             nmf_sso_results["white"].append(nmf_state["white_components"])
@@ -214,34 +212,37 @@ def nmf_sso_plotting_wrapper(
     -------
     None
     """
-    plotting_output = os.path.join(output_dir, "sso_output")
-    coords = projection(dis)
-    clust_score = cluster_scores(sim, partitions)
-    plot_matrix(
-        os.path.join(plotting_output, "similarity_matrix.tiff"),
-        sim,
-        "Similarity Matrix",
-    )
-    plot_matrix(
-        os.path.join(plotting_output, "dissimilarity_matrix.tiff"),
-        dis,
-        "Dis-Similarity Matrix",
-    )
-    plot_rindex(rindex, os.path.join(plotting_output, "rindex.tiff"))
-    plot_cluster_stats(
-        clust_score["N"],
-        clust_score["clusternumber"],
-        clust_score["score"],
-        clust_score["order"],
-        os.path.join(plotting_output, "cluster_stats.tiff"),
-    )
-    plot_network(
-        coords,
-        partitions,
-        sim,
-        centroids,
-        os.path.join(plotting_output, "cluster_network.tiff"),
-    )
+    try:
+        plotting_output = os.path.join(output_dir, "nfact_decomp", "sso_output")
+        coords = projection(dis)
+        clust_score = cluster_scores(sim, partitions)
+        plot_matrix(
+            os.path.join(plotting_output, "similarity_matrix.tiff"),
+            sim,
+            "Similarity Matrix",
+        )
+        plot_matrix(
+            os.path.join(plotting_output, "dissimilarity_matrix.tiff"),
+            dis,
+            "Dis-Similarity Matrix",
+        )
+        plot_rindex(rindex, os.path.join(plotting_output, "rindex.tiff"))
+        plot_cluster_stats(
+            clust_score["N"],
+            clust_score["clusternumber"],
+            clust_score["score"],
+            clust_score["order"],
+            os.path.join(plotting_output, "cluster_stats.tiff"),
+        )
+        plot_network(
+            coords,
+            partitions,
+            sim,
+            centroids,
+            os.path.join(plotting_output, "cluster_network.tiff"),
+        )
+    except Exception as e:
+        nprint(f"Unable to save graphs due to: {e}")
 
 
 def nmf_sso(fdt_matrix: np.ndarray, parameters: dict, args: dict) -> dict:
@@ -271,7 +272,6 @@ def nmf_sso(fdt_matrix: np.ndarray, parameters: dict, args: dict) -> dict:
     results_of_comp = nmfsso_est.run()
     w_components = np.vstack(results_of_comp["white"])
     g_components = np.hstack(results_of_comp["grey"])
-
     sim = compute_similairty_matrix(w_components)
     dis = sim2dis(sim)
     partitions = clustering_components(dis)
