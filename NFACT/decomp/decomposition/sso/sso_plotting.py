@@ -203,8 +203,8 @@ def plot_matrix(file_path: str, mat: np.ndarray, title: str) -> None:
     -------
     None
     """
-    ax.set_title(title)
     ax = sns.heatmap(mat, xticklabels="", yticklabels="")
+    ax.set_title(title)
     plt.savefig(file_path, format="tiff", dpi=300, bbox_inches="tight")
     plt.close()
 
