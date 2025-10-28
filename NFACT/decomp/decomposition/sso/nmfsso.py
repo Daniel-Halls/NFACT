@@ -11,6 +11,7 @@ from NFACT.decomp.decomposition.sso.sso_plotting import (
     plot_matrix,
     plot_rindex,
     plot_cluster_stats,
+    plot_network,
 )
 from NFACT.base.utils import error_and_exit
 from sklearn.decomposition import NMF
@@ -183,11 +184,39 @@ class NMFsso:
 
 
 def nmf_sso_plotting_wrapper(
-    output_dir: str, sim: np.ndarray, dis: np.ndarray, rindex: np.ndarray, partitions
+    output_dir: str,
+    sim: np.ndarray,
+    dis: np.ndarray,
+    rindex: np.ndarray,
+    partitions: np.ndarray,
+    centroids: np.ndarray,
 ) -> None:
+    """
+    Function wrapper around plotting different
+    measures
+
+    Parameters
+    ----------
+    output_dir: str
+        output directory of nfact
+    sim: np.ndarray
+        similairty matrix
+    dis: np.ndarray
+        dis-similairty matrix
+    rindex: np.ndarray
+        r index scores
+    partitions: np.ndarray
+        partition of cluster labels
+    centroids: np.ndarray
+        array of centroids
+
+    Returns
+    -------
+    None
+    """
     plotting_output = os.path.join(output_dir, "sso_output")
     coords = projection(dis)
-    clust_score = cluster_scores()
+    clust_score = cluster_scores(sim, partitions)
     plot_matrix(
         os.path.join(plotting_output, "similarity_matrix.tiff"),
         sim,
@@ -200,15 +229,41 @@ def nmf_sso_plotting_wrapper(
     )
     plot_rindex(rindex, os.path.join(plotting_output, "rindex.tiff"))
     plot_cluster_stats(
-        cluster_stat_number=clust_score["N"],
-        clusternumber=clust_score["clusternumber"],
-        cluster_score=clust_score["score"],
-        estimate_order=clust_score["order"],
-        filepath=os.path.join(plotting_output, "rindex.tiff"),
+        clust_score["N"],
+        clust_score["clusternumber"],
+        clust_score["score"],
+        clust_score["order"],
+        os.path.join(plotting_output, "cluster_stats.tiff"),
+    )
+    plot_network(
+        coords,
+        partitions,
+        sim,
+        centroids,
+        os.path.join(plotting_output, "cluster_network.tiff"),
     )
 
 
-def nmf_sso(fdt_matrix, parameters, args) -> dict:
+def nmf_sso(fdt_matrix: np.ndarray, parameters: dict, args: dict) -> dict:
+    """
+    Function to run nmf, either sso run
+    or singular run.
+
+    Parameters
+    ----------
+    fdt_matrix: np.ndarray
+        fdt_matrix to decompose
+    parameters: dict
+        NMF parameters
+    args: dict
+        cmd arguments
+
+    Returns
+    -------
+    dict: dictionary
+        dictionary of grey and white matter
+        components
+    """
     if args["no_sso"]:
         return nmf_decomp(parameters, fdt_matrix)
 
@@ -224,7 +279,7 @@ def nmf_sso(fdt_matrix, parameters, args) -> dict:
     number_of_clusters = int(np.where(~np.isnan(rindex))[0].max())
     centroids = idx2centrotype(sim, partitions[number_of_clusters])
     nmf_sso_plotting_wrapper(
-        args["outdir"], sim, dis, rindex, partitions[number_of_clusters]
+        args["outdir"], sim, dis, rindex, partitions[number_of_clusters], centroids
     )
     return {
         "grey_components": g_components[:, centroids],
