@@ -1,6 +1,7 @@
 import numpy as np
 from multiprocessing import shared_memory
 from joblib import Parallel, delayed
+import os
 from NFACT.decomp.decomposition.decomp import nmf_decomp
 
 
@@ -58,7 +59,10 @@ class NMFsso:
             :
         ] = self.fdt_mat
         self.shm_name = self.shm.name
-
+        os.environ["OMP_NUM_THREADS"] = "1"
+        os.environ["MKL_NUM_THREADS"] = "1"
+        os.environ["OPENBLAS_NUM_THREADS"] = "1"
+        os.environ["NUMEXPR_NUM_THREADS"] = "1"
         print(
             f"Running {self.num_int} NMF decompositions in parallel (n_jobs={self.n_jobs})..."
         )
@@ -130,3 +134,6 @@ class NMFsso:
             nmf_sso_results = self._single_run()
 
         return nmf_sso_results
+
+
+# def nmf_sso():

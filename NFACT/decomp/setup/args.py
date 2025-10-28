@@ -30,8 +30,8 @@ def nfact_decomp_args() -> dict:
     )
     seed_roi_args(decomp_input)
     decomp_input.add_argument(
-        "-n",
-        "--nfact_config",
+        "-f",
+        "--config_file",
         dest="config",
         default=False,
         help="""
@@ -44,17 +44,47 @@ def nfact_decomp_args() -> dict:
     decomp_args = base_args.add_argument_group(
         f"{col['pink']}Decomposition options{col['reset']}"
     )
+    algo_arg(decomp_args)
     decomp_args.add_argument(
         "-d",
         "--dim",
         dest="dim",
+        default=200,
         help="""
         This is compulsory option. 
         Number of dimensions/components to retain
         after running NMF/ICA.  
         """,
     )
-    algo_arg(decomp_args)
+    decomp_args.add_argument(
+        "-i",
+        "--iterations",
+        dest="iterations",
+        default=15,
+        help="""
+        Number of iterations of NMF for the NMF-sso.
+        Default is 15
+        """,
+    )
+    decomp_args.add_argument(
+        "-n",
+        "--n_cores",
+        dest="n_cores",
+        default=1,
+        help="""
+        To parallelize NMF-sso 
+        """,
+    )
+    decomp_args.add_argument(
+        "-X",
+        "--exclude_sso",
+        dest="no_sso",
+        default=False,
+        help="""
+        Don't do NMF-sso. 
+        Just do a single NMF. Default is False
+        """,
+    )
 
     output_args = base_args.add_argument_group(
         f"{col['darker_pink']}Output options{col['reset']}"
