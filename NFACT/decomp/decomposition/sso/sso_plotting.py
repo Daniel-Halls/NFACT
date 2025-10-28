@@ -3,9 +3,26 @@ from scipy.spatial import ConvexHull
 import networkx as nx
 import numpy as np
 from itertools import combinations
+import seaborn as sns
 
 
-def build_graph(n_points, coordinates):
+def build_graph(n_points: int, coordinates: np.ndarray) -> object:
+    """
+    Function to build out a graph
+
+    Parameters
+    -----------
+    n_points: int
+        n_points in the graph
+    coordinates: np.ndarray
+        co-ordinates of points
+
+    Returns
+    -------
+    graph: nx.Graph object
+        graph object from networkx
+    """
+
     graph = nx.Graph()
     for node in range(n_points):
         graph.add_node(node, pos=coordinates[node])
@@ -16,6 +33,22 @@ def build_edges(n_points: int, similarity: np.ndarray, threshold: float) -> dict
     """
     Function to calssify edges of similairty matrix as either
     greater or less than a given threshold
+
+    Parameters
+    ----------
+    n_points: int
+        number of points in the graph
+    similarity: np.ndarray
+        similairty matrix
+    threshold: float
+        threshold value
+
+    Returns
+    -------
+    dit: dictionary object
+        dictionary of edges above threshold
+        and below threshold
+
     """
     edges_above = []
     edges_below = []
@@ -30,11 +63,11 @@ def build_edges(n_points: int, similarity: np.ndarray, threshold: float) -> dict
 
 
 def plot_network(
-    coordinates,
-    partition,
-    similarity,
-    centers,
-    filepath,
+    coordinates: np.ndarray,
+    partition: np.ndarray,
+    similarity: np.ndarray,
+    centers: np.ndarray,
+    filepath: str,
     threshold=0.5,
     expand_factor=1.1,
 ) -> None:
@@ -51,6 +84,8 @@ def plot_network(
         Similarity matrix
     centers : list or np.ndarray
         Indices of centroid nodes
+    filepath: str
+        where to save graph to
     threshold : float, optional
         Similarity threshold for edges
     expand_factor : float, optional
@@ -62,15 +97,7 @@ def plot_network(
     """
     n_points = coordinates.shape[0]
     graph = build_graph(n_points, coordinates)
-
-    # Add edges and classify them based on threshold
-    edges_above, edges_below = [], []
-    for i in range(n_points):
-        for j in range(i + 1, n_points):
-            if similarity[i, j] > threshold:
-                edges_above.append((i, j))
-            else:
-                edges_below.append((i, j))
+    edges = build_edges(n_points, similarity, threshold)
 
     pos = {i: coordinates[i] for i in range(n_points)}
 
@@ -78,11 +105,11 @@ def plot_network(
     centroid_nodes = centers
 
     plt.figure(figsize=(8, 8))
-    cluster_color = "#2487ea"  # light blue
+    cluster_color = "#2487ea"
     centroid_color = "#f86d6d"
     # Draw nodes
     nx.draw_networkx_nodes(
-        G,
+        graph,
         pos,
         nodelist=cluster_nodes,
         node_color=cluster_color,
@@ -91,7 +118,7 @@ def plot_network(
         node_size=150,
     )
     nx.draw_networkx_nodes(
-        G,
+        graph,
         pos,
         nodelist=centroid_nodes,
         node_color=centroid_color,
@@ -102,18 +129,23 @@ def plot_network(
 
     # Draw edges
     nx.draw_networkx_edges(
-        G, pos, edgelist=edges_below, edge_color="grey", alpha=0.3, width=1
+        graph, pos, edgelist=edges["edges_below"], edge_color="grey", alpha=0.3, width=1
     )
     nx.draw_networkx_edges(
-        G, pos, edgelist=edges_above, edge_color="black", alpha=0.7, width=1.5
+        graph,
+        pos,
+        edgelist=edges["edges_above"],
+        edge_color="black",
+        alpha=0.7,
+        width=1.5,
     )
 
     # Label centroid nodes
     for idx, center in enumerate(centroid_nodes, start=1):
-        x, y = pos[center]
+        x_position, y_position = pos[center]
         plt.text(
-            x,
-            y + 0.02,
+            x_position,
+            y_position + 0.02,
             f"{idx}",
             fontsize=12,
             fontweight="bold",
@@ -149,4 +181,105 @@ def plot_network(
     plt.savefig(
         f"{filepath}/cluster_network.tiff", format="tiff", dpi=300, bbox_inches="tight"
     )
+    plt.close()
+
+
+def plot_matrix(file_path: str, mat: np.ndarray, title: str) -> None:
+    """
+    Function to plot matrix and save
+    to file
+
+    Parameters
+    ----------
+    file_path: str
+        file path to save graph to.
+        Must include file name
+    mat: np.ndarray
+        matrix to plot
+    title: str
+        title of graph
+
+    Returns
+    -------
+    None
+    """
+    ax.set_title(title)
+    ax = sns.heatmap(mat, xticklabels="", yticklabels="")
+    plt.savefig(file_path, format="tiff", dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+def plot_rindex(rindex: np.ndarray, file_path: str) -> None:
+    """
+    Function to plot r index of clusters
+
+    Parameters
+    ----------
+    rindex: np.ndarray
+        array of r index
+    file_path: str
+        file path to save graph to.
+        Must include file name
+
+    Returns
+    -------
+    None
+
+    """
+    plt.plot(rindex, "o:", color="k", markersize=8, markerfacecolor="k")
+    plt.grid(True)
+    plt.xlabel(r"Cluster number")
+    plt.title("R-index by cluster")
+    plt.ylabel("R-index")
+    plt.savefig(file_path, format="tiff", dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+def plot_cluster_stats(
+    cluster_stat_number: np.ndarray,
+    clusternumber: np.ndarray,
+    cluster_score: np.ndarray,
+    estimate_order: np.ndarray,
+    filepath: str,
+) -> None:
+    """
+    Function to plot cluster stats
+
+    Parameters
+    ----------
+    cluster_stat_number: np.ndarray
+        array of cluster numbers
+    clusternumber: np.ndarray
+        an array of cluster labels
+    cluster_score: np.ndarray
+        cluster score for each cluster
+    estimate_order: np.ndarray
+        the order of cluster from
+        high to low
+    filepath: str
+        file path to save graph to.
+        Must include file name
+
+    Returns
+    --------
+    None
+    """
+    plt.figure(2)
+    plt.clf()
+    plt.subplot(1, 2, 1)
+    plt.plot(cluster_score, "o-")
+    plt.title("Iq")
+    plt.xlabel("Number of clusters")
+    plt.ylabel("Iq")
+    plt.subplot(1, 2, 2)
+    y_pos = np.arange(len(clusternumber))
+    plt.barh(y_pos, np.array(cluster_stat_number)[estimate_order], align="center")
+    plt.gca().invert_yaxis()
+    plt.xlim(0, max(cluster_stat_number) * 1.05)
+    plt.title("Cluster labels ranked by Iq and components")
+    plt.xlabel("Number of components")
+    plt.ylabel("Label")
+    plt.gcf().canvas.manager.set_window_title("NMF-sso: Estimate Quality")
+    plt.tight_layout()
+    plt.savefig(filepath, format="tiff", dpi=300, bbox_inches="tight")
     plt.close()
