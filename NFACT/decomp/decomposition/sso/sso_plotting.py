@@ -6,6 +6,26 @@ from itertools import combinations
 import seaborn as sns
 
 
+def threshold_for_graph(sim: np.ndarray) -> float:
+    """
+    Function to define threshold for graph.
+    Takes the 95% centile as threshold
+    value
+
+    Parameters
+    -----------
+    sim: np.ndarray
+        similiarity matrix
+
+    Returns
+    --------
+    float: float value
+        threshold value
+    """
+    lower_idx = np.tril_indices_from(sim, k=-1)
+    return np.percentile(sim[lower_idx], 95)
+
+
 def build_graph(n_points: int, coordinates: np.ndarray) -> object:
     """
     Function to build out a graph
@@ -68,7 +88,6 @@ def plot_network(
     similarity: np.ndarray,
     centers: np.ndarray,
     filepath: str,
-    threshold=0.5,
     expand_factor=1.1,
 ) -> None:
     """
@@ -96,6 +115,7 @@ def plot_network(
     None
     """
     n_points = coordinates.shape[0]
+    threshold = threshold_for_graph(similarity)
     graph = build_graph(n_points, coordinates)
     edges = build_edges(n_points, similarity, threshold)
 
