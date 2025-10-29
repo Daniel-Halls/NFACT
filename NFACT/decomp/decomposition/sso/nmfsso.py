@@ -114,13 +114,12 @@ class NMFsso:
         nprint(f"Running {self.num_int} in parallel (num jobs={self.n_jobs})...")
         results = Parallel(n_jobs=self.n_jobs)(
             delayed(self._run_single_shared)(
-                iterat,
                 self.shm_name,
                 self.shared_shape,
                 self.shared_dtype,
                 self.nmf_params,
             )
-            for iterat in range(self.num_int)
+            for _ in range(self.num_int)
         )
 
         # Collect results
