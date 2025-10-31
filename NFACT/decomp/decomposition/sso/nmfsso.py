@@ -14,6 +14,8 @@ from NFACT.decomp.decomposition.sso.sso_plotting import (
     plot_network,
 )
 from NFACT.base.utils import error_and_exit, nprint
+from NFACT.base.matrix_handling import thresholding
+
 from sklearn.decomposition import NMF
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -22,6 +24,7 @@ import numpy as np
 from multiprocessing import shared_memory
 from joblib import Parallel, delayed
 import os
+import pandas as pd
 
 warnings.filterwarnings("ignore")
 
@@ -89,14 +92,16 @@ class NMFsso:
     def _results(self):
         return {"grey": [], "white": []}
 
-    def _run_single_shared(self, shm_name, shape, dtype, nmf_params):
+    def _run_single_shared(self, iterat, shm_name, shape, dtype, nmf_params):
         """
         Worker function: attach to shared memory and run one NMF decomposition.
         """
         shm = shared_memory.SharedMemory(name=shm_name)
         fdt_mat = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+        nmf_params["random_state"] = iterat
         nmf_state = nmf_decomp(nmf_params, fdt_mat)
         shm.close()  # detach, do NOT unlink here
+        nmf_state["white_components"] = thresholding(nmf_state["white_components"], 3)
         return nmf_state["grey_components"], nmf_state["white_components"]
 
     def _parallel_run(self):
@@ -114,12 +119,13 @@ class NMFsso:
         nprint(f"Running {self.num_int} in parallel (num jobs={self.n_jobs})...")
         results = Parallel(n_jobs=self.n_jobs)(
             delayed(self._run_single_shared)(
+                iterat,
                 self.shm_name,
                 self.shared_shape,
                 self.shared_dtype,
                 self.nmf_params,
             )
-            for _ in range(self.num_int)
+            for iterat in range(self.num_int)
         )
 
         # Collect results
@@ -151,6 +157,7 @@ class NMFsso:
         nmf_sso_results = self._results()
         for iterat in range(self.num_int):
             nprint(f"Run: {iterat+1}/{self.num_int}")
+            self.nmf_params["random_state"] = iterat
             nmf_state = nmf_decomp(self.nmf_params, self.fdt_mat)
             nmf_sso_results["grey"].append(nmf_state["grey_components"])
             nmf_sso_results["white"].append(nmf_state["white_components"])
@@ -180,7 +187,37 @@ class NMFsso:
         return nmf_sso_results
 
 
-def nmf_sso_plotting_wrapper(
+def nmf_cluster_stats_csv(
+    cluster_stats: dict, rindex: np.ndarray, output_dir: str
+) -> None:
+    """
+    Function to safe cluster stats into
+    a csv.
+
+    Parameters
+    ----------
+    cluster_stats: dict
+        output of cluster_scores()
+    rindex: np.ndarray
+        r index scores
+    output_dir: str
+        output directory of nfact
+
+    Returns
+    -------
+    None
+    """
+
+    cluster_df = pd.DataFrame(cluster_stats)
+    cluster_df["cluster_idx"] = cluster_df.index
+    cols = cluster_df.columns.tolist()
+    cluster_df = cluster_df[[cols[-1]] + cols[:-1]]
+    cluster_df["rindex"] = rindex[: cluster_df.shape[0]]
+    cluster_df = cluster_df.replace(np.nan, 0)
+    cluster_df.to_csv(f"{output_dir}/cluster_stats.csv", index=False)
+
+
+def nmf_sso_output_wrapper(
     output_dir: str,
     sim: np.ndarray,
     dis: np.ndarray,
@@ -215,6 +252,7 @@ def nmf_sso_plotting_wrapper(
         plotting_output = os.path.join(output_dir, "nfact_decomp", "sso_output")
         coords = projection(dis)
         clust_score = cluster_scores(sim, partitions)
+        nmf_cluster_stats_csv(clust_score, rindex, plotting_output)
         plot_matrix(
             os.path.join(plotting_output, "similarity_matrix.tiff"),
             sim,
@@ -277,7 +315,7 @@ def nmf_sso(fdt_matrix: np.ndarray, parameters: dict, args: dict) -> dict:
     rindex = compute_r_index(dis, partitions)
     number_of_clusters = int(np.where(~np.isnan(rindex))[0].max())
     centroids = idx2centrotype(sim, partitions[number_of_clusters])
-    nmf_sso_plotting_wrapper(
+    nmf_sso_output_wrapper(
         args["outdir"], sim, dis, rindex, partitions[number_of_clusters], centroids
     )
     return {
