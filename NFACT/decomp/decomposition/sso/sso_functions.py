@@ -302,7 +302,7 @@ def calculate_cluster_stats(
         - min: minimium edge weight
         - avg: avergae edge weight
         - max: maximum edge weight
-    External (current cluster nad all nodes in all other clusters
+    External (current cluster nodes and all nodes in all other clusters
               combined)
         - sum: total edge weight of cluster to rest of graph
         - min: min edge weight of cluster to rest of graph
@@ -360,7 +360,8 @@ def calculate_cluster_stats(
 
 def compute_r_index(dist, partitions):
     """
-    Compute R-index for multiple partitions, equivalent to the MATLAB loop.
+    Function to compute R-index for
+    multiple partitions.
 
     Parameters
     ----------
@@ -376,7 +377,7 @@ def compute_r_index(dist, partitions):
     """
     ri = []
 
-    # Loop over each partition (row in MATLAB)
+    # Loop over each partition
     for part in partitions:
         part = np.array(part)
         clusters, counts = np.unique(part, return_counts=True)

@@ -30,7 +30,7 @@ warnings.filterwarnings("ignore")
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def nmf_decomp(parameters: dict, fdt_matrix: np.ndarray) -> dict:
+def nmf_decomp(parameters: dict, fdt_matrix: np.ndarray, W=None, H=None) -> dict:
     """
     Function to perform NFM.
 
@@ -48,9 +48,13 @@ def nmf_decomp(parameters: dict, fdt_matrix: np.ndarray) -> dict:
         dictionary of grey and white matter
         components
     """
+    if W is not None and H is not None:
+        parameters = parameters.copy()
+        parameters["init"] = "custom"
+
     decomp = NMF(**parameters)
     try:
-        grey_matter = decomp.fit_transform(fdt_matrix)
+        grey_matter = decomp.fit_transform(fdt_matrix, W=W, H=H)
     except Exception as e:
         error_and_exit(False, f"Unable to perform NMF due to {e}")
     return {"grey_components": grey_matter, "white_components": decomp.components_}
@@ -98,7 +102,7 @@ class NMFsso:
         """
         shm = shared_memory.SharedMemory(name=shm_name)
         fdt_mat = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
-        nmf_params["random_state"] = iterat
+        # nmf_params["random_state"] = iterat
         nmf_state = nmf_decomp(nmf_params, fdt_mat)
         shm.close()  # detach, do NOT unlink here
         nmf_state["white_components"] = thresholding(nmf_state["white_components"], 3)
@@ -315,10 +319,12 @@ def nmf_sso(fdt_matrix: np.ndarray, parameters: dict, args: dict) -> dict:
     rindex = compute_r_index(dis, partitions)
     number_of_clusters = int(np.where(~np.isnan(rindex))[0].max())
     centroids = idx2centrotype(sim, partitions[number_of_clusters])
+    parameters["init"] = "custom"
+    parameters["n_components"] = centroids.shape[0]
+    w_mat = np.ascontiguousarray(g_components[:, centroids])
+    h_mat = np.ascontiguousarray(w_components[centroids, :])
+    final_nmf = nmf_decomp(parameters, fdt_matrix, W=w_mat, H=h_mat)
     nmf_sso_output_wrapper(
         args["outdir"], sim, dis, rindex, partitions[number_of_clusters], centroids
     )
-    return {
-        "grey_components": g_components[:, centroids],
-        "white_components": w_components[centroids, :],
-    }
+    return final_nmf
