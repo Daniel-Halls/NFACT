@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.cluster.hierarchy import linkage
+from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
 from NFACT.base.utils import error_and_exit
 from sklearn.manifold import TSNE
@@ -401,6 +401,117 @@ def compute_r_index(dist, partitions):
     return np.array(ri)
 
 
+def clustering_linkage(dis: np.ndarray) -> np.ndarray:
+    """
+    Function to cluster linkage
+
+    Parameters
+    ----------
+    dis: np.ndarray
+       dis-similairty matrix
+
+    Returns
+    --------
+    np.ndarray: array
+       a merge distance array
+       from clustering
+    """
+    dis_flatened = squareform(dis, checks=False)
+    return linkage(dis_flatened, method="average")
+
+
+def calculate_elbow(merge_dist: np.ndarray) -> float:
+    """
+    Function to get point
+
+    Parameters
+    ----------
+    merge_dist: np.ndarray
+        merging distance array
+        for clusters
+
+    Returns
+    --------
+    float: float value
+        elbow point
+    """
+    merge_dist = merge_dist[::-1]
+    num_merges = np.arange(len(merge_dist))
+
+    total_errors = []
+
+    # Try each possible elbow location
+    for elbow in range(2, len(num_merges) - 2):
+        # Fit line 1
+        coeffs1 = np.polyfit(num_merges[:elbow], merge_dist[:elbow], 1)
+        line1 = np.poly1d(coeffs1)(num_merges[:elbow])
+        err1 = np.sum((merge_dist[:elbow] - line1) ** 2)
+
+        # Fit line 2
+        coeffs2 = np.polyfit(num_merges[elbow:], merge_dist[elbow:], 1)
+        line2 = np.poly1d(coeffs2)(num_merges[elbow:])
+        err2 = np.sum((merge_dist[elbow:] - line2) ** 2)
+
+        total_errors.append(err1 + err2)
+
+    elbow_idx = np.argmin(total_errors) + 2
+    return merge_dist[elbow_idx]
+
+
+def cluster_valid(cluster_partition: np.ndarray) -> bool:
+    """
+    Function to ascertain if a cluster
+    partition is all a single cluster
+    or has any singletons
+
+    Parameters
+    ----------
+    cluster_partition: np.ndarray
+        clustuster partition
+
+    Returns
+    -------
+    bool: boolean
+        bool of True no singletons
+        or False if it is
+    """
+    clusters, counts = np.unique(cluster_partition, return_counts=True)
+    if np.any(counts == 1) or len(clusters) == 1:
+        return False
+    return True
+
+
+def dendogram_cut(link_mat: np.ndarray, elbow_height: float) -> np.ndarray:
+    """
+    Function to cut the dendogram at set point.
+
+    Parameters
+    ----------
+    link_mat: np.ndarray
+        linkage matrix
+    elbow_height: float
+        elbow point to use
+        as starting point
+
+    Returns
+    -------
+    np.ndarray: array
+        array of labels
+    """
+    intial_run = fcluster(link_mat, t=elbow_height, criterion="distance")
+    if cluster_valid(intial_run):
+        return intial_run
+
+    merge_heights = np.sort(np.unique(link_mat))
+    start_idx = np.searchsorted(merge_heights, elbow_height)
+
+    for height in merge_heights[start_idx:]:
+        part = fcluster(link_mat, t=height, criterion="distance")
+
+        if cluster_valid(part):
+            return part
+
+
 def clustering_components(dis: np.ndarray) -> np.ndarray:
     """
     Function to cluster components
@@ -415,9 +526,11 @@ def clustering_components(dis: np.ndarray) -> np.ndarray:
     np.ndarray: array
        a partition array
     """
-    dis_flatened = squareform(dis, checks=False)
-    z_link = linkage(dis_flatened, method="average")
-    return Z2partition(z_link)
+    zlink = clustering_linkage(dis)
+    merge_distance = zlink[:, 2]
+    elbow = calculate_elbow(merge_distance)
+
+    return dendogram_cut(zlink, elbow)
 
 
 def check_clustering(n_clusters: int, partition: np.ndarray, sim: np.ndarray) -> None:
