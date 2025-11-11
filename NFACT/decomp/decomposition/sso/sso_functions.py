@@ -85,42 +85,6 @@ def sim2dis(sim: np.ndarray) -> np.ndarray:
     return 1 - sim
 
 
-def Z2partition(link_mat: np.ndarray) -> np.ndarray:
-    """
-    Function to take a  hierarchical clustering linkage matrix
-    and turn it into partition vectors (all merges).
-
-    Parameters
-    ----------
-    link_mat: ndarray
-        Linkage matrix from scipy.cluster.hierarchy.linkage.
-
-    Returns
-    -------
-    partitions : ndarray
-        Array of shape (N-1, N), where each row contains cluster assignments
-        after the idx-th merge. Cluster labels are consecutive integers.
-    """
-    linkage_mat_shape = link_mat.shape[0] + 1
-    partitions_matrix = np.zeros((linkage_mat_shape, linkage_mat_shape), dtype=int)
-    partitions_matrix[0, :] = np.arange(1, linkage_mat_shape + 1)
-    for idx in range(1, linkage_mat_shape - 1):
-        partitions_matrix[idx, :] = partitions_matrix[idx - 1, :]
-        cluster1 = int(link_mat[idx - 1, 0]) + 1
-        cluster2 = int(link_mat[idx - 1, 1]) + 1
-        mask = (partitions_matrix[idx, :] == cluster1) | (
-            partitions_matrix[idx, :] == cluster2
-        )
-        partitions_matrix[idx, mask] = max(partitions_matrix[idx, :]) + 1
-
-    # Recode cluster IDs to consecutive integers for each row
-    for row in range(partitions_matrix.shape[0]):
-        _, new_index = np.unique(partitions_matrix[row, :], return_inverse=True)
-        partitions_matrix[row, :] = new_index + 1
-
-    return partitions_matrix[::-1, :]
-
-
 def create_stats_dict(n_clusters: int) -> dict:
     """
     Function to create stats dictionary
@@ -151,75 +115,6 @@ def create_stats_dict(n_clusters: int) -> dict:
             "max": np.full(n_clusters, np.nan),
         },
     }
-
-
-def between_cluster_stats(
-    stat_dict: dict, sim: np.ndarray, partition: np.ndarray
-) -> dict:
-    """
-    Function to calculate between cluster stats
-
-    between (stats between two nodes in two different clusters)
-        - min: minimum edge weight between all nodes in cluster 1 and 2
-        - avg: avg edge weight between all nodes in cluster 1 and 2
-        - max: maximum edge weight between all nodes in cluster 1 and 2
-
-    Parameters
-    ----------
-    stat_dict: dict
-        stats dictionary
-    sim: np.ndarray
-        similairty matrix
-    partition: np.ndarray
-        partition matrix
-
-    Returns
-    -------
-    stats_dict: dict
-        stats dictionary
-    """
-    n_clusters = stat_dict["N"].shape[0]
-    stat_dict["between"] = {
-        "min": np.zeros((n_clusters, n_clusters)),
-        "max": np.zeros((n_clusters, n_clusters)),
-        "avg": np.zeros((n_clusters, n_clusters)),
-    }
-
-    # Iterate over all unique pairs (i, j) where i < j (to avoid redundant calculations)
-    for cluster1 in range(1, n_clusters + 1):
-        partition_cluster1_mask = partition == cluster1
-        cluster1_idx = cluster1 - 1
-        for cluster2 in range(cluster1 + 1, n_clusters + 1):
-            partition_cluster2_mask = partition == cluster2
-            cluster2_idx = cluster2 - 1
-            # Similarity between members of cluster i and members of cluster j (S(Pi, Pj))
-            sim_cluster1_2 = sim[partition_cluster1_mask][
-                :, partition_cluster2_mask
-            ].flatten()
-
-            # Calculate stats only if there are connecting edges
-            if sim_cluster1_2.size > 0:
-                stat_dict["between"]["min"][cluster1_idx, cluster2_idx] = np.min(
-                    sim_cluster1_2
-                )
-                stat_dict["between"]["avg"][cluster1_idx, cluster2_idx] = np.mean(
-                    sim_cluster1_2
-                )
-                stat_dict["between"]["max"][cluster1_idx, cluster2_idx] = np.max(
-                    sim_cluster1_2
-                )
-
-    # Symmetrize the matrices (Stat.between.min = Stat.between.min + Stat.between.min')
-    stat_dict["between"]["min"] = (
-        stat_dict["between"]["min"] + stat_dict["between"]["min"].T
-    )
-    stat_dict["between"]["max"] = (
-        stat_dict["between"]["max"] + stat_dict["between"]["max"].T
-    )
-    stat_dict["between"]["avg"] = (
-        stat_dict["between"]["avg"] + stat_dict["between"]["avg"].T
-    )
-    return stat_dict
 
 
 def calculate_internal_stats(
@@ -290,9 +185,7 @@ def calculate_external_cluster_stats(
     return stat
 
 
-def calculate_cluster_stats(
-    sim: np.ndarray, partition: np.ndarray, between: bool = False
-) -> dict:
+def calculate_cluster_stats(sim: np.ndarray, partition: np.ndarray) -> dict:
     """
     Function to calculate cluster stats:
 
@@ -316,9 +209,7 @@ def calculate_cluster_stats(
         similairty matrix
     partition: np.ndarray
         array of cluster labels for all partitions
-    between: bool
-        Calculate between cluster stats.
-         Default is False
+
 
     Returns
     -------
@@ -352,53 +243,7 @@ def calculate_cluster_stats(
         if sim_external.size > 0:
             stat = calculate_external_cluster_stats(stat, working_cluster, sim_external)
 
-    if between and n_clusters > 1:
-        stat = between_cluster_stats(stat, sim, partition)
-
     return stat
-
-
-def compute_r_index(dist, partitions):
-    """
-    Function to compute R-index for
-    multiple partitions.
-
-    Parameters
-    ----------
-    dist : np.ndarray
-        Square dissimilarity matrix (N x N)
-    partitions : list or 2D array-like
-        Each element (or row) is a partition vector (length N)
-
-    Returns
-    -------
-    ri : np.ndarray
-        R-index for each partition
-    """
-    ri = []
-
-    # Loop over each partition
-    for part in partitions:
-        part = np.array(part)
-        clusters, counts = np.unique(part, return_counts=True)
-
-        # Skip partitions with singleton clusters or degenerate partition
-        if np.any(counts == 1) or len(clusters) == 1:
-            ri.append(np.nan)
-            continue
-
-        # Compute cluster statistics
-        stat = calculate_cluster_stats(dist, part, between=True)
-
-        # Set diagonal of between.avg to Inf (ignore self-distances)
-        between_avg = stat["between"]["avg"].copy()
-        np.fill_diagonal(between_avg, np.inf)
-
-        # Compute R-index: mean(internal.avg / min(between_avg))
-        r_index = np.mean(stat["internal"]["avg"] / np.min(between_avg, axis=1))
-        ri.append(r_index)
-
-    return np.array(ri)
 
 
 def clustering_linkage(dis: np.ndarray) -> np.ndarray:

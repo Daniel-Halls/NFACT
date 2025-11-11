@@ -2,14 +2,12 @@ from NFACT.decomp.decomposition.sso.sso_functions import (
     compute_similairty_matrix,
     sim2dis,
     clustering_components,
-    compute_r_index,
     idx2centrotype,
     projection,
     cluster_scores,
 )
 from NFACT.decomp.decomposition.sso.sso_plotting import (
     plot_matrix,
-    plot_rindex,
     plot_cluster_stats,
     plot_network,
 )
@@ -102,7 +100,7 @@ class NMFsso:
         """
         shm = shared_memory.SharedMemory(name=shm_name)
         fdt_mat = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
-        # nmf_params["random_state"] = iterat
+        nmf_params["random_state"] = iterat
         nmf_state = nmf_decomp(nmf_params, fdt_mat)
         shm.close()  # detach, do NOT unlink here
         nmf_state["white_components"] = thresholding(nmf_state["white_components"], 3)
@@ -191,9 +189,7 @@ class NMFsso:
         return nmf_sso_results
 
 
-def nmf_cluster_stats_csv(
-    cluster_stats: dict, rindex: np.ndarray, output_dir: str
-) -> None:
+def nmf_cluster_stats_csv(cluster_stats: dict, output_dir: str) -> None:
     """
     Function to safe cluster stats into
     a csv.
@@ -202,8 +198,6 @@ def nmf_cluster_stats_csv(
     ----------
     cluster_stats: dict
         output of cluster_scores()
-    rindex: np.ndarray
-        r index scores
     output_dir: str
         output directory of nfact
 
@@ -216,7 +210,6 @@ def nmf_cluster_stats_csv(
     cluster_df["cluster_idx"] = cluster_df.index
     cols = cluster_df.columns.tolist()
     cluster_df = cluster_df[[cols[-1]] + cols[:-1]]
-    cluster_df["rindex"] = rindex[: cluster_df.shape[0]]
     cluster_df = cluster_df.replace(np.nan, 0)
     cluster_df.to_csv(f"{output_dir}/cluster_stats.csv", index=False)
 
@@ -225,7 +218,6 @@ def nmf_sso_output_wrapper(
     output_dir: str,
     sim: np.ndarray,
     dis: np.ndarray,
-    rindex: np.ndarray,
     partitions: np.ndarray,
     centroids: np.ndarray,
 ) -> None:
@@ -241,8 +233,6 @@ def nmf_sso_output_wrapper(
         similairty matrix
     dis: np.ndarray
         dis-similairty matrix
-    rindex: np.ndarray
-        r index scores
     partitions: np.ndarray
         partition of cluster labels
     centroids: np.ndarray
@@ -256,7 +246,7 @@ def nmf_sso_output_wrapper(
         plotting_output = os.path.join(output_dir, "nfact_decomp", "sso_output")
         coords = projection(dis)
         clust_score = cluster_scores(sim, partitions)
-        nmf_cluster_stats_csv(clust_score, rindex, plotting_output)
+        nmf_cluster_stats_csv(clust_score, plotting_output)
         plot_matrix(
             os.path.join(plotting_output, "similarity_matrix.tiff"),
             sim,
@@ -267,7 +257,7 @@ def nmf_sso_output_wrapper(
             dis,
             "Dis-Similarity Matrix",
         )
-        plot_rindex(rindex, os.path.join(plotting_output, "rindex.tiff"))
+
         plot_cluster_stats(
             clust_score["N"],
             clust_score["clusternumber"],
@@ -316,15 +306,11 @@ def nmf_sso(fdt_matrix: np.ndarray, parameters: dict, args: dict) -> dict:
     sim = compute_similairty_matrix(w_components)
     dis = sim2dis(sim)
     partitions = clustering_components(dis)
-    rindex = compute_r_index(dis, partitions)
-    number_of_clusters = int(np.where(~np.isnan(rindex))[0].max())
-    centroids = idx2centrotype(sim, partitions[number_of_clusters])
+    centroids = idx2centrotype(sim, partitions)
     parameters["init"] = "custom"
     parameters["n_components"] = centroids.shape[0]
     w_mat = np.ascontiguousarray(g_components[:, centroids])
     h_mat = np.ascontiguousarray(w_components[centroids, :])
     final_nmf = nmf_decomp(parameters, fdt_matrix, W=w_mat, H=h_mat)
-    nmf_sso_output_wrapper(
-        args["outdir"], sim, dis, rindex, partitions[number_of_clusters], centroids
-    )
+    nmf_sso_output_wrapper(args["outdir"], sim, dis, partitions, centroids)
     return final_nmf

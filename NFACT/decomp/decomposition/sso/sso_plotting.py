@@ -227,32 +227,6 @@ def plot_matrix(file_path: str, mat: np.ndarray, title: str) -> None:
     plt.close()
 
 
-def plot_rindex(rindex: np.ndarray, file_path: str) -> None:
-    """
-    Function to plot r index of clusters
-
-    Parameters
-    ----------
-    rindex: np.ndarray
-        array of r index
-    file_path: str
-        file path to save graph to.
-        Must include file name
-
-    Returns
-    -------
-    None
-
-    """
-    plt.plot(rindex, "o:", color="k", markersize=8, markerfacecolor="k")
-    plt.grid(True)
-    plt.xlabel(r"Cluster number")
-    plt.title("R-index by cluster")
-    plt.ylabel("R-index")
-    plt.savefig(file_path, format="tiff", dpi=300, bbox_inches="tight")
-    plt.close()
-
-
 def plot_cluster_stats(
     cluster_stat_number: np.ndarray,
     clusternumber: np.ndarray,
