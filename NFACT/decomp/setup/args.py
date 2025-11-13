@@ -74,6 +74,7 @@ def nfact_decomp_args() -> dict:
         "--n_cores",
         dest="n_cores",
         default=1,
+        type=int,
         help="""
         To parallelize NMF-sso. Default is not to.
         """,

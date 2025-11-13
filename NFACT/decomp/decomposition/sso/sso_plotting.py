@@ -240,7 +240,7 @@ def plot_cluster_stats(
     Parameters
     ----------
     cluster_stat_number: np.ndarray
-        array of cluster numbers
+        array of cluster estimates
     clusternumber: np.ndarray
         an array of cluster labels
     cluster_score: np.ndarray

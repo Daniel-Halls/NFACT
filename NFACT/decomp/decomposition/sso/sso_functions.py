@@ -507,7 +507,7 @@ def cluster_scores(sim: np.ndarray, partitions: np.ndarray) -> dict:
     order = np.argsort(-cluster_scores["mean_score"])
 
     return {
-        "N": cluster_stat["N"],
+        "number_in_cluster": cluster_stat["N"][order],
         "order": order,
         "score": cluster_scores["mean_score"][order],
         "clusternumber": clusternumber[order],
