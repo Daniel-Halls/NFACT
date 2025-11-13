@@ -30,7 +30,7 @@ warnings.filterwarnings("ignore")
 @ignore_warnings(category=ConvergenceWarning)
 def nmf_decomp(parameters: dict, fdt_matrix: np.ndarray, W=None, H=None) -> dict:
     """
-    Function to perform NFM.
+    Function to perform NMF.
 
     Parameters
     ----------
@@ -89,14 +89,17 @@ class NMFsso:
         self.n_jobs = n_jobs
         self.fdt_mat = fdt_mat
         self.nmf_params["init"] = "random"
-        self.nmf_params["random_state"] = None
 
-    def _results(self):
+    def _results(self) -> dict:
+        """
+        Method to return dict to
+        store results
+        """
         return {"grey": [], "white": []}
 
     def _run_single_shared(self, iterat, shm_name, shape, dtype, nmf_params):
         """
-        Worker function: attach to shared memory and run one NMF decomposition.
+        Method to run NMF by creating a share memory object
         """
         shm = shared_memory.SharedMemory(name=shm_name)
         fdt_mat = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
@@ -107,6 +110,9 @@ class NMFsso:
         return nmf_state["grey_components"], nmf_state["white_components"]
 
     def _parallel_run(self):
+        """
+        parallel run sso entry point
+        """
         self.shared_shape = self.fdt_mat.shape
         self.shared_dtype = self.fdt_mat.dtype
         self.shm = shared_memory.SharedMemory(create=True, size=self.fdt_mat.nbytes)

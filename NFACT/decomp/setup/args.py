@@ -49,12 +49,12 @@ def nfact_decomp_args() -> dict:
         "-d",
         "--dim",
         dest="dim",
-        default=200,
+        default=75,
         help=""" 
         Number of dimensions to retain
         after running NMF/ICA. If using NMF-sso the dimensions of the 
-        final analysis won't be this. Default is 200 as this 
-        provides the best coverage for whole brain seeds.
+        final analysis won't be this. Default is 75 as this 
+        provides the best coverage for whole brain seeds and doesn't overfit.
         May not work for all data
         """,
     )
