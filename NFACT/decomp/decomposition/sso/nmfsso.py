@@ -213,9 +213,8 @@ def nmf_cluster_stats_csv(cluster_stats: dict, output_dir: str) -> None:
     """
 
     cluster_df = pd.DataFrame(cluster_stats)
-    cols = cluster_df.columns.tolist()
-    cluster_df = cluster_df[[cols[-1]] + cols[:-1]]
     cluster_df = cluster_df.replace(np.nan, 0)
+    cluster_df = cluster_df.rename(columns={"clusternumber": "Component"})
     cluster_df.to_csv(f"{output_dir}/cluster_stats.csv", index=False)
 
 
@@ -264,10 +263,7 @@ def nmf_sso_output_wrapper(
         )
 
         plot_cluster_stats(
-            clust_score["number_in_cluster"],
-            clust_score["clusternumber"],
-            clust_score["score"],
-            clust_score["order"],
+            clust_score,
             os.path.join(plotting_output, "cluster_stats.tiff"),
         )
         plot_network(

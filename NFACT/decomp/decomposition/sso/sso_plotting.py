@@ -114,6 +114,7 @@ def plot_network(
     --------
     None
     """
+    plt.style.use("default")
     n_points = coordinates.shape[0]
     threshold = threshold_for_graph(similarity)
     graph = build_graph(n_points, coordinates)
@@ -228,10 +229,7 @@ def plot_matrix(file_path: str, mat: np.ndarray, title: str) -> None:
 
 
 def plot_cluster_stats(
-    cluster_stat_number: np.ndarray,
-    clusternumber: np.ndarray,
-    cluster_score: np.ndarray,
-    estimate_order: np.ndarray,
+    clusters_scores: dict,
     filepath: str,
 ) -> None:
     """
@@ -239,15 +237,9 @@ def plot_cluster_stats(
 
     Parameters
     ----------
-    cluster_stat_number: np.ndarray
-        array of cluster estimates
-    clusternumber: np.ndarray
-        an array of cluster labels
-    cluster_score: np.ndarray
-        cluster score for each cluster
-    estimate_order: np.ndarray
-        the order of cluster from
-        high to low
+    clusters_scores: dict
+       dictionary of cluster
+       statilbity scores
     filepath: str
         file path to save graph to.
         Must include file name
@@ -256,22 +248,37 @@ def plot_cluster_stats(
     --------
     None
     """
+    plt.style.use("bmh")
     plt.figure(2)
+    step = round(clusters_scores["clusternumber"].shape[0] / 100 * 10)
+    y_pos = np.arange(len(clusters_scores["clusternumber"]))
+    position = list(y_pos[::step])
+    if y_pos[-1] not in position:
+        position.append(y_pos[-1])
+
+    labels = [str(c) for c in clusters_scores["Component"][::step]]
+    if clusters_scores["Component"][-1] not in clusters_scores["Component"][::step]:
+        labels.append(str(clusters_scores["Component"][-1]))
+
+    plt.figure(figsize=(10, 7))
     plt.clf()
     plt.subplot(1, 2, 1)
-    plt.plot(cluster_score, "o-")
-    plt.title("Iq")
-    plt.xlabel("Number of clusters")
-    plt.ylabel("Iq")
+
+    plt.plot(clusters_scores["score"], "o-")
+    plt.xticks(position, labels)
+    plt.title("Stability Score (Ranked Descending)")
+    plt.xlabel("Cluster")
+    plt.ylabel("Stablilty Score")
     plt.subplot(1, 2, 2)
-    y_pos = np.arange(len(clusternumber))
-    plt.barh(y_pos, np.array(cluster_stat_number)[estimate_order], align="center")
+    plt.barh(y_pos, np.array(clusters_scores["number_in_cluster"]), align="center")
     plt.gca().invert_yaxis()
-    plt.xlim(0, max(cluster_stat_number) * 1.05)
-    plt.title("Cluster labels ranked by Iq and components")
-    plt.xlabel("Number of components")
-    plt.ylabel("Label")
-    plt.gcf().canvas.manager.set_window_title("NMF-sso: Estimate Quality")
+    plt.yticks(position, labels)
+    plt.xlim(0, max(clusters_scores["number_in_cluster"]) * 1.05)
+    plt.title("Number of Components in Clusters (Ranked by Stability)")
+    plt.xlabel("Number of Components in Clusters")
+    plt.ylabel("Cluster")
+    plt.suptitle("Cluster Ranking", fontsize=16, fontweight="bold")
+    plt.gcf().canvas.manager.set_window_title("Cluster Ranking")
     plt.tight_layout()
     plt.savefig(filepath, format="tiff", dpi=300, bbox_inches="tight")
     plt.close()
