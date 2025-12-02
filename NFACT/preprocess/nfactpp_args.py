@@ -127,7 +127,7 @@ def nfact_pp_args() -> dict:
         default=3,
         help="""
         Resolution of target image. 
-        Default is 2 mm
+        Default is 3 mm
         """,
     )
     tractography_input.add_argument(

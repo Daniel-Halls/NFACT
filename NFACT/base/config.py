@@ -34,7 +34,6 @@ def get_function_output(function: object) -> dict:
     )
 
     matches = pattern.findall(source_code)
-
     return {
         dest: (
             "Required"
