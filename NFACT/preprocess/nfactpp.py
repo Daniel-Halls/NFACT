@@ -126,7 +126,10 @@ def target_generation(arg: dict, nfactpp_diretory: str, col: dict) -> None:
     )
     if arg["seedref"] == default_ref:
         clean_target2(nfactpp_diretory, default_ref)
-        target_2_ref = os.path.join(nfactpp_diretory, "target2")
+    else:
+        shutil.copy2(arg["seedref"], os.path.join(nfactpp_diretory, "target2.nii.gz"))
+
+    target_2_ref = os.path.join(nfactpp_diretory, "target2")
     downsample_target2(
         target_2_ref,
         os.path.join(nfactpp_diretory, "target2"),
