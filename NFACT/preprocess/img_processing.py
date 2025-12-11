@@ -206,7 +206,7 @@ def clean_target2(nfactpp_diretory: str, default_ref: str) -> None:
     fslmaths_cmd(
         [f"{nfactpp_diretory}/ven_mask_dilated", "-binv", f"{nfactpp_diretory}/ven_inv"]
     )
-    # Subtract the maks from the img by multiplication
+    # Subtract the masks from the img by multiplication
     fslmaths_cmd(
         [
             default_ref,
