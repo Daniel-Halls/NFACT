@@ -311,7 +311,6 @@ def process_config_file(args: dict) -> dict:
     args["nfact_pp"]["n_cores"] = False
     args["nfact_decomp"] = process_decomp_dictionary(args["nfact_decomp"])
     args["nfact_dr"]["n_cores"] = False
-    args["nfact_qc"] = delete_keys(args["nfact_qc"], ["nfact_folder", "dim", "algo"])
     return {"global_input": args.pop("global_input"), **args}
 
 
