@@ -97,13 +97,13 @@ class NMFsso:
         """
         return {"grey": [], "white": []}
 
-    def _run_single_shared(self, iterat, shm_name, shape, dtype, nmf_params):
+    def _run_single_shared(self, shm_name, shape, dtype, nmf_params):
         """
         Method to run NMF by creating a share memory object
         """
         shm = shared_memory.SharedMemory(name=shm_name)
         fdt_mat = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
-        nmf_params["random_state"] = iterat
+        nmf_params["random_state"] = None
         nmf_state = nmf_decomp(nmf_params, fdt_mat)
         shm.close()  # detach, do NOT unlink here
         nmf_state["white_components"] = thresholding(nmf_state["white_components"], 3)
@@ -127,13 +127,12 @@ class NMFsso:
         nprint(f"Running {self.num_int} in parallel (num jobs={self.n_jobs})...")
         results = Parallel(n_jobs=self.n_jobs)(
             delayed(self._run_single_shared)(
-                iterat,
                 self.shm_name,
                 self.shared_shape,
                 self.shared_dtype,
                 self.nmf_params,
             )
-            for iterat in range(self.num_int)
+            for _ in range(self.num_int)
         )
 
         # Collect results
@@ -165,7 +164,7 @@ class NMFsso:
         nmf_sso_results = self._results()
         for iterat in range(self.num_int):
             nprint(f"Run: {iterat+1}/{self.num_int}")
-            self.nmf_params["random_state"] = iterat
+            self.nmf_params["random_state"] = None
             nmf_state = nmf_decomp(self.nmf_params, self.fdt_mat)
             nmf_sso_results["grey"].append(nmf_state["grey_components"])
             nmf_sso_results["white"].append(nmf_state["white_components"])
@@ -308,6 +307,7 @@ def nmf_sso(fdt_matrix: np.ndarray, parameters: dict, args: dict) -> dict:
     dis = sim2dis(sim)
     partitions = clustering_components(dis)
     centroids = idx2centrotype(sim, partitions)
+    parameters["random_state"] = None
     parameters["init"] = "custom"
     parameters["n_components"] = centroids.shape[0]
     w_mat = np.ascontiguousarray(g_components[:, centroids])
