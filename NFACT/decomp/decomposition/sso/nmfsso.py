@@ -67,7 +67,7 @@ class NMFsso:
     Usage
     -----
     est = NMFsso(
-        fdtmat=fdt_mat,
+        fdt_mat=fdt_mat,
         num_int=15,
         nmf_params=nmf_params,
         n_jobs=5
@@ -94,12 +94,38 @@ class NMFsso:
         """
         Method to return dict to
         store results
+
+        Parameters
+        -----------
+        None
+
+        Returns
+        -------
+        dict: dictionary object
+            dict of grey, white lists
         """
         return {"grey": [], "white": []}
 
-    def _run_single_shared(self, shm_name, shape, dtype, nmf_params):
+    def _run_single_shared(
+        self, shm_name: str, shape: tuple, dtype: np.dtype, nmf_params: dict
+    ) -> dict:
         """
-        Method to run NMF by creating a share memory object
+        Method to run NMF via for a shared object.
+
+        Parameters
+        ----------
+        shape: tuple
+            shape of what fdt matrix should be
+        dtype: np.dtype
+            fdt mat datatype
+        nmf_params: dict
+            parmeters for nmf
+
+        Returns
+        -------
+        tuple: tuple object
+            tuple of dictionary
+            objects grey and white
         """
         shm = shared_memory.SharedMemory(name=shm_name)
         fdt_mat = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
@@ -109,9 +135,19 @@ class NMFsso:
         nmf_state["white_components"] = thresholding(nmf_state["white_components"], 3)
         return nmf_state["grey_components"], nmf_state["white_components"]
 
-    def _parallel_run(self):
+    def _parallel_run(self) -> dict:
         """
-        parallel run sso entry point
+        Method entry point for parallel run
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        dict: dictionary object
+            dict of grey and white
+            matter output from sso
         """
         self.shared_shape = self.fdt_mat.shape
         self.shared_dtype = self.fdt_mat.dtype
