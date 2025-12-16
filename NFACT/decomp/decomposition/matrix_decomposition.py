@@ -102,7 +102,7 @@ def get_parameters(parameters: dict, algo: str, n_components: int) -> dict:
     if algo == "nmf":
         parameters["alpha_W"] = 0.1
         parameters["init"] = "nndsvd"
-        parameters["random_state"] = 1
+        parameters["random_state"] = None
         parameters["l1_ratio"] = 1
     return parameters
 
