@@ -62,7 +62,7 @@ def nfact_decomp_main(args: dict = None) -> None:
         args = nfact_decomp_args()
         to_exit = True
     col = colours()
-
+    os.environ["PYTHONWARNINGS"] = "ignore"
     if args["cifti"]:
         print(
             f"{col['plum']}Cifti option given:{col['reset']} Seeds must be in correct order"

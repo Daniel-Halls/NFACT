@@ -17,12 +17,13 @@ from NFACT.base.matrix_handling import thresholding
 from sklearn.decomposition import NMF
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
-import warnings
+
 import numpy as np
 from multiprocessing import shared_memory
 from joblib import Parallel, delayed
 import os
 import pandas as pd
+import warnings
 
 warnings.filterwarnings("ignore")
 
@@ -163,7 +164,8 @@ class NMFsso:
         os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
         if self.n_jobs > self.num_int:
-            self.njobs = self.num_int
+            self.n_jobs = self.num_int
+
         nprint(f"{self.col['pink']}Parallel Jobs: {self.col['reset']}{self.n_jobs}")
         results = Parallel(n_jobs=self.n_jobs)(
             delayed(self._run_single_shared)(
