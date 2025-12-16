@@ -346,7 +346,7 @@ def nmf_sso(fdt_matrix: np.ndarray, parameters: dict, args: dict) -> dict:
     g_components = np.hstack(results_of_comp["grey"])
     sim = compute_similairty_matrix(w_components)
     dis = sim2dis(sim)
-    partitions = clustering_components(dis)
+    partitions = clustering_components(dis, args["dim"])
     centroids = idx2centrotype(sim, partitions)
     parameters["random_state"] = None
     parameters["init"] = "custom"

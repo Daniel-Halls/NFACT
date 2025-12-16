@@ -186,7 +186,7 @@ def nfact_decomp_main(args: dict = None) -> None:
             components,
             os.path.join(args["outdir"], "nfact_decomp"),
             args["algo"].upper(),
-            components["white_components"].shape[0],
+            args["dim"],
         )
     else:
         # Save the results
@@ -198,7 +198,7 @@ def nfact_decomp_main(args: dict = None) -> None:
             ),
             args["seeds"],
             args["algo"].upper(),
-            components["white_components"].shape[0],
+            args["dim"],
             args["roi"],
             args["cifti"],
         )

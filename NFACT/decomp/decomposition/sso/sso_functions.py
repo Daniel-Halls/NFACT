@@ -280,30 +280,27 @@ def calculate_elbow(merge_dist: np.ndarray) -> float:
     float: float value
         elbow point
     """
-    merge_dist = merge_dist[::-1]
-    num_merges = np.arange(len(merge_dist))
+    x = merge_dist
+    y = np.arange(merge_dist.shape[0])
 
-    total_errors = []
+    # Convert to 3D (z=0)
+    p1 = np.array([x[0], y[0], 0.0])
+    p2 = np.array([x[-1], y[-1], 0.0])
 
-    # Try each possible elbow location
-    for elbow in range(2, len(num_merges) - 2):
-        # Fit line 1
-        coeffs1 = np.polyfit(num_merges[:elbow], merge_dist[:elbow], 1)
-        line1 = np.poly1d(coeffs1)(num_merges[:elbow])
-        err1 = np.sum((merge_dist[:elbow] - line1) ** 2)
+    distances = []
+    for xi, yi in zip(x, y):
+        p0 = np.array([xi, yi, 0.0])
 
-        # Fit line 2
-        coeffs2 = np.polyfit(num_merges[elbow:], merge_dist[elbow:], 1)
-        line2 = np.poly1d(coeffs2)(num_merges[elbow:])
-        err2 = np.sum((merge_dist[elbow:] - line2) ** 2)
+        # Distance to the line in 3D; z components are all zero
+        dist = np.linalg.norm(np.cross(p2 - p1, p0 - p1)) / np.linalg.norm(p2 - p1)
+        distances.append(dist)
 
-        total_errors.append(err1 + err2)
-
-    elbow_idx = np.argmin(total_errors) + 2
-    return merge_dist[elbow_idx]
+    distances = np.array(distances)
+    knee_index = np.argmax(distances)
+    return x[knee_index]
 
 
-def cluster_valid(cluster_partition: np.ndarray) -> bool:
+def cluster_valid(cluster_partition: np.ndarray, dim: int) -> bool:
     """
     Function to ascertain if a cluster
     partition is all a single cluster
@@ -323,10 +320,12 @@ def cluster_valid(cluster_partition: np.ndarray) -> bool:
     clusters, counts = np.unique(cluster_partition, return_counts=True)
     if np.any(counts == 1) or len(clusters) == 1:
         return False
+    if clusters.max() > dim:
+        return False
     return True
 
 
-def dendogram_cut(link_mat: np.ndarray, elbow_height: float) -> np.ndarray:
+def dendogram_cut(link_mat: np.ndarray, elbow_height: float, dim: int) -> np.ndarray:
     """
     Function to cut the dendogram at set point.
 
@@ -344,7 +343,7 @@ def dendogram_cut(link_mat: np.ndarray, elbow_height: float) -> np.ndarray:
         array of labels
     """
     intial_run = fcluster(link_mat, t=elbow_height, criterion="distance")
-    if cluster_valid(intial_run):
+    if cluster_valid(intial_run, dim):
         return intial_run
 
     merge_heights = np.sort(np.unique(link_mat))
@@ -353,11 +352,11 @@ def dendogram_cut(link_mat: np.ndarray, elbow_height: float) -> np.ndarray:
     for height in merge_heights[start_idx:]:
         part = fcluster(link_mat, t=height, criterion="distance")
 
-        if cluster_valid(part):
+        if cluster_valid(part, dim):
             return part
 
 
-def clustering_components(dis: np.ndarray) -> np.ndarray:
+def clustering_components(dis: np.ndarray, dim: int) -> np.ndarray:
     """
     Function to cluster components
 
@@ -375,7 +374,7 @@ def clustering_components(dis: np.ndarray) -> np.ndarray:
     merge_distance = zlink[:, 2]
     elbow = calculate_elbow(merge_distance)
 
-    return dendogram_cut(zlink, elbow)
+    return dendogram_cut(zlink, elbow, dim)
 
 
 def check_clustering(n_clusters: int, partition: np.ndarray, sim: np.ndarray) -> None:
