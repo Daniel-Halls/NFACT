@@ -1,0 +1,21 @@
+name: Trigger Read the Docs Build
+
+on:
+  push:
+    branches:
+      - main  # Trigger only on push to the main branch
+    paths-ignore:
+      - '**.md'  # Skip if only documentation files (like READMEs) change
+      - '**/docs/**' # Uncomment if you ONLY want to build documentation when code changes
+
+jobs:
+  trigger_rtd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Read the Docs Build
+        env:
+          RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Authorization: Token $RTD_TOKEN" \
+            "https://readthedocs.org/api/v3/projects/nfact/versions/latest/builds/"
