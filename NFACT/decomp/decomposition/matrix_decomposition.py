@@ -4,7 +4,8 @@ from NFACT.decomp.decomposition.matrix_handling import (
 from NFACT.base.utils import error_and_exit, nprint, Timer
 from NFACT.base.matrix_handling import normalise_components
 from NFACT.config.nfact_config_functions import create_combined_algo_dict
-from sklearn.decomposition import FastICA, NMF, PCA
+from NFACT.decomp.decomposition.sso.nmfsso import nmf_sso
+from sklearn.decomposition import FastICA, PCA
 import numpy as np
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -47,33 +48,6 @@ def ica_decomp(
         "grey_components": grey_matter,
         "white_components": np.linalg.pinv(grey_matter) @ fdt_matrix,
     }
-
-
-@ignore_warnings(category=ConvergenceWarning)
-def nmf_decomp(parameters: dict, fdt_matrix: np.ndarray) -> dict:
-    """
-    Function to perform NFM.
-
-    Parameters
-    ----------
-    parameters: dict
-        dictionary of hyperparameters
-    fdt_matrix: np.ndarray
-        matrix to perform decomposition
-        on
-
-    Returns
-    -------
-    dict: dictionary
-        dictionary of grey and white matter
-        components
-    """
-    decomp = NMF(**parameters)
-    try:
-        grey_matter = decomp.fit_transform(fdt_matrix)
-    except Exception as e:
-        error_and_exit(False, f"Unable to perform NMF due to {e}")
-    return {"grey_components": grey_matter, "white_components": decomp.components_}
 
 
 def pca_reduction(n_components: int, fdt_matrix: np.ndarray) -> np.ndarray:
@@ -133,66 +107,46 @@ def get_parameters(parameters: dict, algo: str, n_components: int) -> dict:
     return parameters
 
 
-def matrix_decomposition(
+def ica_decomposition(
     fdt_matrix: np.ndarray,
-    algo: str,
-    normalise: bool,
-    signflip: bool,
     pca_dim: int,
-    parameters: dict,
     pca_type: str,
+    signflip: bool,
+    parameters: dict,
 ) -> dict:
     """
-    Wrapper function to decompose a matrix2 into
-    grey * white matter components.
-
-    Performs either ICA or NFM depending on input.
-    Will normalise components.
+    Function to do PCA/ICA decomposition
 
     Parameters
     ----------
     fdt_matrix: np.ndarray
-        matrix to decompose
-    algo: str
-        which algo
-    normalise: bool
-        to z score normalise components
-    sign_flip: bool
-        to sign flip ICA components so heavy tail is > 0
+        fdt_matrix to decomp
     pca_dim: int
-        number of pca dimensions for ICA
+        number of pca dimensions
     pca_type: str
-        type of PCA to do
+        which type of PCA to do sckitlearn
+        or MIGP
+    signflip: bool,
+        slipfip so heavy tail > 0
+    parameters: dict
+        ICA parameters in dict form
 
     Returns
-    -------
-    dict: dictionary
-        dict of components
+    --------
+    components: dict
+        dictionary of components
     """
+    if pca_type == "pca":
+        nprint("Doing PCA reduction")
+        pca_matrix = pca_reduction(pca_dim, fdt_matrix)
+    else:
+        pca_matrix = melodic_incremental_group_pca(fdt_matrix, pca_dim, pca_dim)
 
-    if algo == "ica":
-        if pca_type == "pca":
-            nprint("Doing PCA reduction")
-            pca_matrix = pca_reduction(pca_dim, fdt_matrix)
-        else:
-            pca_matrix = melodic_incremental_group_pca(fdt_matrix, pca_dim, pca_dim)
-        components = ica_decomp(parameters, pca_matrix, fdt_matrix)
-
-        if signflip:
-            nprint("Sign-flipping components")
-            components["grey_components"] = sign_flip(components["grey_components"].T).T
-            components["white_components"] = sign_flip(components["white_components"])
-
-    if algo == "nmf":
-        components = nmf_decomp(parameters, fdt_matrix)
-
-    if normalise:
-        normalised = normalise_components(
-            components["grey_components"], components["white_components"]
-        )
-        components["normalised_white"] = normalised["white_matter"]
-        components["normalised_grey"] = normalised["grey_matter"]
-
+    components = ica_decomp(parameters, pca_matrix, fdt_matrix)
+    if signflip:
+        nprint("Sign-flipping components")
+        components["grey_components"] = sign_flip(components["grey_components"].T).T
+        components["white_components"] = sign_flip(components["white_components"])
     return components
 
 
@@ -235,3 +189,53 @@ def sign_flip(decomp_matrix: np.ndarray, thr: int = 0) -> np.ndarray:
         signflip_decomp_matrix[index] = row if skew == 0 else row * skew
 
     return signflip_decomp_matrix
+
+
+def matrix_decomposition(
+    fdt_matrix: np.ndarray,
+    parameters: dict,
+    args: dict,
+) -> dict:
+    """
+    Wrapper function to decompose a matrix2 into
+    grey * white matter components.
+
+    Performs either ICA or NMF depending on input.
+    Will normalise components.
+
+    Parameters
+    ----------
+    fdt_matrix: np.ndarray
+        matrix to decompose
+    parameters: dict
+        dictionary of decomp
+        parameters
+    args: dict
+        cmd args
+
+    Returns
+    -------
+    dict: dictionary
+        dict of components
+    """
+
+    if args["algo"] == "ica":
+        components = ica_decomposition(
+            fdt_matrix,
+            args["components"],
+            args["pca_type"],
+            args["sign_flip"],
+            parameters,
+        )
+
+    if args["algo"] == "nmf":
+        components = nmf_sso(fdt_matrix, parameters, args)
+
+    if args["normalise"]:
+        normalised = normalise_components(
+            components["grey_components"], components["white_components"]
+        )
+        components["normalised_white"] = normalised["white_matter"]
+        components["normalised_grey"] = normalised["grey_matter"]
+
+    return components

@@ -1,5 +1,8 @@
 import signal
 from NFACT.base.utils import colours, nprint
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 class Signit_handler:

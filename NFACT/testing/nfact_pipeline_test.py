@@ -1,11 +1,11 @@
 from NFACT.decomp.decomposition.matrix_handling import avg_fdt
-from NFACT.decomp.decomposition.decomp import (
+from NFACT.decomp.decomposition.matrix_decomposition import (
     melodic_incremental_group_pca,
     ica_decomp,
     get_parameters,
-    nmf_decomp,
     sign_flip,
 )
+from NFACT.decomp.decomposition.sso.nmfsso import nmf_decomp
 from NFACT.decomp.pipes.image_handling import create_wta_map
 from NFACT.base.matrix_handling import normalise_components, load_fdt_matrix
 from NFACT.dual_reg.dual_regression.dual_regression_methods import (

@@ -29,6 +29,7 @@ def create_folder_set_up(directory: str) -> None:
         "group_averages",
         "logs",
         "components",
+        "sso_output",
         "components/NMF",
         "components/ICA",
         "components/NMF/decomp",

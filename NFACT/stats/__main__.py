@@ -46,5 +46,5 @@ def nfactstats_main(args: dict = None) -> None:
 
 if __name__ == "__main__":
     args = nfact_stats_args()
-    nfact_stats_args(args)
+    nfactstats_main(args)
     exit(0)

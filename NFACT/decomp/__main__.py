@@ -21,7 +21,10 @@ from NFACT.decomp.setup.configure_setup import (
     check_config_file,
     load_config_file,
 )
-from NFACT.decomp.decomposition.decomp import matrix_decomposition, get_parameters
+from NFACT.decomp.decomposition.matrix_decomposition import (
+    matrix_decomposition,
+    get_parameters,
+)
 from NFACT.decomp.decomposition.matrix_handling import (
     process_fdt_matrix2,
     load_previous_matrix,
@@ -59,7 +62,7 @@ def nfact_decomp_main(args: dict = None) -> None:
         args = nfact_decomp_args()
         to_exit = True
     col = colours()
-
+    os.environ["PYTHONWARNINGS"] = "ignore"
     if args["cifti"]:
         print(
             f"{col['plum']}Cifti option given:{col['reset']} Seeds must be in correct order"
@@ -149,15 +152,7 @@ def nfact_decomp_main(args: dict = None) -> None:
     nprint("-" * 100)
     nprint(f"{col['pink']}NFACT method:{col['reset']} {args['algo'].upper()}")
 
-    components = matrix_decomposition(
-        fdt_2_conn,
-        algo=args["algo"],
-        normalise=args["normalise"],
-        signflip=args["sign_flip"],
-        pca_dim=args["components"],
-        parameters=parameters,
-        pca_type=args["pca_type"],
-    )
+    components = matrix_decomposition(fdt_2_conn, parameters, args)
     nprint(
         f"{col['pink']}Decomposition time:{col['reset']} {decomposition_timer.how_long()}\n"
     )

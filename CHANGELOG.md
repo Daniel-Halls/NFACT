@@ -1,5 +1,18 @@
 # ChangeLog
 
+## 16/12/2025
+
+Iterative NMF
+
+### Bug fixes
+- Fixed nfact_config pipeline error that crashed the pipeline json creator
+
+### New Features
+- Added in NMF-sso (iterative NMF)
+- NMF-sso can be turned turned off
+- Number of iteration and ability to parallelize the process
+
+
 ## NFACT V2
 
 This is will be the first and last new edition. Moving to rolling releases after v2

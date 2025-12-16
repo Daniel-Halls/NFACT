@@ -30,8 +30,8 @@ def nfact_decomp_args() -> dict:
     )
     seed_roi_args(decomp_input)
     decomp_input.add_argument(
-        "-n",
-        "--nfact_config",
+        "-f",
+        "--config_file",
         dest="config",
         default=False,
         help="""
@@ -44,17 +44,51 @@ def nfact_decomp_args() -> dict:
     decomp_args = base_args.add_argument_group(
         f"{col['pink']}Decomposition options{col['reset']}"
     )
+    algo_arg(decomp_args)
     decomp_args.add_argument(
         "-d",
         "--dim",
         dest="dim",
-        help="""
-        This is compulsory option. 
-        Number of dimensions/components to retain
-        after running NMF/ICA.  
+        default=75,
+        help=""" 
+        Number of dimensions to retain
+        after running NMF/ICA. If using NMF-sso the dimensions of the 
+        final analysis won't be this. Default is 75 as this 
+        provides the best coverage for whole brain seeds and doesn't overfit.
+        May not work for all data
         """,
     )
-    algo_arg(decomp_args)
+    decomp_args.add_argument(
+        "-i",
+        "--iterations",
+        dest="iterations",
+        default=20,
+        type=int,
+        help="""
+        Number of iterations of NMF for the NMF-sso.
+        Default is 20
+        """,
+    )
+    decomp_args.add_argument(
+        "-n",
+        "--n_cores",
+        dest="n_cores",
+        default=1,
+        type=int,
+        help="""
+        To parallelize NMF-sso. Default is not to.
+        """,
+    )
+    decomp_args.add_argument(
+        "-X",
+        "--exclude_sso",
+        dest="no_sso",
+        default=False,
+        help="""
+        Don't do NMF-sso. 
+        Just do a single NMF. Default is False
+        """,
+    )
 
     output_args = base_args.add_argument_group(
         f"{col['darker_pink']}Output options{col['reset']}"
@@ -212,13 +246,19 @@ def nfact_decomp_usage():
 {col["darker_pink"]}Basic NMF with volume seeds usage:{col["reset"]}
     nfact_decomp --list_of_subjects /absolute path/sub_list \ 
                  --seeds /absolute path/seeds.txt \ 
-                 --dim 50
+    
 
 {col["darker_pink"]}Basic NMF usage with surface seeds:{col["reset"]}
     nfact_decomp --list_of_subjects /absolute path/sub_list \ 
                  --seeds /absolute path/seeds.txt \ 
                  --roi /absolute path/rois
+
+{col["darker_pink"]}NMF usage with surface seeds with different dims and reduced NMF-sso iterations:{col["reset"]}
+    nfact_decomp --list_of_subjects /absolute path/sub_list \ 
+                 --seeds /absolute path/seeds.txt \ 
+                 --roi /absolute path/rois
                  --dim 50
+                 --iterations 10
 
 {col["darker_pink"]}ICA with config file usage:{col["reset"]}
     nfact_decomp --list_of_subjects /absolute path/sub_list \ 

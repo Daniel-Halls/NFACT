@@ -25,7 +25,9 @@ dependencies = [
     'tqdm',
     'file-tree',
     'lz4',
-    'pandas'
+    'pandas',
+    'networkx',
+    'seaborn'
 ]
 requires-python = ">=3.9"
 [project.optional-dependencies]
