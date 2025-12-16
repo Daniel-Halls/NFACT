@@ -302,7 +302,6 @@ def nmf_sso_output_wrapper(
             dis,
             "Dis-Similarity Matrix",
         )
-        breakpoint()
         plot_cluster_stats(
             clust_score,
             os.path.join(plotting_output, "cluster_stats.tiff"),
