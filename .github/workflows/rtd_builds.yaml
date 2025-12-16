@@ -1,18 +1,18 @@
 name: Trigger Read the Docs Build
 
 on:
-  push:
+  pull_request:
     branches:
-      - main  # Trigger only on push to the main branch
+      - main  
     paths-ignore:
-      - '**.md'  # Skip if only documentation files (like READMEs) change
-      - '**/docs/**' # Uncomment if you ONLY want to build documentation when code changes
+      - '**.md' 
+      - '**/docs/**'
 
 jobs:
   trigger_rtd:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Read the Docs Build
+      - name: Read the Docs Build
         env:
           RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
         run: |
