@@ -256,9 +256,12 @@ def plot_cluster_stats(
     if y_pos[-1] not in position:
         position.append(y_pos[-1])
 
-    labels = [str(c) for c in clusters_scores["Component"][::step]]
-    if clusters_scores["Component"][-1] not in clusters_scores["Component"][::step]:
-        labels.append(str(clusters_scores["Component"][-1]))
+    labels = [str(c) for c in clusters_scores["clusternumber"][::step]]
+    if (
+        clusters_scores["clusternumber"][-1]
+        not in clusters_scores["clusternumber"][::step]
+    ):
+        labels.append(str(clusters_scores["clusternumber"][-1]))
 
     plt.figure(figsize=(10, 7))
     plt.clf()

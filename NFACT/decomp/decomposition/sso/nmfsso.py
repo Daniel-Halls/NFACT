@@ -11,7 +11,7 @@ from NFACT.decomp.decomposition.sso.sso_plotting import (
     plot_cluster_stats,
     plot_network,
 )
-from NFACT.base.utils import error_and_exit, nprint
+from NFACT.base.utils import error_and_exit, nprint, colours
 from NFACT.base.matrix_handling import thresholding
 
 from sklearn.decomposition import NMF
@@ -89,6 +89,7 @@ class NMFsso:
         self.n_jobs = n_jobs
         self.fdt_mat = fdt_mat
         self.nmf_params["init"] = "random"
+        self.col = colours()
 
     def _results(self) -> dict:
         """
@@ -160,7 +161,10 @@ class NMFsso:
         os.environ["MKL_NUM_THREADS"] = "1"
         os.environ["OPENBLAS_NUM_THREADS"] = "1"
         os.environ["NUMEXPR_NUM_THREADS"] = "1"
-        nprint(f"Running {self.num_int} in parallel (num jobs={self.n_jobs})...")
+
+        if self.n_jobs > self.num_int:
+            self.njobs = self.num_int
+        nprint(f"{self.col['pink']}Parallel Jobs: {self.col['reset']}{self.n_jobs}")
         results = Parallel(n_jobs=self.n_jobs)(
             delayed(self._run_single_shared)(
                 self.shm_name,
@@ -198,8 +202,10 @@ class NMFsso:
         """
 
         nmf_sso_results = self._results()
-        for iterat in range(self.num_int):
-            nprint(f"Run: {iterat+1}/{self.num_int}")
+        for iterat in range(colours):
+            nprint(
+                f"{self.col['pink']}Run: {self.col['reset']}{iterat+1}/{self.num_int}"
+            )
             self.nmf_params["random_state"] = None
             nmf_state = nmf_decomp(self.nmf_params, self.fdt_mat)
             nmf_sso_results["grey"].append(nmf_state["grey_components"])
@@ -221,7 +227,7 @@ class NMFsso:
         nmf_sso_results: dict
             dict of grey and white matter_components
         """
-
+        nprint(f"{self.col['pink']}NMF iterations: {self.col['reset']}{self.num_int}")
         if self.n_jobs > 1:
             nmf_sso_results = self._parallel_run()
         else:
@@ -296,7 +302,7 @@ def nmf_sso_output_wrapper(
             dis,
             "Dis-Similarity Matrix",
         )
-
+        breakpoint()
         plot_cluster_stats(
             clust_score,
             os.path.join(plotting_output, "cluster_stats.tiff"),
