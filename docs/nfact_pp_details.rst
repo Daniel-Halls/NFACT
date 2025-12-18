@@ -74,6 +74,7 @@ Filetree labels:
 
 Please see https://open.win.ox.ac.uk/pages/fsl/file-tree/index.html for further details on filetrees.
 
+
 CIFTI support
 -------------
 
@@ -143,7 +144,7 @@ Examples are:
 
 
 Usage
--------------
+------
 
 
 .. code-block:: text

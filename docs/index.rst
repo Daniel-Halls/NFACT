@@ -37,3 +37,4 @@ Modules
    :titlesonly:
 
    nfact_pp
+   nfact_decomp

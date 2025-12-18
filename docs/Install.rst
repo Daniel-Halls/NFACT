@@ -25,7 +25,7 @@ To install do the following steps
 1. Go to https://github.com/SPMIC-UoN/NFACT
 2. Click the green code button and choose how you want to download NFACT
 3. Set up a python virtual enviorment (recommend)::
-    
+
     python3 -m venv venv
 4. Activate the virtual enviorment if using::
 
