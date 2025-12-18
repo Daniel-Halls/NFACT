@@ -5,24 +5,27 @@ NFACT documentation
 tractography data using NMF/ICA.
 
 It consists of three "main" decomposition modules:
-    
-    - nfact_pp (Pre-process data for decomposition)
-    - nfact_decomp (Decomposes a single or average group matrix using NMF or ICA)
-    - nfact_dr (Dual regression on group matrix)
+  - nfact_pp (Pre-process data for decomposition)
+  - nfact_decomp (Decomposes a single or average group matrix using NMF or ICA)
+  - nfact_dr (Dual regression on group matrix)
 
-as well as three axillary "modules":
-    
-    - nfact_config (creates config files for the pipeline and changing any hyperparameters)
-    - nfact_Qc (Creates hitmaps to check for bias in decomposition)
-    - nfact_stats
+And three axillary modules:
+  - nfact_config (creates config files for the pipeline and changing any hyperparameters)
+  - nfact_Qc (Creates hitmaps to check for bias in decomposition)
+  - nfact_stats (Creates Spatial maps and component loadings for further statistical testing)
 
 and a pipeline wrapper
-    
     - nfact (runs nfact_pp, nfact_decomp, nfact_Qc and nfact_dr. nfact_pp, nfact_Qc and nfact_dr can all individually be skipped)
 
 .. note::
 
-   This project is currently under active development.
+   This read the docs is currently under active development. In the meantime see the README on the github
+
+Overview
+--------
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
 
 Modules
 --------
@@ -32,17 +35,3 @@ Modules
    :titlesonly:
 
    nfact_pp
-
-   
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference:
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
