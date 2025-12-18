@@ -35,6 +35,7 @@ Usage
 -----
 
 .. code-block:: text
+
     nfact_dr [-h] [-hh] [-O] [-l LIST_OF_SUBJECTS] [-o OUTDIR] [-a ALGO] [--seeds SEEDS] 
     [--roi ROI] [-d NFACT_DECOMP_DIR] [-dd DECOMP_DIR] [-N] [-D] [-n N_CORES] 
     [-C] [-cq CLUSTER_QUEUE] [-cr CLUSTER_RAM] [-ct CLUSTER_TIME] [-cqos CLUSTER_QOS]
@@ -56,11 +57,11 @@ Set Up Arguments:
     Path to output directory
 
 Dual Regression Arguments:
-  -a ALGO, --algo   
+  -a, --algo 
     Which decomposition algorithm. Options are: NMF (default), or ICA. This is case insensitive.
   -s, --seeds 
     Absolute path to a text file of seed(s) used in nfact_pp/probtrackx. If used nfact_pp this is the seeds_for_decomp.txt in the nfact_pp directory.
-  -roi, --roi 
+  -r, --roi 
     Absolute path to a text file containing the absolute path ROI(s) paths to restrict seeding to (e.g. medial wall masks). This is not needed if seeds are not surfaces. If used nfact_pp then this is the roi_for_decomp.txt file in the nfact_pp directory.
   -d, --nfact_decomp_dir 
     Filepath to the NFACT_decomp directory. Use this if you have ran NFACT decomp.
