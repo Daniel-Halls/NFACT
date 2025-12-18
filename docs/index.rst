@@ -48,3 +48,4 @@ Auxiliary Modules
    :titlesonly:
 
    nfact_Qc
+   nfact_config

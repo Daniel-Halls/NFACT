@@ -1,5 +1,5 @@
 NFACT Pre-Processing
-==========
+====================
 Pre-processing module of NFACT.
 
 Before any data can be decomposed, subject level seeds by target mconnectivity matricies are needed. 
