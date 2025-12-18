@@ -10,7 +10,7 @@ It consists of three "main" decomposition modules:
   - nfact_dr (Dual regression on group matrix)
 
 And three axillary modules:
-  - nfact_config (creates config files for the pipeline and changing any hyperparameters)
+  - nfact_config (Creates config files for the pipeline and changing any hyperparameters)
   - nfact_Qc (Creates hitmaps to check for bias in decomposition)
   - nfact_stats (Creates Spatial maps and component loadings for further statistical testing)
 
@@ -26,6 +26,8 @@ Overview
 .. toctree::
    :maxdepth: 1
    :titlesonly:
+   
+   Install
 
 Modules
 --------

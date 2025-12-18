@@ -157,7 +157,7 @@ Usage
 Options
 """"""""
 
-options:
+General options:
   -h, --help 
     Show help message
   -hh, --verbose_help 
