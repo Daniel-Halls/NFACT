@@ -28,6 +28,7 @@ Overview
    :titlesonly:
    
    Install
+   Examples
 
 Main Modules
 ------------
@@ -50,3 +51,12 @@ Auxiliary Modules
    nfact_Qc
    nfact_config
    nfact_stats
+
+Pipeline Modules
+-----------------
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   nfact_pipeline
