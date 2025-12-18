@@ -29,8 +29,8 @@ Overview
    
    Install
 
-Modules
---------
+Main Modules
+------------
 
 .. toctree::
    :maxdepth: 1
@@ -38,3 +38,4 @@ Modules
 
    nfact_pp
    nfact_decomp
+   nfact_dr

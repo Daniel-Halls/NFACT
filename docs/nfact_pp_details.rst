@@ -142,6 +142,13 @@ Examples are:
      - ``CIFTI_STRUCTURE_THALAMUS_RIGHT.nii.gz``
 
 
+HPC clusters
+------------
+NFACT can directly submit jobs to high performance computing enviorments and monitor queues to let you know when they are finished. 
+Cluster arguments require ``--cluster`` and a queue to submit to via ``--cluster_qos``. 
+This will make NFACT search for a HPC cluster enviorment and the queue to check that NFACT can submit to the cluster. 
+NFACT by default allocates time and ram to the job, however, these may need to be changed depending on the data by the ``--cluster_ram`` and ``--cluster_time`` arguments.
+
 
 Usage
 ------
