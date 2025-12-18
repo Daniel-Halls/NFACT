@@ -49,3 +49,4 @@ Auxiliary Modules
 
    nfact_Qc
    nfact_config
+   nfact_stats

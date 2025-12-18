@@ -124,7 +124,11 @@ Subject lists
 --------------
 
 NFACT config will attempt to given a directory work out and write to a file all the subjects in that file. Though nfact will try and filter out 
-folders that aren't subjects, it isn't perfect so please check the subject list. 
+folders that aren't subjects, it isn't perfect so please check the subject list.
+
+NFACT config will also from the file path work out what type of subject list to create. If it is ran within the nfact_pp directory
+if will add /omatrix2 onto the file path so this subject list can be used for decomposition. If it is ran within the nfact_dr/NMF directory
+if will get the subjects from those files.
 
 .. code-block:: text
 

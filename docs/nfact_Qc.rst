@@ -5,6 +5,6 @@ This is a quality control module that creates a number of hitmaps that can be us
 
 .. toctree::
    :maxdepth: 5
-   :caption: NFACT pre-processing
+   :caption: NFACT Quality Control
 
    nfact_Qc_details
