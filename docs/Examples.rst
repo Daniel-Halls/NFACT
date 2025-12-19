@@ -1,5 +1,5 @@
 Examples
----------
+============
 Here is some examples of how to use NFACT. 
 
 
@@ -8,7 +8,7 @@ HCP style HUMAN data
 These examples assumes that you have ran pre-freesurfer, freesurfer, post-freesurfer & the diffusion parts of the HCP pipeline
 
 NMF with 200 dimensions and mutlicore processing
-""""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Config File
 
@@ -16,7 +16,7 @@ Config File
 
   {
       "global_input": {
-       "list_of_subjects": "/path_to/nfact_config.sublist", # Or any subject list
+       "list_of_subjects": "/path_to/nfact_config.sublist",
        "outdir": "/out_dir/path",
        "seed": [
            "Required unless file_tree specified"
@@ -25,7 +25,7 @@ Config File
        "pp_skip": false,
        "dr_skip": false,
        "qc_skip": false,
-       "folder_name": "nfact_HCP" # or what ever you like
+       "folder_name": "nfact_HCP"
       },
       "cluster": {
           "cluster": false,
@@ -86,7 +86,7 @@ Run with::
 
 
 Downsampling ICA Cluster 
-""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 This assumes that there is a downsampling folder with volumes and surfaces (located at the same level as the T1w & MNINonLinear), it is going to be run on a cluster with ICA 200 dimensions, and mutlicore processing for the dual regression and :
 
 Config file
@@ -95,7 +95,7 @@ Config file
 
   {
       "global_input": {
-          "list_of_subjects": "/path_to/nfact_config.sublist", # Or any subject list
+          "list_of_subjects": "/path_to/nfact_config.sublist",
           "outdir": "/out_dir/path",
           "seed": [
               "Required unless file_tree specified"
@@ -104,7 +104,7 @@ Config file
           "pp_skip": false,
           "dr_skip": false,
           "qc_skip": false,
-          "folder_name": "nfact_HCP_cifti" # or what ever you like
+          "folder_name": "nfact_HCP_cifti"
       },
       "cluster": {
           "cluster": true,
@@ -168,7 +168,7 @@ Non HCP style data
 --------------------
 
 Non-Human data no filetree
-""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This is for animal data where seed references need to be changed and warps are .mat files. A ptx options file is given to reduce the step length. Due to animal data being lower quality the resoltuion is going to be set to 1mm for the downsampling. THe decomposition is NMF with everything being run locally. The threshold for the nfact_Qc is going to be lowered and there will be no thresholding of components before saving.
 
@@ -250,7 +250,7 @@ Run with::
 
 
 Non-Human with filetree
-""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 THe same data but this time with a custom filetree sepcifying where the data is and a customised target image
 
@@ -287,7 +287,7 @@ Config file
           "bpx_path": false,
           "roi": [],
           "seedref": "/path_to/sub1/preconall/T2_dingo.nii.gz",
-          "target2": /path_to/sub1/preconall/target_2.nii.gz,
+          "target2": "/path_to/sub1/preconall/target_2.nii.gz",
           "nsamples": "1000",
           "mm_res": "1",
           "ptx_options": "/path_to/ptxopts.txt",
