@@ -1,0 +1,24 @@
+.wy-menu-vertical .caption {
+    font-size: 0.1em;
+}
+
+.wy-menu-vertical .caption {
+    font-size: 0.1em;
+    margin-top: 0.6em;
+    margin-bottom: 0.2em;
+}
+
+img {
+    max-width: 100%;
+    height: auto !important;
+}
+img.no-wrap {
+    display: block;
+    float: none !important;
+    margin: 1em 0;
+}
+
+img.spaced-figure {
+    margin-top: 3em;    
+    margin-bottom: 3em; 
+}
