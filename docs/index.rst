@@ -1,11 +1,9 @@
-NFACT documentation
-======================================
+NFACT 
+=====
 
 .. image:: _static/thalamus_radiations.png
    :alt: description
    :class: spaced-figure
-
-
 
 **NFACT** (Non-negative matrix Factorisation of Tractography data) is a set of modules (as well as an end to end pipeline) that decomposes 
 tractography data using NMF/ICA.
@@ -22,6 +20,11 @@ And three auxiliary modules:
 
 and a pipeline wrapper
     - nfact (runs nfact_pp, nfact_decomp, nfact_Qc and nfact_dr. nfact_pp, nfact_Qc and nfact_dr can all individually be skipped)
+
+
+.. image:: _static/pipeline.png
+   :alt: description
+   :class: spaced-figure
 
 .. note::
 
