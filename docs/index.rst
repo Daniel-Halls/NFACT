@@ -55,8 +55,3 @@ create confirguation files.
 .. note::
 
    Wanting to contribute? Please check out the `contributing <https://github.com/SPMIC-UoN/NFACT/blob/main/CONTRIBUTING.md>`_
-
-
-
-Overview
---------
