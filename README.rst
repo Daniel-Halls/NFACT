@@ -14,12 +14,12 @@ It consists of three "main" decomposition modules:
   - nfact_dr (Dual regression on group matrix)
 
 And three auxiliary modules:
-  - nfact_config (Creates config files for the pipeline and changing any hyperparameters)
+  - nfact_config (Creates config files for the pipeline and for changing any hyperparameters)
   - nfact_Qc (Creates hitmaps to check for bias in decomposition)
-  - nfact_stats (Creates Spatial maps and component loadings for further statistical testing)
+  - nfact_stats (Creates spatial maps and component loadings for further statistical testing)
 
 and a pipeline wrapper
-    - nfact (runs nfact_pp, nfact_decomp, nfact_Qc and nfact_dr. nfact_pp, nfact_Qc and nfact_dr can all individually be skipped)
+    - nfact (Runs nfact_pp, nfact_decomp, nfact_Qc and nfact_dr. nfact_pp, nfact_Qc and nfact_dr can all individually be skipped)
 
 For further info please see the `readthedocs <https://nfact.readthedocs.io/en/latest/>`_
 
