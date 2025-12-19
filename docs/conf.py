@@ -30,3 +30,9 @@ html_theme_options = {
     "collapse_navigation": False,
     "navigation_depth": 4,
 }
+rst_prolog = """
+.. |thal| image:: _static/thalamus_radiations.png
+   :alt: description
+   :align: middle
+   :class: spaced-figure
+"""
