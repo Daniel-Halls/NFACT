@@ -1,7 +1,10 @@
 NFACT documentation
 ======================================
 
-|thal|
+.. image:: docs/_static/thalamus_radiations.png
+   :alt: description
+   :class: spaced-figure
+
 
 
 **NFACT** (Non-negative matrix Factorisation of Tractography data) is a set of modules (as well as an end to end pipeline) that decomposes 
