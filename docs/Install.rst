@@ -3,7 +3,7 @@ Installation
 
 Currently NFACT can only be installed by directly cloning the NFACT repository at https://github.com/SPMIC-UoN/NFACT directly to your local machine.
 
-Before NFACT can be installed it needs a number of external 
+Before NFACT can be installed it needs a number of external dependencies.
 
 External dependencies
 ---------------------

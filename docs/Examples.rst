@@ -2,10 +2,15 @@ Examples
 ============
 Here is some examples of how to use NFACT. 
 
+.. image:: _static/example.png
+   :alt: description
+   :class: spaced-figure
 
 HCP style HUMAN data 
 --------------------
 These examples assumes that you have ran pre-freesurfer, freesurfer, post-freesurfer & the diffusion parts of the HCP pipeline
+
+
 
 NMF with 200 dimensions and mutlicore processing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

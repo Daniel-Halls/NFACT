@@ -134,6 +134,15 @@ if will get the subjects from those files.
 
     nfact_config -s /path/to/subs/dir
 
+Zipping fdt matrix2
+--------------------
+The main output from NFACT Pre-processing is the fdt_matrix2.dot file which can be very large. nfact_config is able to zip this file into a lz4 file to significantly save on space.
+NFACT is able to read the zipped files, however it may add to processing time. 
+
+To zip files::
+
+  nfact_config -z /path/to/nfact_pp
+
 Usage
 ------
 

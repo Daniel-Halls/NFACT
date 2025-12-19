@@ -21,8 +21,9 @@ And three auxiliary modules:
 and a pipeline wrapper
     - nfact (runs nfact_pp, nfact_decomp, nfact_Qc and nfact_dr. nfact_pp, nfact_Qc and nfact_dr can all individually be skipped)
 
+For further info please see the `readthedocs <https://nfact.readthedocs.io/en/latest/>`_
+
 .. image:: docs/_static/pipeline.png
    :alt: description
    :class: spaced-figure
 
-For further info please see the `readthedocs <https://nfact.readthedocs.io/en/latest/>`_
