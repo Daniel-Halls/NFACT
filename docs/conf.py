@@ -27,3 +27,7 @@ html_theme_options = {
     "collapse_navigation": False,
     "navigation_depth": 4,
 }
+
+rst_prolog = """
+.. |static| replace:: _static
+"""

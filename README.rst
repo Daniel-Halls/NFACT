@@ -1,7 +1,7 @@
 NFACT documentation
 ======================================
 
-.. image:: docs/_static/thalamus_radiations.png
+.. image:: _static/thalamus_radiations.png
    :alt: description
    :align: center
    :class: spaced-figure
