@@ -2,6 +2,9 @@ import os
 import sys
 from datetime import datetime
 
+
+# path for images in Sphinx
+
 # Add project root to path
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -27,7 +30,3 @@ html_theme_options = {
     "collapse_navigation": False,
     "navigation_depth": 4,
 }
-
-rst_prolog = """
-.. |static| replace:: _static
-"""
