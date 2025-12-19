@@ -1,5 +1,15 @@
 # ChangeLog
 
+## 19/12/2025
+
+### Bug fixes
+- None
+
+### New Features
+- Documentation now hosted on readthedocs
+- Readme stripped down to be more readable
+- Added OHBM abstract pictures
+
 ## 16/12/2025
 
 Iterative NMF
