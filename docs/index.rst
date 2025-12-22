@@ -9,7 +9,7 @@ NFACT
 tractography data using NMF/ICA.
 
 NFACT pre-processes data ready for decomposition, performs group level decomposition and output then projects back to the subject level.
-It is also able to produce qulaity control output, create spatialmaps and component loadings for further statistical testing as well as 
+It is also able to produce quality control output, create spatialmaps and component loadings for further statistical testing as well as 
 create confirguation files.
 
 .. toctree::

@@ -2,29 +2,23 @@ name: Trigger Read the Docs Build
 
 on:
   pull_request:
+    types:
+      - closed
     branches:
       - main
-    types: [opened, synchronize, reopened]
 
 jobs:
   trigger_rtd:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set branch version
-        id: version
-        run: |
-          # Use the PR source branch as the version
-          echo "RTD_VERSION=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
-
       - name: Trigger Read the Docs Build
         env:
           RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
-          RTD_VERSION: ${{ env.RTD_VERSION }}
         run: |
-          echo "Triggering RTD build for version: $RTD_VERSION"
+          echo "Triggering RTD build for latest (main)"
           curl -X POST \
             -H "Authorization: Token $RTD_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"version\": \"$RTD_VERSION\"}" \
-            "https://readthedocs.org/api/v3/projects/nfact/versions/$RTD_VERSION/builds/"
+            "https://readthedocs.org/api/v3/projects/nfact/versions/latest/builds/"
